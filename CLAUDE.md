@@ -22,7 +22,7 @@
 - Rails 7.2 系は 2026年8月でサポート終了済み。Rails のメジャー／マイナーを上げる提案はしてよいが、実行はしない。
 - 認証: `devise_token_auth`（**1.2.6 以上**。1.2.5 以下は `rails < 7.2` 制約で入らない）。
 - フロント: JavaScript（JSX）、React Router、グラフは Recharts、スタイルは CSS Modules。追加ライブラリは最小限にし、入れる前に理由を書く。
-- 開発時は Vite の proxy で `/api` と `/characters` を `http://localhost:3000` に転送する（CORS 設定は不要にする）。
+- 開発時は Vite の proxy で `/api`・`/characters`・`/rails/active_storage`（食事の写真）を `http://localhost:3000` に転送する（CORS 設定は不要にする）。
 
 ## すでに済んでいること（やり直さない）
 - `rails _7.2.3.2_ new sotuken_b02 --api -d mysql` でプロジェクト作成（場所: `D:\g2\sotuken_b\sotuken_b02`。DB は `sotuken_b02_development` / `sotuken_b02_test`）
