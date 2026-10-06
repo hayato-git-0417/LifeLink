@@ -5,7 +5,7 @@
 module Api
   module V1
     class TimedRecordsController < BaseController
-      before_action :close_overdue_timers
+      game_api
 
       # GET /api/v1/<records>?from=&to=（新しい順。計測中の記録も含む）
       def index

@@ -2,7 +2,7 @@
 module Api
   module V1
     class ExerciseRecordsController < BaseController
-      before_action :close_overdue_timers
+      game_api
 
       # GET /api/v1/exercise_records?from=&to=（7日グラフ用に日ごとの合計も返す）
       def index

@@ -3,7 +3,7 @@
 module Api
   module V1
     class ExerciseTaskCompletionsController < BaseController
-      before_action :close_overdue_timers
+      game_api
       before_action :set_task
 
       # POST /api/v1/exercise_tasks/:id/completion

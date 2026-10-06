@@ -2,7 +2,7 @@
 module Api
   module V1
     class ExerciseTasksController < BaseController
-      before_action :close_overdue_timers
+      game_api
 
       # GET /api/v1/exercise_tasks/today
       def today

@@ -15,11 +15,23 @@ module Api
         render_errors(e.message)
       end
 
+      # 記録・ホームの API で使う。
+      #   前: 止め忘れの自動終了（spec.md 2.1）→ 前日までの確定（spec.md 3.2）
+      #   後: 記録を変えたらキャラの状態を判定し直す（spec.md 4.1「記録の保存時」）
+      def self.game_api
+        before_action :prepare_game_state
+        after_action :resolve_character_state, unless: -> { request.get? || response.status >= 400 }
+      end
+
       private
 
-      # 記録 API の前に止め忘れのタイマーを自動終了する（spec.md 2.1）
-      def close_overdue_timers
+      def prepare_game_state
         OverdueTimerCloser.call(user: current_user)
+        DailyFinalizer.call(user: current_user)
+      end
+
+      def resolve_character_state
+        CharacterStateResolver.call(user: current_user)
       end
 
       # 記録が変わった日の達成度を計算し直す（中身はフェーズ4）

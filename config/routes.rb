@@ -31,6 +31,10 @@ Rails.application.routes.draw do
         resource :completion, only: %i[create destroy], controller: "exercise_task_completions"
       end
       resources :meals
+
+      # ホームと詳細画面のグラフ（フェーズ4）
+      resource :home, only: :show
+      resources :daily_achievements, only: :index
     end
   end
 

@@ -5,7 +5,7 @@ module Api
     class MealsController < BaseController
       MEAL_ATTRIBUTES = [ :meal_type, :eaten_at, :content, :comment, :photo, *Meal::NUTRIENT_COLUMNS ].freeze
 
-      before_action :close_overdue_timers
+      game_api
       before_action :set_meal, only: %i[show update destroy]
 
       # GET /api/v1/meals?date=2026-10-06（省略時は今日。食べた時刻の順）
