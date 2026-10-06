@@ -1,6 +1,6 @@
 # sotuken_b02 — 生活リズム改善ゲーム
 
-卒業研究チーム開発の Web アプリ。Rails（API モード）＋ React（`frontend/`、フェーズ5で作成）。
+卒業研究チーム開発の Web アプリ。Rails（API モード）＋ React（`frontend/`、Vite・React Router・CSS Modules）。
 仕様は `docs/spec.md`、DB 設計は `docs/db_design.md`、仮決めは `docs/decisions.md`。
 README の詳しい環境構築手順はフェーズ8でまとめる。ここには今使える手順だけを書く。
 
@@ -18,10 +18,31 @@ ruby bin/rails s            # http://localhost:3000
 
 デモユーザー: `demo1@example.com`（たろう）／`demo2@example.com`（はなこ）、パスワードはどちらも `password`。
 
+## ブラウザで使う（Rails と Vite を両方起動する）
+
+ターミナルを2つ開く。ブラウザで開くのは **http://localhost:5173**（Vite）。
+`/api`・`/characters`・`/rails/active_storage` は Vite が Rails（localhost:3000）へ転送するので、Rails も起動しておく。
+
+```powershell
+# ターミナル1: Rails（API）
+cd D:\g2\sotuken_b\sotuken_b02
+ruby bin/rails s
+
+# ターミナル2: React（初回だけ npm install）
+cd D:\g2\sotuken_b\sotuken_b02\frontend
+npm install
+npm run dev                 # http://localhost:5173
+```
+
+- スマホ幅で見るときは、ブラウザの開発者ツール（F12）→ デバイスツールバー（Ctrl+Shift+M）で幅 375 などにする。
+- 画面に「サーバーに接続できません」と出たら、ターミナル1の Rails が止まっている。
+- ログイン状態はブラウザの localStorage（`sotuken_b02.auth`）に入る。おかしくなったら開発者ツールの Application → Local Storage で消す。
+
 ## テスト
 
 ```powershell
-bundle exec rails test
+bundle exec rails test       # Rails
+cd frontend; npm run build   # React（ビルドが通るか）。npm run lint で静的チェック
 ```
 
 初回だけ `ruby bin/rails db:test:prepare` が必要な場合がある。
