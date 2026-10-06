@@ -1,16 +1,23 @@
 // 画面の共通の枠: 上部ヘッダー（タイトル・通知ベル・メニュー≡）と下部ナビ（ホーム／マイページ）。
 // ログイン・新規登録の画面は guest にして、ベル・メニュー・下部ナビを出さない（spec.md 5章）。
 //   <AppShell title="ログイン" guest>...</AppShell>
+//   <AppShell title="食事" backTo="/">...</AppShell>  … 左上に戻るボタン（←）
 import { useEffect, useRef, useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth.js'
 import styles from './AppShell.module.css'
 
-export default function AppShell({ title, guest = false, children }) {
+export default function AppShell({ title, guest = false, backTo, children }) {
   return (
     <div className={styles.frame}>
       <header className={styles.header}>
-        <span className={styles.side} />
+        <span className={styles.side}>
+          {backTo && (
+            <Link to={backTo} className={styles.iconButton} aria-label="戻る">
+              <BackIcon />
+            </Link>
+          )}
+        </span>
         <h1 className={styles.title}>{title}</h1>
         <span className={`${styles.side} ${styles.actions}`}>{!guest && <HeaderActions />}</span>
       </header>
@@ -79,6 +86,14 @@ function BottomNav() {
         <span>マイページ</span>
       </NavLink>
     </nav>
+  )
+}
+
+function BackIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true">
+      <path fill="currentColor" d="M10.5 5 3.5 12l7 7 1.4-1.4L7.3 13H21v-2H7.3l4.6-4.6L10.5 5Z" />
+    </svg>
   )
 }
 

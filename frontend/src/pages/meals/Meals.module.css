@@ -1,0 +1,316 @@
+.loading,
+.empty {
+  padding: 24px 0;
+  color: var(--color-text-sub);
+  text-align: center;
+}
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.heading {
+  margin: 0;
+  color: var(--color-text-sub);
+  font-size: 1.2rem;
+  font-weight: 500;
+}
+
+/* 今日の摂取量: 左に円グラフ、右に PFC・食物繊維 */
+.summary {
+  display: grid;
+  grid-template-columns: 150px 1fr;
+  align-items: center;
+  gap: 12px;
+}
+
+.donut {
+  position: relative;
+  width: 150px;
+  height: 150px;
+}
+
+.donutCenter {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.donutCenter strong {
+  font-size: 1.5rem;
+  line-height: 1.1;
+}
+
+.donutCenter span {
+  color: var(--color-text-sub);
+  font-size: 0.8rem;
+}
+
+.nutrients {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--color-input);
+  font-size: 0.85rem;
+}
+
+.nutrients th,
+.nutrients td {
+  padding: 8px 6px;
+  border: 1px solid var(--color-border);
+}
+
+.nutrients th {
+  font-weight: 500;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.nutrients td {
+  text-align: right;
+}
+
+.mainButtons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0 24px;
+}
+
+.bigButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 52px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-input);
+  color: var(--color-text);
+  font-size: 1.15rem;
+  text-decoration: none;
+}
+
+/* 食事カード */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.card {
+  display: flex;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  background: var(--color-input);
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.cards .card {
+  flex-direction: column;
+}
+
+.cardPhoto,
+.cardNoPhoto {
+  flex-shrink: 0;
+  width: 72px;
+  height: 72px;
+  border-radius: 10px;
+  object-fit: cover;
+}
+
+.cards .cardPhoto,
+.cards .cardNoPhoto {
+  width: 100%;
+  height: 90px;
+}
+
+.cardNoPhoto {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #e2e8ee;
+  font-size: 1.8rem;
+}
+
+.cardBody {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.cardType {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.cardDate {
+  color: var(--color-text-sub);
+  font-size: 0.8rem;
+}
+
+.cardContent {
+  overflow: hidden;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.cardKcal {
+  font-size: 1rem;
+}
+
+/* 記録・修正のフォーム */
+.mealForm {
+  gap: 18px;
+}
+
+.photoBox {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 190px;
+  margin: calc(-1 * var(--gutter)) calc(-1 * var(--gutter)) 0;
+  overflow: hidden;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-input);
+  cursor: pointer;
+}
+
+.photo {
+  width: 100%;
+  max-height: 280px;
+  object-fit: cover;
+}
+
+.photoEmpty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  color: var(--color-text-sub);
+  font-size: 1.5rem;
+}
+
+.photoPlus {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 56px;
+  border: 1px solid var(--color-border);
+  border-radius: 50%;
+  font-size: 1.2rem;
+}
+
+/* ファイル選択の入力欄は隠して、写真の枠全体を押せるようにする */
+.fileInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.mealTypes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 6px 18px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-input);
+  cursor: pointer;
+}
+
+.chip input {
+  position: absolute;
+  opacity: 0;
+}
+
+.chipOn {
+  border-color: var(--color-primary-dark);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+.chip:focus-within {
+  outline: 2px solid rgb(66 135 245 / 0.5);
+}
+
+.nutrientInputs {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.nutrientRow {
+  display: grid;
+  grid-template-columns: 96px 1fr 40px;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-text-sub);
+}
+
+.number {
+  min-height: 44px;
+  text-align: right;
+}
+
+.comment {
+  min-height: 88px;
+  resize: vertical;
+}
+
+.danger {
+  border-color: var(--color-error);
+  background: var(--color-surface);
+  color: var(--color-error);
+}
+
+/* 一覧の日付切り替え */
+.dateNav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.dateInput {
+  flex: 1;
+  min-height: 44px;
+  text-align: center;
+}
+
+.dateButton {
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-surface);
+}
+
+.dayTotal {
+  margin: 0 0 10px;
+  color: var(--color-text-sub);
+  text-align: right;
+}
