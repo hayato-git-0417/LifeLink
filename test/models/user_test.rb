@@ -49,7 +49,6 @@ class UserTest < ActiveSupport::TestCase
   test "ユーザーを消すと関連データも消え、送った通知の actor は NULL になる" do
     alice = create_user
     bob = create_user
-    alice.create_character!
     Follow.create!(follower: alice, followed: bob)
     notification = bob.notifications.create!(actor: alice, notification_type: :follow, title: "フォローされました")
 

@@ -92,7 +92,7 @@ User.where(email: demo_users.pluck(:email)).destroy_all
 users = demo_users.map do |attrs|
   user = User.create!(email: attrs[:email], password: DEMO_PASSWORD, password_confirmation: DEMO_PASSWORD,
                       name: attrs[:name], icon: attrs[:icon], gender: attrs[:gender], birthdate: attrs[:birthdate])
-  user.create_character!(last_reset_on: today - (DEMO_DAYS + 1))
+  user.character.update!(last_reset_on: today - (DEMO_DAYS + 1)) # キャラは User 作成時に自動で作られる
 
   standard = NutritionStandard.moderate.where(gender: attrs[:gender]).for_age(user.age).first
   user.create_goal!(attrs[:goal].merge(

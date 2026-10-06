@@ -51,7 +51,7 @@ class MiscModelsTest < ActiveSupport::TestCase
   end
 
   test "キャラの状態の履歴" do
-    character = @user.create_character!
+    character = @user.character
     log = character.character_state_logs.create!(state: :hungry, target_date: Date.new(2026, 10, 6), started_at: Time.current, reason: "朝食の記録がない")
     assert_equal [ log ], character.character_state_logs.current.to_a
   end

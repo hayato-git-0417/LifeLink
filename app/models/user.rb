@@ -32,13 +32,18 @@ class User < ActiveRecord::Base
   validates :birthdate, presence: true
   validate :birthdate_not_in_future
 
-  # 年齢（日本時間の今日で数える）。食事の目標値の初期値に使う
-  def age(on: Time.zone.today)
-    return nil if birthdate.nil?
+  # 1ユーザー1匹。登録した日はポイントに反映しない（spec.md 3.2）ので last_reset_on = 登録日
+  after_create :create_initial_character
 
+  # 生年月日から年齢を出す（日本時間の今日で数える）。食事の目標値の初期値に使う
+  def self.age_on(birthdate, on: Time.zone.today)
     years = on.year - birthdate.year
     birthday_passed = on.month * 100 + on.day >= birthdate.month * 100 + birthdate.day
     birthday_passed ? years : years - 1
+  end
+
+  def age(on: Time.zone.today)
+    birthdate && self.class.age_on(birthdate, on: on)
   end
 
   def following?(other)
@@ -46,6 +51,10 @@ class User < ActiveRecord::Base
   end
 
   private
+
+  def create_initial_character
+    create_character!(last_reset_on: Time.zone.today)
+  end
 
   def birthdate_not_in_future
     return if birthdate.nil?
