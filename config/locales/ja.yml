@@ -117,3 +117,14 @@ ja:
         self_follow: 自分自身はフォローできません
         already_in_progress: すでに計測中の記録があります
         must_be_after_start: は開始より後の日時にしてください
+        not_found: が見つかりません
+        invalid_date: は正しい日付ではありません
+        exercise_tasks_required: 運動タスクを1件以上登録してください
+        exercise_task_not_found: 運動タスクが見つかりません
+  devise:
+    failure:
+      unauthenticated: ログインしてください
+  api:
+    errors:
+      not_found: データが見つかりません
+      parameter_missing: "必要な項目（%{param}）がありません"

@@ -12,11 +12,22 @@ class Goal < ApplicationRecord
     attribute column, default: -> { GameConfig.meal_times[meal] }
   end
 
+  MINUTES_PER_DAY = 24 * 60
+
   validates :user_id, uniqueness: true
-  validates :sleep_goal_minutes, presence: true, numericality: { only_integer: true, greater_than: 0 }, if: :duration?
+  validates :sleep_goal_minutes, presence: true, if: :duration?
+  validates :sleep_goal_minutes, numericality: { only_integer: true, greater_than: 0, less_than_or_equal_to: MINUTES_PER_DAY }, allow_nil: true
   validates :bedtime, :wake_time, presence: true, if: :time_range?
-  validates :work_goal_minutes, numericality: { only_integer: true, greater_than_or_equal_to: 0 }, allow_nil: true
+  validates :work_goal_minutes, numericality: { only_integer: true, greater_than_or_equal_to: 0, less_than_or_equal_to: MINUTES_PER_DAY }, allow_nil: true
   validates(*NUTRIENT_COLUMNS, numericality: { greater_than_or_equal_to: 0 }, allow_nil: true)
+
+  # 目標設定画面（新規登録③④・目標変更）から保存するときは全項目を必須にする（spec.md 3.1 の 0 除算対策）
+  #   goal.save(context: :setting)
+  with_options on: :setting do
+    validates :work_goal_minutes, presence: true
+    validates(*NUTRIENT_COLUMNS, presence: true)
+    validates(*MEAL_TIME_COLUMNS, presence: true)
+  end
 
   # スコア計算に使う目標睡眠時間（分）。時間帯のときは 起床 − 就寝（日をまたぐときは +24h）
   def target_sleep_minutes
