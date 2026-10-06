@@ -7,7 +7,8 @@ class ExerciseRecord < ApplicationRecord
   before_validation :fill_recorded_on
 
   validates :started_at, :recorded_on, presence: true
-  validates :distance_km, numericality: { greater_than_or_equal_to: 0, less_than: 1000 }, allow_nil: true
+  # 移動距離の手入力にしか使わないので距離は必須
+  validates :distance_km, presence: true, numericality: { greater_than: 0, less_than: 1000, allow_nil: true }
   validates :memo, length: { maximum: 255 }
 
   scope :between, ->(from, to) { where(recorded_on: from..to) }
