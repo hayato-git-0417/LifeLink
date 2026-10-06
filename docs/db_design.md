@@ -28,7 +28,7 @@
 | 9 | 記録 | sleep_records | SleepRecord | 就寝〜起床の記録。ホームの「睡眠」で開始、「起床」で終了。手動入力も可。 | ホーム(p.1-2) / 睡眠(p.6) / 詳細(p.5) / マイページ(p.3) |
 | 10 | 記録 | work_records | WorkRecord | 仕事・学習のタイマー記録。計測中はキャラが「勉強中」になる。 | ホーム(p.1-2)の仕事 / ワーク(p.7) / 詳細(p.5)の学習タブ |
 | 11 | 記録 | exercise_task_completions | ExerciseTaskCompletion | 運動タスクのその日のチェック。行があれば達成。日付ごとに持つので毎日自然にリセットされる。 | 運動(p.18) / 詳細(p.5)の運動タブ |
-| 12 | 記録 | exercise_records | ExerciseRecord | 運動した時間と移動距離。計測中はキャラが「汗汗」になる。 | ホーム(p.1-2)の運動 / 運動(p.18)の移動距離 / 詳細(p.5) |
+| 12 | 記録 | exercise_records | ExerciseRecord | 移動距離の手入力の記録（運動タイマーは作らない。started_at は入力した日時、ended_at・duration_minutes は使わない）。 | ホーム(p.1-2)の運動 / 運動(p.18)の移動距離 / 詳細(p.5) |
 | 13 | 記録 | meals | Meal | 1回の食事。写真は Active Storage（has_one_attached :photo）で保存し、このテーブルには列を持たない。 | ホーム(p.1-2) / 食事トップ(p.13) / 食事を記録(p.14) / 詳細(p.5) |
 | 14 | マスタ | nutrition_standards | NutritionStandard | 年齢・性別ごとの食事のデフォルト値。新規登録時に goals の初期値を決めるのに使う。値は db/seeds.rb で投入。 | 新規登録（内部処理） / 食事トップ(p.13) |
 | 15 | マスタ | character_animations | CharacterAnimation | キャラの状態（8種類）ごとに表示するGIFのパス。GIF本体は Rails の public/characters/ に置く（Reactを使う場合も使わない場合も同じパスで表示できる）。値は db/seeds.rb で投入。 | ホーム(p.1-2) |
@@ -201,9 +201,9 @@
 | `fat_goal_g` | 目標脂質（g） | DECIMAL(5,1) | decimal (precision: 5, scale: 1) |  |  |  |  | 60.0 | 同上 |
 | `carbs_goal_g` | 目標炭水化物（g） | DECIMAL(5,1) | decimal (precision: 5, scale: 1) |  |  |  |  | 300.0 | 同上 |
 | `fiber_goal_g` | 目標食物繊維（g） | DECIMAL(5,1) | decimal (precision: 5, scale: 1) |  |  |  |  | 21.0 | 同上。食事達成度の5項目めに使う |
-| `breakfast_time` | 朝食の時刻 | TIME | time |  |  |  |  | 07:30 | キャラが空腹になるタイミング。※画面に入力欄なし→要確認 |
-| `lunch_time` | 昼食の時刻 | TIME | time |  |  |  |  | 12:00 | 同上 |
-| `dinner_time` | 夕食の時刻 | TIME | time |  |  |  |  | 19:00 | 同上 |
+| `breakfast_time` | 朝食の時刻 | TIME | time |  |  |  |  | 07:00 | キャラが空腹になるタイミング。新規登録④・目標変更で入力。初期値 7:00（フロントの初期表示） |
+| `lunch_time` | 昼食の時刻 | TIME | time |  |  |  |  | 12:00 | 同上。初期値 12:00 |
+| `dinner_time` | 夕食の時刻 | TIME | time |  |  |  |  | 19:00 | 同上。初期値 19:00 |
 
 インデックス: ユニーク: `user_id`（1ユーザーにつき1行に制限）
 
@@ -234,8 +234,7 @@
 | `slept_at` | 就寝日時 | DATETIME(6) | datetime | ○ |  |  |  | 2026-10-04 23:45 |  |
 | `woke_at` | 起床日時 | DATETIME(6) | datetime |  |  |  |  | 2026-10-05 06:15 | NULL＝睡眠中（キャラも睡眠中にする） |
 | `duration_minutes` | 睡眠時間（分） | INT | integer |  |  |  |  | 390 | 起床時に計算して保存 |
-| `quality` | 睡眠の質（%） | INT | integer |  |  |  |  | 80 | 0〜100。※算出方法は要確認 |
-| `record_method` | 記録方法 | INT | integer | ○ | 0 |  |  | 0（タイマー） | enum（タイマー／手動） |
+| `record_method` | 記録方法 | INT | integer | ○ | 0 |  |  | 0（タイマー） | enum（タイマー／手動）。ホームのボタンで記録するので作成時は timer。詳細画面で修正したら manual にする |
 | `recorded_on` | 集計日 | DATE | date | ○ |  |  |  | 2026-10-05 | 起床した日の日付。日付をまたぐのでグラフ集計はこれで行う |
 
 インデックス: 通常: `user_id, recorded_on`（日ごとの集計・グラフ表示を速くする） / 通常: `user_id, slept_at`（一覧・集計の検索を速くする）
@@ -274,7 +273,7 @@
 
 ### exercise_records
 
-- 役割: 運動した時間と移動距離。計測中はキャラが「汗汗」になる。
+- 役割: 移動距離の手入力の記録（運動タイマーは作らない。started_at は入力した日時、ended_at・duration_minutes は使わない）。
 - 画面: ホーム(p.1-2)の運動 / 運動(p.18)の移動距離 / 詳細(p.5)
 - モデル: ExerciseRecord（app/models/exercise_record.rb）
 
@@ -343,7 +342,7 @@
 | 物理名 | 論理名 | MySQL型 | Rails型 | NOT NULL | 初期値 | キー | 参照先 | 例 | 備考 |
 |---|---|---|---|---|---|---|---|---|---|
 | `state` | 状態 | INT | integer | ○ |  | UQ |  | 1（睡眠中） | enum（characters.state と同じ）。1状態に1行 |
-| `gif_path` | GIFのパス | VARCHAR(255) | string | ○ |  |  |  | /characters/sleeping.gif | Rails の public/ から見たパス |
+| `gif_path` | 画像のパス | VARCHAR(255) | string | ○ |  |  |  | /characters/sleeping.png | Rails の public/ から見たパス |
 | `description` | 説明 | VARCHAR(100) | string (limit: 100) |  |  |  |  | ふとんで眠っている | 任意 |
 
 インデックス: ユニーク: `state`（重複登録を防ぐ）
@@ -399,7 +398,7 @@
 | 3 | 画面 | 食事の時刻（朝・昼・夕）を入力する欄がない。キャラの空腹判定に必要 | goals に breakfast_time / lunch_time / dinner_time を用意。目標設定画面に欄を追加 | goals | 未確認 |
 | 4 | 将来 | 自由設定（入浴・趣味など）は今回の範囲から削除。後で入れる可能性あり | 入れるときは custom_activities（項目名・分類・予定時刻・目標時間・表示順）と custom_activity_records（開始・終了・時間・記録方法・集計日）の2テーブルを追加する。既存テーブルの変更は不要 | （追加時）custom_activities, custom_activity_records | 保留 |
 | 5 | 画面 | 新規登録の③（4段階のうち）の内容が未定 | 現状の画面（①メール→②プロフィール→目標設定）で設計 | － | 未確認 |
-| 6 | 仕様 | 睡眠の質（80%など）の出し方が未定 | quality（0〜100の整数）だけ用意。起床時の自己評価にするのが一番簡単 | sleep_records | 未確認 |
+| 6 | 仕様 | 睡眠の質（80%など）の出し方が未定 | 睡眠の質は記録しない（sleep_records.quality を削除） | sleep_records | 確定（2026-10-06） |
 | 7 | 仕様 | 「1日」の区切り（0時か、朝4時などか） | 集計は recorded_on（日付）で行う。睡眠は起床した日を入れる | 各記録テーブル | 未確認 |
 | 8 | 仕様 | キャラの状態を判定するタイミング（記録時／アクセス時／定期実行） | 記録の保存時とホーム表示時に判定し、characters.state と当日の daily_achievements を更新。日付が変わったら last_reset_on を見て状態をリセットし、前日分のポイントを確定してキャラへ反映 | characters, character_state_logs, daily_achievements | 未確認 |
 | 9 | 仕様 | その日のスコア（0〜100）をポイントの増減に換える方法 | 仮案：増減 ＝（スコア − 50）× 2。100点で＋100、50点で±0、記録なし（0点）で−100。ポイントは0〜1000の範囲に収める（「達成度の計算」シートで値を変えて試せる） | characters, daily_achievements | 未確認 |
@@ -408,7 +407,7 @@
 | 12 | 仕様 | アプリを開かなかった日のポイント反映 | 日付が変わって最初にアクセスしたとき、last_reset_on の翌日から昨日までを順に確定させる（記録のない日はスコア0）。定期実行の仕組みは不要 | characters, daily_achievements | 未確認 |
 | 13 | 仕様 | 「太り」になる条件 | 仮：運動ポイントが300未満の日は、その日の基本の状態を「太り」にする。状態は毎日リセットし、睡眠中など他の状態と重なることはない | characters | 未確認 |
 | 14 | 仕様 | ワークスコアに上限がない（目標の2倍働くと200になる） | ポイント換算の前に100で頭打ちにする（換算式の min(スコア,100)）。ワークスコア自体は指定どおりの式で保存 | daily_achievements | 未確認 |
-| 15 | 技術 | GIF画像の置き場所 | Rails の public/characters/ に置き、character_animations.gif_path にパスを保存。Reactを使う場合も使わない場合も同じテーブル・同じGIFで表示できる | character_animations | 未確認 |
+| 15 | 技術 | GIF画像の置き場所 | Rails の public/characters/ に置き、character_animations.gif_path にパスを保存。Reactを使う場合も使わない場合も同じテーブル・同じ画像で表示できる。画像は GIF ではなく PNG | character_animations | 確定（2026-10-06） |
 | 16 | 技術 | Reactを導入できなかった場合の画面 | 今のRailsはAPIモードで、画面（HTML）を返す仕組みを持たない。その場合はコントローラを ActionController::Base にしてビュー（ERB）を追加する必要がある。DB設計は変わらない | － | 未確認 |
 | 17 | 仕様 | 目標値が0・未設定、運動タスクが0件のとき（0で割ってしまう） | 仮：目標設定で各目標値と運動タスク1件以上を必須にする。それでも0のときは達成度0% | goals, exercise_tasks | 未確認 |
 | 18 | 仕様 | 睡眠目標を「時間帯」で決めたときの目標睡眠時間 | 仮：起床時刻 − 就寝時刻（日付をまたぐときは24時間を足す）。判定は睡眠の長さだけで、就寝時刻のずれは見ない | goals | 未確認 |
@@ -615,7 +614,6 @@ class CreateSleepRecords < ActiveRecord::Migration[7.2]
       t.datetime :slept_at, null: false
       t.datetime :woke_at
       t.integer :duration_minutes
-      t.integer :quality
       t.integer :record_method, null: false, default: 0
       t.date :recorded_on, null: false
       t.timestamps

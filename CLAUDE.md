@@ -25,7 +25,8 @@
 - 開発時は Vite の proxy で `/api` と `/characters` を `http://localhost:3000` に転送する（CORS 設定は不要にする）。
 
 ## すでに済んでいること（やり直さない）
-- `rails _7.2.3.2_ new sotuken_b --api -d mysql` でプロジェクト作成（場所: `D:\g2\sotuken_b\sotuken_b`）
+- `rails _7.2.3.2_ new sotuken_b02 --api -d mysql` でプロジェクト作成（場所: `D:\g2\sotuken_b\sotuken_b02`。DB は `sotuken_b02_development` / `sotuken_b02_test`）
+- 初回コミット済み（main）。`docs/`・`public/characters/`・`CLAUDE.md` もリポジトリに含めた
 - `dotenv-rails` 導入。`config/database.yml` の default は `username: <%= ENV.fetch("DB_USERNAME") { "root" } %>` / `password: <%= ENV["DB_PASSWORD"] %>`
 - `.env`（各自のパスワード・push しない）と `.env.example`（push する）を作成、`.gitignore` に `/.env`
 - `rails db:create` 成功
