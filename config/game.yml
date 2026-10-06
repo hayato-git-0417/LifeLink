@@ -1,0 +1,62 @@
+# ゲームの定数（spec.md 2.1・3章・4章）。値を変えるときはここだけ直す。
+# 読み出しは GameConfig（app/models/game_config.rb）経由で行う。
+shared: &shared
+  score:
+    # 今日の総合達成度・総合ポイントの重み（合計 1.0）
+    weights:
+      sleep: 0.30
+      meal: 0.30
+      exercise: 0.20
+      work: 0.20
+    # スコアはこの値で頭打ちにしてからポイント換算・総合計算に使う
+    cap: 100
+
+  points:
+    initial: 500
+    min: 0
+    max: 1000
+    # 増減 = round((min(スコア, cap) - base) * multiplier)
+    base: 50
+    multiplier: 2
+
+  mood:
+    # 総合ポイントの下限 → 気分（上から順に判定。spec.md 3.4）
+    - { min_points: 700, key: genki, label: 元気 }
+    - { min_points: 400, key: futsu, label: 普通 }
+    - { min_points: 200, key: kanashii, label: 悲しい }
+    - { min_points: 0, key: ikari, label: 怒り }
+
+  timer:
+    # 止め忘れの上限。超えたら 開始 + 上限 で自動終了（spec.md 2.1）
+    sleep_max_minutes: 960 # 16 時間
+    work_max_minutes: 720 # 12 時間
+
+  character:
+    default_name: めばえ
+    # 状態判定のしきい値（spec.md 4.1）
+    exercising_minutes_after_task: 30
+    full_minutes_after_meal: 90
+    hungry_grace_minutes: 60
+    sleep_deprived_score_below: 80
+    fat_exercise_points_below: 300
+
+  meal_times:
+    # 新規登録④・目標変更の初期値（spec.md 2章）
+    breakfast: "07:00"
+    lunch: "12:00"
+    dinner: "19:00"
+
+  pacemaker:
+    # 就寝リマインドを出し始める時間（就寝時刻の何分前から）
+    bedtime_reminder_minutes_before: 30
+    # この時刻以降に未完了タスクがあれば声をかける
+    task_reminder_hour: 20
+
+development:
+  <<: *shared
+
+test:
+  <<: *shared
+
+production:
+  <<: *shared
