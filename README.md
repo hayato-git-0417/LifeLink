@@ -135,3 +135,19 @@ curl.exe -s -X POST "$base/meals" -H "access-token: $($h['access-token'])" -H "c
 ```
 
 エラーはすべて `{ "errors": ["..."] }` の形で、422（入力エラー）・401（未ログイン）・404（見つからない）を返す。
+
+### ホーム・スコア・ポイント（フェーズ4）
+
+ホームを開く（`GET /home`）と、止め忘れの自動終了 → 前日までの確定（キャラのポイントへ反映） → 今日のスコアの計算 → キャラの状態判定 → 通知の作成 の順に処理してから返す。
+デモユーザーは登録日が8日前・7日分の記録つきなので、`db:seed` 直後に1回開くと7日分が確定してポイントが変わる。2回目以降は変わらない。
+
+```powershell
+# demo1 でログインして $h を作り直し、ホームを開く
+$res = Invoke-WebRequest -Method Post "$base/auth/sign_in" -UseBasicParsing -ContentType "application/json; charset=utf-8" `
+  -Body (To-Utf8Json @{ email = "demo1@example.com"; password = "password" })
+$h = @{ "access-token" = $res.Headers["access-token"]; client = $res.Headers["client"]; uid = $res.Headers["uid"] }
+Api Get "/home" | ConvertTo-Json -Depth 5     # character（状態・画像・気分・ポイント）/ today / timers / message / 未読数
+Api Get "/daily_achievements?from=2026-10-01&to=2026-10-07" | ConvertTo-Json -Depth 5   # スコアとポイントの推移
+```
+
+確定をやり直したいときは `ruby bin/rails db:seed`（デモユーザーを作り直す）。
