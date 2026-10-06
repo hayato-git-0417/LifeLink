@@ -1,0 +1,119 @@
+ja:
+  activerecord:
+    models:
+      user: ユーザー
+      follow: フォロー
+      notification: 通知
+      character: キャラクター
+      character_state_log: キャラの状態の履歴
+      daily_achievement: 日ごとの達成度
+      goal: 目標
+      exercise_task: 運動タスク
+      exercise_task_completion: 運動タスクの達成
+      sleep_record: 睡眠の記録
+      work_record: ワークの記録
+      exercise_record: 運動の記録
+      meal: 食事
+      nutrition_standard: 栄養の基準
+      character_animation: キャラの画像
+    attributes:
+      user:
+        email: メールアドレス
+        password: パスワード
+        password_confirmation: パスワード（確認用）
+        name: ユーザー名
+        icon: アイコン
+        birthdate: 生年月日
+        gender: 性別
+      follow:
+        follower_id: フォローする人
+        followed_id: フォローされる人
+      notification:
+        notification_type: 通知の種類
+        title: タイトル
+        body: 本文
+      character:
+        name: キャラ名
+        state: 状態
+        sleep_points: 睡眠ポイント
+        meal_points: 食事ポイント
+        exercise_points: 運動ポイント
+        work_points: ワークポイント
+        total_points: 総合ポイント
+      character_state_log:
+        state: 状態
+        target_date: 対象日
+        started_at: 開始日時
+      daily_achievement:
+        target_date: 対象日
+        sleep_score: 睡眠スコア
+        meal_score: 食事スコア
+        exercise_score: 運動スコア
+        work_score: ワークスコア
+        recorded_items_count: 記録した項目数
+      goal:
+        sleep_goal_type: 睡眠目標の指定方法
+        sleep_goal_minutes: 目標睡眠時間
+        bedtime: 目標就寝時刻
+        wake_time: 目標起床時刻
+        work_goal_minutes: 目標ワーク時間
+        calorie_goal: 目標カロリー
+        protein_goal_g: 目標たんぱく質
+        fat_goal_g: 目標脂質
+        carbs_goal_g: 目標炭水化物
+        fiber_goal_g: 目標食物繊維
+        breakfast_time: 朝食の時刻
+        lunch_time: 昼食の時刻
+        dinner_time: 夕食の時刻
+      exercise_task:
+        title: タスク名
+        position: 表示順
+      exercise_task_completion:
+        target_date: 対象日
+        completed_at: 達成日時
+      sleep_record:
+        slept_at: 就寝日時
+        woke_at: 起床日時
+        duration_minutes: 睡眠時間
+        record_method: 記録方法
+        recorded_on: 集計日
+      work_record:
+        title: 内容
+        started_at: 開始日時
+        ended_at: 終了日時
+        duration_minutes: ワーク時間
+        record_method: 記録方法
+        recorded_on: 集計日
+      exercise_record:
+        started_at: 記録日時
+        distance_km: 移動距離
+        memo: メモ
+        recorded_on: 集計日
+      meal:
+        meal_type: 食事区分
+        eaten_at: 食べた日時
+        content: 内容
+        calories: カロリー
+        protein_g: たんぱく質
+        fat_g: 脂質
+        carbs_g: 炭水化物
+        fiber_g: 食物繊維
+        comment: コメント
+        input_method: 入力方法
+        recorded_on: 集計日
+      nutrition_standard:
+        gender: 性別
+        age_from: 年齢（から）
+        age_to: 年齢（まで）
+        activity_level: 身体活動レベル
+        calories: 推定エネルギー必要量
+      character_animation:
+        state: 状態
+        gif_path: 画像のパス
+        description: 説明
+    errors:
+      messages:
+        in_future: は今日より前の日付にしてください
+        self_follow: 自分自身はフォローできません
+        already_in_progress: すでに計測中の記録があります
+        must_be_after_start: は開始より後の日時にしてください

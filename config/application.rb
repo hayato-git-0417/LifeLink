@@ -24,6 +24,8 @@ module SotukenB02
     # 表示・日付の境界は日本時間。DB には UTC で保存する（Rails の標準）
     config.time_zone = "Tokyo"
     config.active_record.default_timezone = :utc
+    # goals.bedtime・breakfast_time などの time 型は「時計の時刻」なのでタイムゾーン変換しない
+    config.active_record.time_zone_aware_types = [ :datetime ]
 
     config.i18n.default_locale = :ja
     config.i18n.available_locales = [ :ja, :en ]
