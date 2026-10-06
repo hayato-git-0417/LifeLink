@@ -1,6 +1,10 @@
 # frozen_string_literal: true
 
 DeviseTokenAuth.setup do |config|
+  # API モードはセッションを持たないので、トークン認証のたびにセッションへ書き込まない
+  # （true のままだと bypass_sign_in が DisabledSessionError になる）
+  config.bypass_sign_in = false
+
   # By default the authorization headers will change after each request. The
   # client is responsible for keeping track of the changing tokens. Change
   # this to false to prevent the Authorization header from changing after
