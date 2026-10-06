@@ -21,7 +21,12 @@ module SotukenB02
     # These settings can be overridden in specific environments using the files
     # in config/environments, which are processed later.
     #
-    # config.time_zone = "Central Time (US & Canada)"
+    # 表示・日付の境界は日本時間。DB には UTC で保存する（Rails の標準）
+    config.time_zone = "Tokyo"
+    config.active_record.default_timezone = :utc
+
+    config.i18n.default_locale = :ja
+    config.i18n.available_locales = [ :ja, :en ]
     # config.eager_load_paths << Rails.root.join("extras")
 
     # Only loads a smaller set of middleware suitable for API only apps.
