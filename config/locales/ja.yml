@@ -127,6 +127,49 @@ ja:
   devise:
     failure:
       unauthenticated: ログインしてください
+  # ゲームの文言（spec.md 4章・7章）。しきい値などの数値は config/game.yml
+  game:
+    states:
+      normal: デフォルト
+      sleeping: 睡眠中
+      sleep_deprived: 睡眠不足
+      full: 満腹
+      hungry: 空腹
+      exercising: 汗汗
+      studying: 勉強中
+      fat: 太り
+    meal_types:
+      breakfast: 朝食
+      lunch: 昼食
+      dinner: 夕食
+      snack: 間食
+    # 吹き出し（spec.md 4.2【仮】）。state_* は状態に合ったひとこと
+    messages:
+      bedtime: そろそろ寝る時間だよ
+      sleep_deprived: ねむい…今日は早く寝よう
+      hungry: おなかすいた…
+      tasks_remaining: 運動タスクが残ってるよ
+      state_normal: 今日もいっしょにがんばろう！
+      state_sleeping: すやすや…
+      state_sleep_deprived: ねむい…今日は早く寝よう
+      state_full: おなかいっぱい！
+      state_hungry: おなかすいた…
+      state_exercising: いい汗かいた！
+      state_studying: 集中してるよ！
+      state_fat: ちょっと体が重いかも…運動しよう
+    notifications:
+      sleep_deprived:
+        title: キャラが睡眠不足です
+        body: 今日は早めに寝て、睡眠時間を取り戻そう。
+      hungry:
+        title: キャラがおなかをすかせています
+        body: 食事を記録しよう。
+      bedtime:
+        title: そろそろ就寝時刻です
+        body: 目標の就寝時刻が近づいています。
+      tasks_remaining:
+        title: 運動タスクが残っています
+        body: 今日の運動タスクをチェックしよう。
   api:
     errors:
       not_found: データが見つかりません
