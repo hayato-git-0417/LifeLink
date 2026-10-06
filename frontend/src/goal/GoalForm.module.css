@@ -1,0 +1,64 @@
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.task {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-left: 24px;
+}
+
+.taskLabel {
+  color: var(--color-text-sub);
+}
+
+.taskInput {
+  flex: 1;
+  min-height: 48px;
+  border-radius: 4px;
+}
+
+.remove {
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--color-border-light);
+  border-radius: 50%;
+  background: var(--color-surface);
+  color: var(--color-text-sub);
+  font-size: 1.2rem;
+}
+
+.nutrients {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.nutrient,
+.mealTime {
+  display: grid;
+  grid-template-columns: 96px 1fr 40px;
+  align-items: center;
+  gap: 8px;
+}
+
+.mealTime {
+  grid-template-columns: 96px auto;
+  justify-content: start;
+}
+
+.nutrientLabel {
+  color: var(--color-text-sub);
+}
+
+.nutrientInput {
+  min-height: 44px;
+  text-align: right;
+}
+
+.unit {
+  color: var(--color-text-sub);
+}

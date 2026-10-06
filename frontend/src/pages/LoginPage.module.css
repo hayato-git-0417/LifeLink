@@ -1,0 +1,14 @@
+.form {
+  gap: 32px;
+  padding: 72px 16px 0;
+}
+
+.submit {
+  margin-top: 48px;
+}
+
+.signup {
+  margin: 0;
+  color: var(--color-text-sub);
+  text-align: center;
+}
