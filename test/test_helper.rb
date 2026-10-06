@@ -24,3 +24,16 @@ module ActiveSupport
     end
   end
 end
+
+module ActionDispatch
+  class IntegrationTest
+    # ログイン済みのヘッダー（access-token / client / uid）
+    def auth_headers(user)
+      user.create_new_auth_token
+    end
+
+    def json
+      response.parsed_body
+    end
+  end
+end

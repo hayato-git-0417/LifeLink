@@ -101,6 +101,7 @@ ja:
         comment: コメント
         input_method: 入力方法
         recorded_on: 集計日
+        photo: 写真
       nutrition_standard:
         gender: 性別
         age_from: 年齢（から）
@@ -121,6 +122,8 @@ ja:
         invalid_date: は正しい日付ではありません
         exercise_tasks_required: 運動タスクを1件以上登録してください
         exercise_task_not_found: 運動タスクが見つかりません
+        photo_content_type: は画像ファイル（JPEG・PNG など）にしてください
+        photo_too_large: "は%{count}MB以下にしてください"
   devise:
     failure:
       unauthenticated: ログインしてください
@@ -128,3 +131,13 @@ ja:
     errors:
       not_found: データが見つかりません
       parameter_missing: "必要な項目（%{param}）がありません"
+      invalid_date_param: "%{param}は YYYY-MM-DD の形式で指定してください"
+      invalid_time_param: "%{param}は正しい日時で指定してください"
+      date_range_order: 期間の終わり（to）は始まり（from）以降にしてください
+      date_range_too_long: "期間は%{days}日以内にしてください"
+      timer:
+        already_in_progress: "%{model}はすでに計測中です"
+        not_in_progress: "計測中の%{model}がありません"
+        cannot_start_work_while_sleeping: 睡眠中はワークを開始できません
+        in_progress_not_editable: 計測中の記録は修正できません（取り消しを使ってください）
+        finish_in_future: 終了日時は現在より前にしてください
