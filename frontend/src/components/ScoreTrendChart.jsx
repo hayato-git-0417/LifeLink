@@ -1,6 +1,7 @@
 // スコア（棒・左の目盛り 0〜100%）とポイント（線・右の目盛り 0〜1000）の推移。詳細画面とマイページで使う。
 // Recharts を読み込むので、使う画面は React.lazy で開く。
 //   rows: [{ day: '7日', score: 76.5, points: 599 }]（値がない日は null）
+//   height: 数値（px）か '100%'（親の高さいっぱい。親に高さが必要）
 import { Bar, CartesianGrid, ComposedChart, Legend, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 
 export default function ScoreTrendChart({ rows, scoreLabel = 'スコア', pointsLabel = 'ポイント', height = 220 }) {

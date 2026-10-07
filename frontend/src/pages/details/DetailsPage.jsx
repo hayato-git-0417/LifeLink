@@ -1,5 +1,6 @@
 // 詳細（記録の履歴。デザイン p.5）。タブ: 睡眠／食事／運動／ワーク。
-// 7日ずつ表示し、前の週・次の週へ移れる。期間の合計・スコアとポイントの推移グラフ・記録の一覧を出す。
+// 7日ずつ表示し、前の週・次の週へ移れる。期間の合計（1行）と、「グラフ / 記録」の切り替えを出す。
+// スマホ（375×667）でページがスクロールしないように、グラフは残りの高さいっぱいに描き、記録の一覧はその枠の中だけスクロールする。
 // 睡眠・ワークのタブでは記録ごとに開始・終了日時の修正と削除ができる。睡眠の質は表示しない（spec.md 5章）
 // /users/:id/details は相互フォローの人の詳細（読み取り専用。修正・削除なし。データは GET /users/:id/records）
 import { useCallback, useEffect, useState } from 'react'
@@ -22,6 +23,10 @@ const TABS = [
 ]
 
 const RANGE_DAYS = 7
+const VIEWS = [
+  { key: 'chart', label: 'グラフ' },
+  { key: 'list', label: '記録' },
+]
 
 export default function DetailsPage() {
   const { id: userId } = useParams()
@@ -29,6 +34,7 @@ export default function DetailsPage() {
   const today = toDateString()
   const [searchParams, setSearchParams] = useSearchParams()
   const tab = TABS.find((entry) => entry.key === searchParams.get('tab')) || TABS[0]
+  const view = VIEWS.find((entry) => entry.key === searchParams.get('view')) || VIEWS[0]
   const [to, setTo] = useState(today)
   const from = shiftDate(to, -(RANGE_DAYS - 1))
 
@@ -92,8 +98,9 @@ export default function DetailsPage() {
   const changeTab = (key) => {
     if (key === tab.key) return
     reset()
-    setSearchParams({ tab: key }, { replace: true })
+    setSearchParams({ tab: key, view: view.key }, { replace: true })
   }
+  const changeView = (key) => setSearchParams({ tab: tab.key, view: key }, { replace: true })
   const changeWeek = (days) => {
     reset()
     setTo(shiftDate(to, days))
@@ -148,30 +155,46 @@ export default function DetailsPage() {
           <>
             <Summary tab={tab.key} records={records} achievements={achievements.daily_achievements} />
 
-            <section className={styles.card}>
-              <h2 className={styles.heading}>{tab.label}のスコアとポイントの推移</h2>
-              <ScoreTrendChart rows={chartRows(tab.key, dates, achievements, today)} />
-              <p className={styles.note}>
-                棒: その日のスコア（%）／線: 日付が変わって確定したポイント（今日は現在のポイント）
-              </p>
-            </section>
+            <div className={styles.views} role="tablist" aria-label="表示">
+              {VIEWS.map((entry) => (
+                <button
+                  key={entry.key}
+                  type="button"
+                  role="tab"
+                  aria-selected={entry.key === view.key}
+                  className={`${styles.view} ${entry.key === view.key ? styles.viewActive : ''}`}
+                  onClick={() => changeView(entry.key)}
+                >
+                  {entry.label}
+                </button>
+              ))}
+            </div>
 
-            <section className={styles.card}>
-              <h2 className={styles.heading}>記録</h2>
-              {TIMED_KINDS[tab.key] ? (
-                <TimedRecordList
-                  kind={tab.key}
-                  records={records[`${tab.key}_records`]}
-                  readOnly={readOnly}
-                  onChanged={reload}
-                  onError={setErrors}
-                />
-              ) : tab.key === 'meal' ? (
-                <MealDays dates={dates} meals={records.meals} />
-              ) : (
-                <ExerciseDays dates={dates} distance={records} achievements={achievements.daily_achievements} />
-              )}
-            </section>
+            {view.key === 'chart' ? (
+              <section className={`${styles.card} ${styles.panel} ${styles.chartPanel}`}>
+                <h2 className={styles.heading}>{tab.label}のスコアとポイントの推移</h2>
+                <div className={styles.chart}>
+                  <ScoreTrendChart rows={chartRows(tab.key, dates, achievements, today)} height="100%" />
+                </div>
+                <p className={styles.note}>棒: その日のスコア（%）／線: 確定したポイント（今日は現在の値）</p>
+              </section>
+            ) : (
+              <section className={`${styles.card} ${styles.panel}`}>
+                {TIMED_KINDS[tab.key] ? (
+                  <TimedRecordList
+                    kind={tab.key}
+                    records={records[`${tab.key}_records`]}
+                    readOnly={readOnly}
+                    onChanged={reload}
+                    onError={setErrors}
+                  />
+                ) : tab.key === 'meal' ? (
+                  <MealDays dates={dates} meals={records.meals} />
+                ) : (
+                  <ExerciseDays dates={dates} distance={records} achievements={achievements.daily_achievements} />
+                )}
+              </section>
+            )}
           </>
         )}
       </div>
@@ -204,23 +227,23 @@ function Summary({ tab, records, achievements }) {
     const days = new Set(finished.map((record) => record.recorded_on)).size
     const label = tab === 'sleep' ? '睡眠時間' : 'ワーク時間'
     tiles.push({ label: `合計${label}`, value: formatMinutes(total) })
-    tiles.push({ label: '1日平均（記録した日）', value: days ? formatMinutes(total / days) : '-' })
+    tiles.push({ label: '1日平均', value: days ? formatMinutes(total / days) : '-' })
   } else if (tab === 'meal') {
     const totals = sumNutrients(records.meals)
     const days = new Set(records.meals.map((meal) => meal.recorded_on)).size
     tiles.push({ label: '合計カロリー', value: `${formatNumber(totals.calories)} kcal` })
-    tiles.push({ label: '1日平均（記録した日）', value: days ? `${formatNumber(totals.calories / days)} kcal` : '-' })
+    tiles.push({ label: '1日平均', value: days ? `${formatNumber(totals.calories / days)} kcal` : '-' })
   } else {
     const km = records.daily_totals.reduce((sum, day) => sum + day.distance_km, 0)
     tiles.push({ label: '合計移動距離', value: `${formatNumber(km)} km` })
     const completed = achievements.filter((row) => row.exercise_score >= 100).length
-    tiles.push({ label: 'タスクを全部達成した日', value: `${completed} 日` })
+    tiles.push({ label: 'タスク全達成', value: `${completed} 日` })
   }
   const average = averageScore(tab, achievements)
   tiles.push({ label: '平均スコア', value: average == null ? '-' : `${Math.round(average)}%` })
 
   return (
-    <div className={styles.tiles}>
+    <div className={styles.tiles} title="1日平均は記録した日で割った値">
       {tiles.map((tile) => (
         <div key={tile.label} className={styles.tile}>
           <span className={styles.tileLabel}>{tile.label}</span>
