@@ -8,8 +8,8 @@ class CreateCharacterStateLogs < ActiveRecord::Migration[7.2]
       t.datetime :started_at, null: false
       t.datetime :ended_at
       t.timestamps
-      t.index [:character_id, :started_at]
-      t.index [:character_id, :target_date]
+      t.index [ :character_id, :started_at ]
+      t.index [ :character_id, :target_date ]
     end
   end
 end

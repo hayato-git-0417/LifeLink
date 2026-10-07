@@ -5,7 +5,7 @@ class CreateExerciseTaskCompletions < ActiveRecord::Migration[7.2]
       t.date :target_date, null: false
       t.datetime :completed_at, null: false
       t.timestamps
-      t.index [:exercise_task_id, :target_date], unique: true
+      t.index [ :exercise_task_id, :target_date ], unique: true
     end
   end
 end

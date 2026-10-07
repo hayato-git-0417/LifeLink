@@ -9,8 +9,8 @@ class CreateNotifications < ActiveRecord::Migration[7.2]
       t.references :notifiable, polymorphic: true
       t.datetime :read_at
       t.timestamps
-      t.index [:user_id, :read_at]
-      t.index [:user_id, :created_at]
+      t.index [ :user_id, :read_at ]
+      t.index [ :user_id, :created_at ]
     end
   end
 end

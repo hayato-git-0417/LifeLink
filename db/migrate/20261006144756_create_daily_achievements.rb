@@ -19,7 +19,7 @@ class CreateDailyAchievements < ActiveRecord::Migration[7.2]
       t.integer :recorded_items_count, null: false, default: 0
       t.datetime :finalized_at
       t.timestamps
-      t.index [:user_id, :target_date], unique: true
+      t.index [ :user_id, :target_date ], unique: true
     end
   end
 end
