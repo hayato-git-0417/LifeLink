@@ -41,6 +41,7 @@ export default function App() {
           <Route path="/mypage" element={<MyPage />} />
           <Route path="/follows" element={<FollowsPage />} />
           <Route path="/users/:id" element={<UserPage />} />
+          <Route path="/users/:id/details" element={<DetailsPage />} />
           <Route path="/notifications" element={<NotificationsPage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/settings/profile" element={<ProfileEditPage />} />

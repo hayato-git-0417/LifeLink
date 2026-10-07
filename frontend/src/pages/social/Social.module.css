@@ -224,3 +224,16 @@ a.count span {
   background: var(--color-surface);
   color: var(--color-primary-dark);
 }
+
+/* 相互フォローの人の詳細へ */
+.detailsLink {
+  display: block;
+  padding: 12px;
+  border: 1px solid var(--color-primary-dark);
+  border-radius: 12px;
+  background: var(--color-surface);
+  color: var(--color-primary-dark);
+  font-weight: 600;
+  text-align: center;
+  text-decoration: none;
+}

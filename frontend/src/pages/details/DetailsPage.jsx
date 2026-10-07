@@ -1,8 +1,9 @@
 // 詳細（記録の履歴。デザイン p.5）。タブ: 睡眠／食事／運動／ワーク。
 // 7日ずつ表示し、前の週・次の週へ移れる。期間の合計・スコアとポイントの推移グラフ・記録の一覧を出す。
 // 睡眠・ワークのタブでは記録ごとに開始・終了日時の修正と削除ができる。睡眠の質は表示しない（spec.md 5章）
+// /users/:id/details は相互フォローの人の詳細（読み取り専用。修正・削除なし。データは GET /users/:id/records）
 import { useCallback, useEffect, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useParams, useSearchParams } from 'react-router-dom'
 import { api } from '../../api/client.js'
 import AppShell from '../../components/AppShell.jsx'
 import ErrorList from '../../components/ErrorList.jsx'
@@ -23,6 +24,8 @@ const TABS = [
 const RANGE_DAYS = 7
 
 export default function DetailsPage() {
+  const { id: userId } = useParams()
+  const readOnly = Boolean(userId)
   const today = toDateString()
   const [searchParams, setSearchParams] = useSearchParams()
   const tab = TABS.find((entry) => entry.key === searchParams.get('tab')) || TABS[0]
@@ -32,12 +35,29 @@ export default function DetailsPage() {
   const [achievements, setAchievements] = useState(null)
   const [records, setRecords] = useState(null)
   const [errors, setErrors] = useState([])
+  const [owner, setOwner] = useState(null)
 
   const load = useCallback(async () => {
     const params = { from, to }
+    if (userId) {
+      const data = await api(`/users/${userId}/records`, { params: { ...params, tab: tab.key } })
+      return { scores: { daily_achievements: data.daily_achievements, current_points: data.current_points }, list: data }
+    }
     const [scores, list] = await Promise.all([api('/daily_achievements', { params }), api(tab.path, { params })])
     return { scores, list }
-  }, [from, to, tab.path])
+  }, [from, to, tab.key, tab.path, userId])
+
+  // 相互フォローの人の詳細では、見出しに名前を出す
+  useEffect(() => {
+    if (!userId) return undefined
+    let active = true
+    api(`/users/${userId}`)
+      .then((data) => active && setOwner(data.user))
+      .catch(() => {})
+    return () => {
+      active = false
+    }
+  }, [userId])
 
   useEffect(() => {
     let active = true
@@ -83,7 +103,10 @@ export default function DetailsPage() {
   const loading = !achievements || !records
 
   return (
-    <AppShell title="詳細" backTo="/">
+    <AppShell
+      title={readOnly ? `${owner ? owner.name : ''}さんの詳細` : '詳細'}
+      backTo={readOnly ? `/users/${userId}` : '/'}
+    >
       <div className={styles.page}>
         <div className={styles.tabs} role="tablist">
           {TABS.map((entry) => (
@@ -139,6 +162,7 @@ export default function DetailsPage() {
                 <TimedRecordList
                   kind={tab.key}
                   records={records[`${tab.key}_records`]}
+                  readOnly={readOnly}
                   onChanged={reload}
                   onError={setErrors}
                 />
