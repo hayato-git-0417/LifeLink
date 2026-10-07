@@ -8,7 +8,7 @@
 .page {
   display: flex;
   flex-direction: column;
-  gap: 28px;
+  gap: 14px;
 }
 
 .heading {
@@ -16,9 +16,9 @@
   flex-wrap: wrap;
   align-items: baseline;
   gap: 4px 14px;
-  margin: 8px 0 12px;
+  margin: 0 0 6px;
   color: var(--color-text-sub);
-  font-size: 1.35rem;
+  font-size: 1.1rem;
   font-weight: 500;
 }
 
@@ -39,14 +39,14 @@
 .task {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   width: 100%;
-  min-height: 56px;
-  padding: 8px 12px;
+  min-height: 46px;
+  padding: 6px 12px;
   border: none;
   border-radius: 12px;
   background: var(--color-surface);
-  font-size: 1.2rem;
+  font-size: 1.05rem;
   text-align: left;
 }
 
@@ -55,8 +55,8 @@
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
+  width: 28px;
+  height: 28px;
   border: 2px solid var(--color-text);
   border-radius: 6px;
   background: var(--color-surface);
@@ -82,15 +82,16 @@
 }
 
 .progress {
-  margin: 8px 0 0;
+  margin: 4px 0 0;
   color: var(--color-text-sub);
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   text-align: right;
 }
 
+/* 距離・km・メモ・記録ボタンを1行に */
 .distanceForm {
   display: grid;
-  grid-template-columns: 90px auto 1fr;
+  grid-template-columns: 72px auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 8px;
 }
@@ -105,16 +106,19 @@
 }
 
 .add {
-  grid-column: 1 / -1;
+  min-width: 0;
   min-height: 44px;
+  padding: 0 14px;
 }
 
 .records {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  margin: 12px 0 0;
+  gap: 4px;
+  max-height: 84px;
+  margin: 8px 0 0;
   padding: 0;
+  overflow-y: auto;
   list-style: none;
 }
 
@@ -122,10 +126,10 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 6px 10px;
+  padding: 2px 10px;
   border-radius: 8px;
   background: var(--color-surface);
-  font-size: 0.95rem;
+  font-size: 0.9rem;
 }
 
 .remove {
@@ -138,10 +142,10 @@
 }
 
 .chart {
-  margin-top: 18px;
+  margin-top: 8px;
 }
 
 .unit {
   color: var(--color-text-sub);
-  font-size: 0.95rem;
+  font-size: 0.8rem;
 }
