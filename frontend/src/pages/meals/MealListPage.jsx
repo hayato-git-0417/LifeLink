@@ -3,17 +3,11 @@ import { useEffect, useState } from 'react'
 import { api } from '../../api/client.js'
 import AppShell from '../../components/AppShell.jsx'
 import ErrorList from '../../components/ErrorList.jsx'
-import { toDateString } from '../../lib/format.js'
+import { shiftDate, toDateString } from '../../lib/format.js'
 import form from '../../styles/form.module.css'
 import MealCard from './MealCard.jsx'
 import styles from './Meals.module.css'
 import { sumNutrients } from './mealTypes.js'
-
-function shiftDate(dateString, days) {
-  const date = new Date(`${dateString}T00:00:00`)
-  date.setDate(date.getDate() + days)
-  return toDateString(date)
-}
 
 export default function MealListPage() {
   const today = toDateString()

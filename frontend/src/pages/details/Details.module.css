@@ -1,0 +1,162 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.tabs {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  padding: 6px;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius);
+  background: var(--color-input);
+}
+
+.tab {
+  min-height: 42px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  font-size: 1.05rem;
+}
+
+.tabActive {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  font-weight: 700;
+}
+
+.week {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.95rem;
+}
+
+.weekButton {
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--color-border-light);
+  border-radius: 50%;
+  background: var(--color-surface);
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.loading,
+.empty {
+  margin: 0;
+  padding: 16px 0;
+  color: var(--color-text-sub);
+  text-align: center;
+}
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 4px;
+  padding: 10px;
+  border-radius: 10px;
+  background: var(--color-surface);
+}
+
+.tileLabel {
+  color: var(--color-text-sub);
+  font-size: 0.75rem;
+}
+
+.tileValue {
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.card {
+  padding: 14px;
+  border-radius: var(--radius);
+  background: var(--color-surface);
+}
+
+.heading {
+  margin: 0 0 10px;
+  font-size: 1.05rem;
+}
+
+.note {
+  margin: 6px 0 0;
+  color: var(--color-text-sub);
+  font-size: 0.75rem;
+}
+
+.records {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.record {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.record:last-child {
+  border-bottom: none;
+}
+
+.recordMain {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  font-size: 0.95rem;
+}
+
+.recordTitle {
+  font-weight: 700;
+}
+
+.recordDuration {
+  color: var(--color-text-sub);
+  font-size: 0.85rem;
+}
+
+.recordActions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 4px;
+}
+
+.danger {
+  color: var(--color-error);
+}
+
+.editForm {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.editLabel {
+  color: var(--color-text-sub);
+  font-size: 0.9rem;
+}
+
+.editActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}

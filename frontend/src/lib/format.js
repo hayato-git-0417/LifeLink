@@ -56,3 +56,17 @@ export function formatNumber(value) {
   if (value == null || value === '') return '-'
   return String(Math.round(Number(value) * 10) / 10)
 }
+
+// "2026-10-07" を days 日ずらす（-1 で前の日）
+export function shiftDate(dateString, days) {
+  const date = new Date(`${dateString}T00:00:00`)
+  date.setDate(date.getDate() + days)
+  return toDateString(date)
+}
+
+// from〜to の日付の配列（"2026-10-01", "2026-10-02", ...）
+export function datesBetween(from, to) {
+  const dates = []
+  for (let date = from; date <= to; date = shiftDate(date, 1)) dates.push(date)
+  return dates
+}
