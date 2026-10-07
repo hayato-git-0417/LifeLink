@@ -8,28 +8,28 @@
 .page {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 12px;
 }
 
 .heading {
   margin: 0;
   color: var(--color-text-sub);
-  font-size: 1.2rem;
+  font-size: 1.05rem;
   font-weight: 500;
 }
 
 /* 今日の摂取量: 左に円グラフ、右に PFC・食物繊維 */
 .summary {
   display: grid;
-  grid-template-columns: 150px 1fr;
+  grid-template-columns: 132px 1fr;
   align-items: center;
   gap: 12px;
 }
 
 .donut {
   position: relative;
-  width: 150px;
-  height: 150px;
+  width: 132px;
+  height: 132px;
 }
 
 .donutCenter {
@@ -61,7 +61,7 @@
 
 .nutrients th,
 .nutrients td {
-  padding: 8px 6px;
+  padding: 6px;
   border: 1px solid var(--color-border);
 }
 
@@ -75,31 +75,41 @@
   text-align: right;
 }
 
+/* 記録する・一覧（横に並べる） */
 .mainButtons {
   display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 0 24px;
+  gap: 10px;
+}
+
+.mainButtons > .bigButton {
+  flex: 1;
 }
 
 .bigButton {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 52px;
+  min-height: 44px;
   border: 1px solid var(--color-border);
   border-radius: 8px;
   background: var(--color-input);
   color: var(--color-text);
-  font-size: 1.15rem;
+  font-size: 1.05rem;
   text-decoration: none;
 }
 
-/* 食事カード */
+/* 食事カード。食事トップでは横に並べて、横にスクロールする（縦に伸ばさない） */
 .cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  display: flex;
   gap: 10px;
+  padding-bottom: 4px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+}
+
+.cards > .card {
+  flex: 0 0 140px;
+  scroll-snap-align: start;
 }
 
 .list {
@@ -135,7 +145,7 @@
 .cards .cardPhoto,
 .cards .cardNoPhoto {
   width: 100%;
-  height: 90px;
+  height: 64px;
 }
 
 .cardNoPhoto {
@@ -175,7 +185,37 @@
 
 /* 記録・修正のフォーム */
 .mealForm {
-  gap: 18px;
+  gap: 10px;
+}
+
+.smallLabel {
+  padding: 0;
+  color: var(--color-text-sub);
+  font-size: 0.85rem;
+}
+
+/* 写真（左）と内容・時間（右） */
+.formTop {
+  display: grid;
+  grid-template-columns: 104px minmax(0, 1fr);
+  gap: 10px;
+}
+
+.photoCol {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.topFields {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.topFields .smallLabel {
+  margin-bottom: -4px;
 }
 
 .photoBox {
@@ -183,17 +223,18 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 190px;
-  margin: calc(-1 * var(--gutter)) calc(-1 * var(--gutter)) 0;
+  width: 104px;
+  height: 104px;
   overflow: hidden;
-  border-bottom: 1px solid var(--color-border);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
   background: var(--color-input);
   cursor: pointer;
 }
 
 .photo {
   width: 100%;
-  max-height: 280px;
+  height: 100%;
   object-fit: cover;
 }
 
@@ -201,20 +242,39 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
+  gap: 4px;
   color: var(--color-text-sub);
-  font-size: 1.5rem;
+  font-size: 0.85rem;
 }
 
 .photoPlus {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 72px;
-  height: 56px;
+  width: 40px;
+  height: 32px;
   border: 1px solid var(--color-border);
   border-radius: 50%;
-  font-size: 1.2rem;
+  font-size: 1rem;
+}
+
+.smallLink {
+  font-size: 0.8rem;
+}
+
+/* 区分（見出しと選択肢を1行に） */
+.typeRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+.typeRow > legend {
+  float: left;
+  margin-right: 10px;
 }
 
 /* ファイル選択の入力欄は隠して、写真の枠全体を押せるようにする */
@@ -228,14 +288,14 @@
 .mealTypes {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
 }
 
 .chip {
   display: inline-flex;
   align-items: center;
-  min-height: 44px;
-  padding: 6px 18px;
+  min-height: 36px;
+  padding: 4px 14px;
   border: 1px solid var(--color-border);
   border-radius: 10px;
   background: var(--color-input);
@@ -257,27 +317,42 @@
   outline: 2px solid rgb(66 135 245 / 0.5);
 }
 
+/* 栄養は2列 */
+.nutrientSet {
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
 .nutrientInputs {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 10px;
+  margin-top: 2px;
 }
 
 .nutrientRow {
   display: grid;
-  grid-template-columns: 96px 1fr 40px;
+  grid-template-columns: 4.8em minmax(0, 1fr) 2.3em;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
   color: var(--color-text-sub);
+  font-size: 0.8rem;
 }
 
 .number {
-  min-height: 44px;
+  min-height: 36px;
+  padding: 4px 8px;
   text-align: right;
 }
 
+.commentBox summary {
+  cursor: pointer;
+}
+
 .comment {
-  min-height: 88px;
+  min-height: 60px;
+  margin-top: 4px;
   resize: vertical;
 }
 

@@ -1,6 +1,7 @@
 // 食事を記録（デザイン p.14）／修正（/meals/:id/edit）。写真・内容・区分・時間・栄養値・コメント。
 // 写真はスマホのカメラ／ファイル選択（capture="environment"）。送信は multipart（meal[photo]）。
-// 今回は手入力だけ（spec.md 6章）。デザインの内容の候補ボタンはスキャン用なので、自由入力の1行にする
+// 今回は手入力だけ（spec.md 6章）。デザインの内容の候補ボタンはスキャン用なので、自由入力の1行にする。
+// スマホ（375×667）でスクロールしないように、写真は小さな枠で内容・時間の横に置き、栄養は2列、コメントは折りたたむ
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { api } from '../../api/client.js'
@@ -127,44 +128,59 @@ export default function MealFormPage() {
         !errors.length && <p className={styles.loading}>読み込み中…</p>
       ) : (
         <form className={`${form.form} ${styles.mealForm}`} onSubmit={handleSubmit} noValidate>
-          <label className={styles.photoBox}>
-            {shownPhoto ? (
-              <img src={shownPhoto} alt="食事の写真" className={styles.photo} />
-            ) : (
-              <span className={styles.photoEmpty}>
-                <span className={styles.photoPlus}>＋</span>
-                撮影する
-              </span>
-            )}
-            <input
-              ref={fileInput}
-              className={styles.fileInput}
-              type="file"
-              accept="image/*"
-              capture="environment"
-              onChange={choosePhoto}
-            />
-          </label>
-          {shownPhoto && (
-            <button type="button" className={form.linkButton} onClick={clearPhoto}>
-              写真を外す
-            </button>
-          )}
+          <div className={styles.formTop}>
+            <div className={styles.photoCol}>
+              <label className={styles.photoBox}>
+                {shownPhoto ? (
+                  <img src={shownPhoto} alt="食事の写真" className={styles.photo} />
+                ) : (
+                  <span className={styles.photoEmpty}>
+                    <span className={styles.photoPlus}>＋</span>
+                    撮影する
+                  </span>
+                )}
+                <input
+                  ref={fileInput}
+                  className={styles.fileInput}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  onChange={choosePhoto}
+                />
+              </label>
+              {shownPhoto && (
+                <button type="button" className={`${form.linkButton} ${styles.smallLink}`} onClick={clearPhoto}>
+                  写真を外す
+                </button>
+              )}
+            </div>
 
-          <label className={form.field}>
-            <span className={form.label}>内容</span>
-            <input
-              className={form.input}
-              type="text"
-              maxLength={255}
-              placeholder="例: ご飯、魚の塩焼き、サラダ"
-              value={meal.content}
-              onChange={(event) => update({ content: event.target.value })}
-            />
-          </label>
+            <div className={styles.topFields}>
+              <label className={form.field}>
+                <span className={styles.smallLabel}>内容</span>
+                <input
+                  className={form.input}
+                  type="text"
+                  maxLength={255}
+                  placeholder="例: ご飯、焼き魚"
+                  value={meal.content}
+                  onChange={(event) => update({ content: event.target.value })}
+                />
+              </label>
+              <label className={form.field}>
+                <span className={styles.smallLabel}>時間</span>
+                <input
+                  className={form.input}
+                  type="datetime-local"
+                  value={meal.eaten_at}
+                  onChange={(event) => update({ eaten_at: event.target.value })}
+                />
+              </label>
+            </div>
+          </div>
 
-          <fieldset className={form.field}>
-            <legend className={form.label}>区分</legend>
+          <fieldset className={styles.typeRow}>
+            <legend className={styles.smallLabel}>区分</legend>
             <div className={styles.mealTypes}>
               {MEAL_TYPES.map(({ key, label }) => (
                 <label key={key} className={`${styles.chip} ${meal.meal_type === key ? styles.chipOn : ''}`}>
@@ -180,18 +196,8 @@ export default function MealFormPage() {
             </div>
           </fieldset>
 
-          <label className={form.field}>
-            <span className={form.label}>時間</span>
-            <input
-              className={form.input}
-              type="datetime-local"
-              value={meal.eaten_at}
-              onChange={(event) => update({ eaten_at: event.target.value })}
-            />
-          </label>
-
-          <fieldset className={form.field}>
-            <legend className={form.label}>栄養（分かる範囲で）</legend>
+          <fieldset className={styles.nutrientSet}>
+            <legend className={styles.smallLabel}>栄養（分かる範囲で）</legend>
             <div className={styles.nutrientInputs}>
               {NUTRIENTS.map(({ key, label, unit, step }) => (
                 <label key={key} className={styles.nutrientRow}>
@@ -211,15 +217,16 @@ export default function MealFormPage() {
             </div>
           </fieldset>
 
-          <label className={form.field}>
-            <span className={form.label}>コメント</span>
+          <details className={styles.commentBox} open={Boolean(meal.comment)}>
+            <summary className={styles.smallLabel}>コメント（任意）</summary>
             <textarea
               className={`${form.input} ${styles.comment}`}
-              rows={3}
+              rows={2}
+              aria-label="コメント"
               value={meal.comment}
               onChange={(event) => update({ comment: event.target.value })}
             />
-          </label>
+          </details>
 
           <div className={`${form.actions} ${editing ? form.actionsBetween : form.actionsCenter}`}>
             {editing && (
