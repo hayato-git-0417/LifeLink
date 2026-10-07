@@ -1,0 +1,9 @@
+.birthdate {
+  max-width: 220px;
+}
+
+.genders {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+}

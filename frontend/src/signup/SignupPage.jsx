@@ -7,7 +7,8 @@ import { api } from '../api/client.js'
 import { useAuth } from '../auth/useAuth.js'
 import AppShell from '../components/AppShell.jsx'
 import ErrorList from '../components/ErrorList.jsx'
-import { UserIconPicker } from '../components/UserIcon.jsx'
+import ProfileFields from '../components/ProfileFields.jsx'
+import { validateProfile } from '../components/validateProfile.js'
 import GoalBasicsForm from '../goal/GoalBasicsForm.jsx'
 import { applyNutritionDefaults, newGoalDraft, toGoalPayload, validateBasics, validateMeals } from '../goal/goalDraft.js'
 import MealGoalForm from '../goal/MealGoalForm.jsx'
@@ -16,19 +17,6 @@ import StepIndicator from './StepIndicator.jsx'
 import signup from './Signup.module.css'
 
 const PASSWORD_MIN = 6
-const GENDERS = [
-  { value: 'male', label: '男性' },
-  { value: 'female', label: '女性' },
-  { value: 'other', label: 'その他' },
-  { value: 'unspecified', label: '回答しない' },
-]
-
-function today() {
-  const now = new Date()
-  const pad = (n) => String(n).padStart(2, '0')
-  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
-}
-
 export default function SignupPage() {
   const navigate = useNavigate()
   const { refreshMe } = useAuth()
@@ -100,10 +88,7 @@ export default function SignupPage() {
 
   function submitProfile(event) {
     event.preventDefault()
-    const found = []
-    if (!profile.name.trim()) found.push('ユーザー名を入力してください')
-    if (!profile.birthdate) found.push('生年月日を入力してください')
-    else if (profile.birthdate > today()) found.push('生年月日は今日より前の日付にしてください')
+    const found = validateProfile(profile)
     if (found.length) return setErrors(found)
     go(3)
   }
@@ -196,49 +181,7 @@ export default function SignupPage() {
 
       {step === 2 && (
         <form className={styles.form} onSubmit={submitProfile} noValidate>
-          <section className={styles.card}>
-            <h3 className={styles.cardTitle}>アイコンを選択</h3>
-            <UserIconPicker value={profile.icon} onChange={(icon) => setProfile({ ...profile, icon })} />
-          </section>
-          <label className={`${styles.card} ${styles.field}`}>
-            <span className={styles.cardTitle}>ユーザー名</span>
-            <input
-              className={styles.input}
-              type="text"
-              maxLength={50}
-              placeholder="名前を入力"
-              autoComplete="nickname"
-              value={profile.name}
-              onChange={(event) => setProfile({ ...profile, name: event.target.value })}
-            />
-          </label>
-          <label className={styles.field}>
-            <span className={styles.label}>生年月日</span>
-            <input
-              className={`${styles.input} ${signup.birthdate}`}
-              type="date"
-              min="1900-01-01"
-              max={today()}
-              value={profile.birthdate}
-              onChange={(event) => setProfile({ ...profile, birthdate: event.target.value })}
-            />
-          </label>
-          <fieldset className={styles.field}>
-            <legend className={styles.label}>性別（食事の目標の初期値に使います）</legend>
-            <div className={signup.genders}>
-              {GENDERS.map(({ value, label }) => (
-                <label key={value} className={styles.radio}>
-                  <input
-                    type="radio"
-                    name="gender"
-                    checked={profile.gender === value}
-                    onChange={() => setProfile({ ...profile, gender: value })}
-                  />
-                  {label}
-                </label>
-              ))}
-            </div>
-          </fieldset>
+          <ProfileFields value={profile} onChange={(changes) => setProfile({ ...profile, ...changes })} />
           <div className={`${styles.actions} ${styles.actionsBetween}`}>
             <button className={styles.button} type="button" onClick={() => go(1)}>
               戻る

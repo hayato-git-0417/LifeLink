@@ -42,16 +42,6 @@
   text-align: center;
 }
 
-.birthdate {
-  max-width: 220px;
-}
-
-.genders {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 18px;
-}
-
 .loginLink {
   margin: 0;
   color: var(--color-text-sub);
