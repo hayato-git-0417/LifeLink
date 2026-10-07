@@ -170,6 +170,9 @@ ja:
       tasks_remaining:
         title: 運動タスクが残っています
         body: 今日の運動タスクをチェックしよう。
+      follow:
+        title: "%{name}さんにフォローされました"
+        body: マイページのフォロー一覧から確認できます。
   api:
     errors:
       not_found: データが見つかりません

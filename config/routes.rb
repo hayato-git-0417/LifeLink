@@ -35,6 +35,19 @@ Rails.application.routes.draw do
       # ホームと詳細画面のグラフ（フェーズ4）
       resource :home, only: :show
       resources :daily_achievements, only: :index
+
+      # フォロー・通知（フェーズ7）
+      resources :users, only: %i[index show] do
+        member do
+          get :followers
+          get :followings
+        end
+        resource :follow, only: %i[create destroy]
+      end
+      resources :notifications, only: :index do
+        patch :read, on: :member
+        post :read_all, on: :collection
+      end
     end
   end
 

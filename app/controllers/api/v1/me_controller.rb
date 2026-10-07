@@ -31,7 +31,9 @@ module Api
           birthdate: user.birthdate,
           gender: user.gender,
           age: user.age,
-          goal_registered: user.goal.present?
+          goal_registered: user.goal.present?,
+          followers_count: user.passive_follows.count,
+          followings_count: user.active_follows.count
         }
       end
     end
