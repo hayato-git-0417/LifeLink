@@ -101,6 +101,11 @@
   font-size: 0.95rem;
 }
 
+/* 画面の main の直下に置いたとき（gap のある入れ物の中でないとき）は、下の要素と間をあける */
+main > .errors {
+  margin-bottom: 16px;
+}
+
 .row {
   display: flex;
   flex-wrap: wrap;
