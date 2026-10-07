@@ -43,6 +43,8 @@ Rails.application.routes.draw do
           get :followings
         end
         resource :follow, only: %i[create destroy]
+        # 相互フォローの人の記録の詳細（読み取り専用）
+        resource :records, only: :show, controller: "user_records"
       end
       resources :notifications, only: :index do
         patch :read, on: :member

@@ -181,6 +181,7 @@ ja:
       invalid_time_param: "%{param}は正しい日時で指定してください"
       date_range_order: 期間の終わり（to）は始まり（from）以降にしてください
       date_range_too_long: "期間は%{days}日以内にしてください"
+      invalid_tab: "tab は %{tabs} のどれかにしてください"
       timer:
         already_in_progress: "%{model}はすでに計測中です"
         not_in_progress: "計測中の%{model}がありません"

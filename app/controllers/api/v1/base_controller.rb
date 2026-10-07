@@ -83,6 +83,39 @@ module Api
         }
       end
 
+      # 日ごとのスコアとポイント（詳細画面のグラフ。自分の分と相互フォローの人の分で使う）。
+      # ポイント（*_change / *_points / total_points）は確定した日だけ。確定前（今日など）は null
+      def daily_achievement_json(row)
+        scores = ScoreCalculator::ITEMS.index_with { |item| row[:"#{item}_score"] }
+        finalized = row.finalized?
+        json = {
+          target_date: row.target_date,
+          total_percent: ScoreCalculator.total_percent(scores).to_f,
+          recorded_items_count: row.recorded_items_count,
+          finalized: finalized,
+          total_points: finalized ? row.total_points : nil
+        }
+        ScoreCalculator::ITEMS.each do |item|
+          json[:"#{item}_score"] = scores[item].to_f
+          json[:"#{item}_change"] = finalized ? row[:"#{item}_change"] : nil
+          json[:"#{item}_points"] = finalized ? row[:"#{item}_points"] : nil
+        end
+        json
+      end
+
+      # キャラのいまのポイント（項目ごと＋総合）
+      def current_points_json(character)
+        ScoreCalculator::ITEMS.index_with { |item| character[:"#{item}_points"] }.merge(total: character.total_points)
+      end
+
+      # 睡眠・ワークの記録1件（extra_attributes はワークの title など）
+      def timed_record_json(record, extra_attributes = [])
+        return nil if record.nil?
+
+        record.as_json(only: [ :id, record.class.start_column, record.class.finish_column, :duration_minutes, :recorded_on, :record_method, *extra_attributes ])
+              .merge("in_progress" => record.in_progress?)
+      end
+
       # DECIMAL は JSON で文字列になるので数値に直す
       def numeric_json(hash)
         hash.transform_values { |value| value.is_a?(BigDecimal) ? value.to_f : value }

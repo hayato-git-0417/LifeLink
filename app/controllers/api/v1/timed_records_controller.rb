@@ -75,10 +75,7 @@ module Api
       end
 
       def record_json(record)
-        return nil if record.nil?
-
-        record.as_json(only: [ :id, record_class.start_column, record_class.finish_column, :duration_minutes, :recorded_on, :record_method, *extra_attributes ])
-              .merge("in_progress" => record.in_progress?)
+        timed_record_json(record, extra_attributes)
       end
     end
   end

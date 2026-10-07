@@ -1,5 +1,6 @@
 # ユーザー検索・他人のマイページ・フォロー一覧（spec.md 5章・8章）。
-# 他人について返すのは アイコン・名前・フォロー数・キャラの状態・総合ポイントだけ（睡眠時刻や食事内容は返さない）
+# 他人について返すのは アイコン・名前・フォロー数・キャラの状態・総合ポイントだけ（睡眠時刻や食事内容は返さない）。
+# 相互フォロー（mutual）の人の記録の詳細は UserRecordsController
 module Api
   module V1
     class UsersController < BaseController
@@ -57,6 +58,7 @@ module Api
           icon: user.icon,
           is_self: user.id == current_user.id,
           following: current_user.following?(user),
+          mutual: current_user.mutual_follow?(user),
           followers_count: user.passive_follows.count,
           followings_count: user.active_follows.count,
           character: character && {
