@@ -44,26 +44,28 @@ export default function GoalBasicsForm({ value, onChange }) {
   return (
     <div className={styles.form}>
       <section className={goal.section}>
-        <h3 className={styles.sectionTitle}>睡眠</h3>
-        <div className={styles.radioGroup}>
-          <label className={styles.radio}>
-            <input
-              type="radio"
-              name="sleep_goal_type"
-              checked={value.sleep_goal_type === 'time_range'}
-              onChange={() => onChange({ sleep_goal_type: 'time_range' })}
-            />
-            時間帯
-          </label>
-          <label className={styles.radio}>
-            <input
-              type="radio"
-              name="sleep_goal_type"
-              checked={value.sleep_goal_type === 'duration'}
-              onChange={() => onChange({ sleep_goal_type: 'duration' })}
-            />
-            時間
-          </label>
+        <div className={goal.titleRow}>
+          <h3 className={styles.sectionTitle}>睡眠</h3>
+          <div className={styles.radioGroup}>
+            <label className={styles.radio}>
+              <input
+                type="radio"
+                name="sleep_goal_type"
+                checked={value.sleep_goal_type === 'time_range'}
+                onChange={() => onChange({ sleep_goal_type: 'time_range' })}
+              />
+              時間帯
+            </label>
+            <label className={styles.radio}>
+              <input
+                type="radio"
+                name="sleep_goal_type"
+                checked={value.sleep_goal_type === 'duration'}
+                onChange={() => onChange({ sleep_goal_type: 'duration' })}
+              />
+              時間
+            </label>
+          </div>
         </div>
         {value.sleep_goal_type === 'duration' ? (
           <HoursMinutes
@@ -109,27 +111,25 @@ export default function GoalBasicsForm({ value, onChange }) {
             <label className={goal.taskLabel} htmlFor={`task-${index}`}>
               項目{index + 1}
             </label>
-            <div className={styles.row}>
-              <input
-                id={`task-${index}`}
-                className={`${styles.input} ${goal.taskInput}`}
-                type="text"
-                maxLength={100}
-                placeholder="例: 1キロ走る"
-                value={task.title}
-                onChange={(event) => updateTask(index, event.target.value)}
-              />
-              {value.tasks.length > 1 && (
-                <button
-                  type="button"
-                  className={goal.remove}
-                  onClick={() => removeTask(index)}
-                  aria-label={`項目${index + 1}を削除`}
-                >
-                  ×
-                </button>
-              )}
-            </div>
+            <input
+              id={`task-${index}`}
+              className={`${styles.input} ${goal.taskInput}`}
+              type="text"
+              maxLength={100}
+              placeholder="例: 1キロ走る"
+              value={task.title}
+              onChange={(event) => updateTask(index, event.target.value)}
+            />
+            {value.tasks.length > 1 && (
+              <button
+                type="button"
+                className={goal.remove}
+                onClick={() => removeTask(index)}
+                aria-label={`項目${index + 1}を削除`}
+              >
+                ×
+              </button>
+            )}
           </div>
         ))}
         {value.tasks.length < MAX_TASKS && (

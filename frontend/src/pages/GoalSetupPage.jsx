@@ -1,11 +1,13 @@
 // 目標設定（目標が未登録のユーザー向け。spec.md 5章）。新規登録③④と同じ部品を使う。
 // 新規登録で目標の保存だけ失敗したときは、入力していた値（location.state.draft）から続ける。
+// 目標変更と同じく「睡眠・運動・ワーク / 食事」のタブで切り替える（保存は両方まとめて）。
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { api } from '../api/client.js'
 import { useAuth } from '../auth/useAuth.js'
 import AppShell from '../components/AppShell.jsx'
 import ErrorList from '../components/ErrorList.jsx'
+import GoalTabs, { tabWithErrors } from '../goal/GoalTabs.jsx'
 import GoalBasicsForm from '../goal/GoalBasicsForm.jsx'
 import { applyNutritionDefaults, newGoalDraft, toGoalPayload, validateBasics, validateMeals } from '../goal/goalDraft.js'
 import MealGoalForm from '../goal/MealGoalForm.jsx'
@@ -19,6 +21,7 @@ export default function GoalSetupPage() {
   const [errors, setErrors] = useState(() => location.state?.errors || [])
   const [basis, setBasis] = useState(null)
   const [busy, setBusy] = useState(false)
+  const [tab, setTab] = useState('basics')
 
   const updateGoal = (changes) => setGoal((current) => ({ ...current, ...changes }))
 
@@ -47,6 +50,7 @@ export default function GoalSetupPage() {
     const found = [...validateBasics(goal), ...validateMeals(goal)]
     if (found.length) {
       setErrors(found)
+      setTab(tabWithErrors(goal))
       window.scrollTo(0, 0)
       return
     }
@@ -68,14 +72,18 @@ export default function GoalSetupPage() {
       <form className={styles.form} onSubmit={handleSubmit} noValidate>
         <p className={styles.hint}>はじめに理想の生活リズムを登録してください。キャラはこの目標に沿って暮らします。</p>
         <ErrorList errors={errors} />
-        <GoalBasicsForm value={goal} onChange={updateGoal} />
-        <MealGoalForm
-          value={goal}
-          onChange={updateGoal}
-          basis={basis}
-          onResetDefaults={() => loadDefaults(true)}
-          loadingDefaults={busy}
-        />
+        <GoalTabs current={tab} onChange={setTab} />
+        {tab === 'basics' ? (
+          <GoalBasicsForm value={goal} onChange={updateGoal} />
+        ) : (
+          <MealGoalForm
+            value={goal}
+            onChange={updateGoal}
+            basis={basis}
+            onResetDefaults={() => loadDefaults(true)}
+            loadingDefaults={busy}
+          />
+        )}
         <div className={`${styles.actions} ${styles.actionsCenter}`}>
           <button className={`${styles.button} ${styles.primary}`} type="submit" disabled={busy}>
             {busy ? '保存中…' : '保存してはじめる'}
