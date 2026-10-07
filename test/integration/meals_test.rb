@@ -55,6 +55,23 @@ class MealsTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "from・to で期間の一覧（詳細画面の食事タブ）" do
+    travel_to Time.zone.local(2026, 10, 7, 20) do
+      @user.meals.create!(meal_type: :dinner, eaten_at: Time.zone.local(2026, 9, 30, 19))
+      @user.meals.create!(meal_type: :breakfast, eaten_at: Time.zone.local(2026, 10, 1, 7), calories: 400)
+      @user.meals.create!(meal_type: :lunch, eaten_at: Time.zone.local(2026, 10, 7, 12), calories: 600)
+      headers = auth_headers(@user)
+
+      get "/api/v1/meals", params: { from: "2026-10-01", to: "2026-10-07" }, headers: headers
+      assert_response :ok
+      assert_equal "2026-10-01", json["from"]
+      assert_equal [ 400, 600 ], json["meals"].map { |m| m["calories"] }
+
+      get "/api/v1/meals", params: { from: "2026-10-07", to: "2026-10-01" }, headers: headers
+      assert_response :unprocessable_entity
+    end
+  end
+
   test "入力が正しくなければ 422（区分・時間・マイナス・画像以外）" do
     post "/api/v1/meals", params: { meal: { meal_type: "brunch", eaten_at: Time.current.iso8601 } }, headers: @headers, as: :json
     assert_response :unprocessable_entity

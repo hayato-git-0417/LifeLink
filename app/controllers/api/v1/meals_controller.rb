@@ -9,7 +9,14 @@ module Api
       before_action :set_meal, only: %i[show update destroy]
 
       # GET /api/v1/meals?date=2026-10-06（省略時は今日。食べた時刻の順）
+      # GET /api/v1/meals?from=&to=（詳細画面の食事タブ。期間の指定は他の記録と同じ）
       def index
+        if params[:from].present? || params[:to].present?
+          range = date_range_param
+          meals = current_user.meals.between(range.first, range.last).order(:eaten_at).with_attached_photo
+          return render json: { from: range.first, to: range.last, meals: meals.map { |meal| meal_json(meal) } }
+        end
+
         date = date_param(:date) || Time.zone.today
         meals = current_user.meals.on(date).order(:eaten_at).with_attached_photo
         render json: { date: date, meals: meals.map { |meal| meal_json(meal) } }
