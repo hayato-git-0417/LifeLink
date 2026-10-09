@@ -139,6 +139,10 @@ users = demo_users.map do |attrs|
     end
   end
 
+  # 日ごとのスコアを計算しておく（アプリで記録したときと同じ。相互フォローの人の詳細に出すため）。
+  # ポイントの確定はこれまでどおりホームを開いたとき
+  DailyAchievementUpdater.call(user: user, dates: (1..DEMO_DAYS).map { |days_ago| today - days_ago })
+
   user
 end
 

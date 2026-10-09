@@ -135,3 +135,8 @@ export function toGoalPayload(draft) {
       .map((task) => (task.id ? { id: task.id, title: task.title.trim() } : { title: task.title.trim() })),
   }
 }
+
+// 入力のエラーがあるタブ（GoalTabs。保存できなかったときに、直す項目のあるタブを開くため）
+export function tabWithErrors(draft) {
+  return validateBasics(draft).length ? 'basics' : 'meals'
+}

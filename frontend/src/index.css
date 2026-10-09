@@ -15,10 +15,10 @@
   --color-error-bg: #fdecea;
 
   --max-width: 430px;
-  --header-height: 56px;
-  --nav-height: 60px;
+  --header-height: 48px;
+  --nav-height: 52px;
   --radius: 12px;
-  --gutter: 16px;
+  --gutter: 12px;
 
   font-family: system-ui, -apple-system, "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif;
   line-height: 1.5;

@@ -1,7 +1,7 @@
 // 他人のマイページ（spec.md 5章【仮】）。公開するのは アイコン・名前・フォロー数・キャラの状態・総合ポイントだけ。
-// 自分の id ならマイページへ移る
+// 相互フォローの人は「記録の詳細を見る」から詳細画面（読み取り専用）を開ける。自分の id ならマイページへ移る
 import { useEffect, useState } from 'react'
-import { Navigate, useParams } from 'react-router-dom'
+import { Link, Navigate, useParams } from 'react-router-dom'
 import { api } from '../../api/client.js'
 import { useAuth } from '../../auth/useAuth.js'
 import AppShell from '../../components/AppShell.jsx'
@@ -41,8 +41,15 @@ export default function UserPage() {
                 userId={user.id}
                 following={user.following}
                 onChange={(data) => {
-                  setUser({ ...user, following: data.following, followers_count: data.followers_count })
+                  setUser({
+                    ...user,
+                    following: data.following,
+                    mutual: data.following && user.mutual,
+                    followers_count: data.followers_count,
+                  })
                   refreshMe().catch(() => {})
+                  // フォローし直すと相互になることがあるので取り直す
+                  if (data.following) api(`/users/${id}`).then((fresh) => setUser(fresh.user)).catch(() => {})
                 }}
                 onError={setErrors}
               />
@@ -61,6 +68,11 @@ export default function UserPage() {
                   <span className={styles.points}>総合 {user.character.total_points} / 1000 P</span>
                 </div>
               </section>
+            )}
+            {user.mutual && (
+              <Link to={`/users/${user.id}/details`} className={styles.detailsLink}>
+                記録の詳細を見る（相互フォロー）
+              </Link>
             )}
             <p className={styles.note}>※ キャラの状態とポイントは、その人が最後にアプリを開いたときのものです。</p>
           </>

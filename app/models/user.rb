@@ -50,6 +50,11 @@ class User < ActiveRecord::Base
     active_follows.exists?(followed_id: other.id)
   end
 
+  # お互いにフォローしているか（相手の記録の詳細を見られる条件。自分自身は false）
+  def mutual_follow?(other)
+    other.id != id && following?(other) && other.following?(self)
+  end
+
   private
 
   def create_initial_character

@@ -10,9 +10,16 @@ export default function MealGoalForm({ value, onChange, basis, onResetDefaults, 
   return (
     <div className={styles.form}>
       <section className={goal.section}>
-        <h3 className={styles.sectionTitle}>食事の目標（1日）</h3>
+        <div className={`${goal.titleRow} ${goal.titleRowBetween}`}>
+          <h3 className={styles.sectionTitle}>食事の目標（1日）</h3>
+          {onResetDefaults && (
+            <button type="button" className={`${styles.linkButton} ${goal.smallLink}`} onClick={onResetDefaults} disabled={loadingDefaults}>
+              {loadingDefaults ? '読み込み中…' : '年齢・性別から出し直す'}
+            </button>
+          )}
+        </div>
         {basis && (
-          <p className={styles.hint}>
+          <p className={`${styles.hint} ${goal.basis}`}>
             {basis.age}歳・{GENDER_LABELS[basis.gender] ?? basis.gender}
             {basis.averaged ? '（男女の平均）' : ''}の基準値です。自由に変えられます。
             <br />
@@ -36,27 +43,24 @@ export default function MealGoalForm({ value, onChange, basis, onResetDefaults, 
             </label>
           ))}
         </div>
-        {onResetDefaults && (
-          <button type="button" className={styles.linkButton} onClick={onResetDefaults} disabled={loadingDefaults}>
-            {loadingDefaults ? '読み込み中…' : '年齢・性別から出し直す'}
-          </button>
-        )}
       </section>
 
       <section className={goal.section}>
         <h3 className={styles.sectionTitle}>食事の時刻</h3>
-        <p className={styles.hint}>この時刻から1時間たっても記録がないと、キャラがおなかをすかせます。</p>
-        {MEAL_TIME_FIELDS.map(({ key, label }) => (
-          <label key={key} className={goal.mealTime}>
-            <span className={goal.nutrientLabel}>{label}</span>
-            <input
-              className={`${styles.input} ${styles.time}`}
-              type="time"
-              value={value[key]}
-              onChange={(event) => onChange({ [key]: event.target.value })}
-            />
-          </label>
-        ))}
+        <p className={styles.hint}>1時間たっても記録がないと、キャラがおなかをすかせます。</p>
+        <div className={goal.mealTimes}>
+          {MEAL_TIME_FIELDS.map(({ key, label }) => (
+            <label key={key} className={goal.mealTime}>
+              <span className={goal.nutrientLabel}>{label}</span>
+              <input
+                className={`${styles.input} ${goal.timeInput}`}
+                type="time"
+                value={value[key]}
+                onChange={(event) => onChange({ [key]: event.target.value })}
+              />
+            </label>
+          ))}
+        </div>
       </section>
     </div>
   )

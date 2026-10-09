@@ -1,53 +1,107 @@
 .section {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 6px;
 }
 
+/* 見出しと選択肢を1行に（睡眠） */
+.titleRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 20px;
+}
+
+/* 「睡眠・運動・ワーク / 食事」のタブ */
+.tabs {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: 4px;
+  padding: 3px;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius);
+  background: var(--color-input);
+}
+
+.tab {
+  min-height: 34px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  font-size: 0.95rem;
+}
+
+.tabActive {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  font-weight: 700;
+}
+
+/* 運動タスク: 「項目1」・入力・削除を1行に */
 .task {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding-left: 24px;
-}
-
-.taskLabel {
-  color: var(--color-text-sub);
-}
-
-.taskInput {
-  flex: 1;
-  min-height: 48px;
-  border-radius: 4px;
-}
-
-.remove {
-  width: 40px;
-  height: 40px;
-  border: 1px solid var(--color-border-light);
-  border-radius: 50%;
-  background: var(--color-surface);
-  color: var(--color-text-sub);
-  font-size: 1.2rem;
-}
-
-.nutrients {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.nutrient,
-.mealTime {
-  display: grid;
-  grid-template-columns: 96px 1fr 40px;
   align-items: center;
   gap: 8px;
 }
 
+.taskLabel {
+  flex-shrink: 0;
+  width: 3.2em;
+  color: var(--color-text-sub);
+  font-size: 0.85rem;
+}
+
+.taskInput {
+  flex: 1;
+  min-width: 0;
+  min-height: 40px;
+  border-radius: 4px;
+}
+
+.remove {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--color-border-light);
+  border-radius: 50%;
+  background: var(--color-surface);
+  color: var(--color-text-sub);
+  font-size: 1.1rem;
+}
+
+/* 栄養5項目は2列 */
+.nutrients {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 10px;
+}
+
+.nutrient {
+  display: grid;
+  grid-template-columns: 4.8em minmax(0, 1fr) 2.3em;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.85rem;
+}
+
+/* 食事の時刻は3つを横に */
+.mealTimes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
 .mealTime {
-  grid-template-columns: 96px auto;
-  justify-content: start;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.85rem;
+}
+
+.timeInput {
+  min-width: 0;
+  min-height: 40px;
+  padding: 6px;
 }
 
 .nutrientLabel {
@@ -55,10 +109,24 @@
 }
 
 .nutrientInput {
-  min-height: 44px;
+  min-height: 38px;
+  padding: 4px 8px;
   text-align: right;
 }
 
 .unit {
   color: var(--color-text-sub);
+}
+
+.titleRowBetween {
+  justify-content: space-between;
+}
+
+.smallLink {
+  padding: 0;
+  font-size: 0.85rem;
+}
+
+.basis {
+  font-size: 0.75rem;
 }

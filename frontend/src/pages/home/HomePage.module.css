@@ -2,7 +2,7 @@
 .page {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
   margin: calc(-1 * var(--gutter)) calc(-1 * var(--gutter)) 0;
 }
 
@@ -24,17 +24,17 @@
   flex-direction: column;
   align-items: center;
   justify-content: flex-end;
-  height: 300px;
-  padding-bottom: 14px;
+  height: 160px;
+  padding-bottom: 8px;
   overflow: hidden;
 }
 
 .stage::after {
   position: absolute;
-  bottom: 18px;
+  bottom: 12px;
   left: 50%;
-  width: 190px;
-  height: 34px;
+  width: 130px;
+  height: 24px;
   border-radius: 50%;
   background: rgb(120 84 52 / 0.35);
   transform: translateX(-50%);
@@ -59,8 +59,8 @@
 .character {
   position: relative;
   z-index: 1;
-  width: 210px;
-  height: 210px;
+  width: 116px;
+  height: 116px;
   object-fit: contain;
 }
 
@@ -68,10 +68,10 @@
   position: relative;
   z-index: 1;
   margin-top: 2px;
-  padding: 2px 12px;
+  padding: 0 10px;
   border-radius: 999px;
   background: rgb(255 255 255 / 0.85);
-  font-size: 0.85rem;
+  font-size: 0.8rem;
 }
 
 /* アニメーション: 通常はふわふわ、睡眠中はゆっくり、汗汗は小刻み（spec.md 4章） */
@@ -124,22 +124,22 @@
 /* 右上の気分バッジ（spec.md 3.4） */
 .mood {
   position: absolute;
-  top: 12px;
-  right: 12px;
+  top: 8px;
+  right: 8px;
   z-index: 2;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 4px 16px 4px 6px;
+  gap: 6px;
+  padding: 2px 12px 2px 4px;
   border-radius: 999px;
   background: rgb(240 240 240 / 0.95);
-  font-size: 1.05rem;
+  font-size: 0.9rem;
   font-weight: 700;
 }
 
 .moodFace {
-  width: 28px;
-  height: 28px;
+  width: 20px;
+  height: 20px;
   border: 3px solid currentColor;
   border-radius: 50%;
 }
@@ -163,12 +163,13 @@
 /* 吹き出し */
 .bubble {
   position: relative;
-  margin-top: 6px;
+  margin-top: 4px;
   margin-bottom: 0;
-  padding: 10px 14px;
+  padding: 5px 12px;
   border: 2px solid var(--color-border-light);
   border-radius: 14px;
   background: var(--color-surface);
+  font-size: 0.95rem;
   font-weight: 600;
   text-align: center;
 }
@@ -184,22 +185,22 @@
   content: '';
 }
 
-/* ゲージ（ポイント 0〜1000 と今日のスコア） */
+/* ゲージ（ポイント 0〜1000 と今日のスコア）。2列×2段 */
 .gauges {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 12px 14px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 14px;
+  padding: 8px 12px;
   border-radius: var(--radius);
   background: var(--color-surface);
 }
 
 .gauge {
   display: grid;
-  grid-template-columns: 48px 1fr 40px 68px;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.9rem;
+  grid-template-columns: auto 1fr auto;
+  align-items: baseline;
+  gap: 2px 6px;
+  font-size: 0.85rem;
 }
 
 .gaugeLabel {
@@ -207,9 +208,10 @@
 }
 
 .bar {
-  height: 10px;
+  grid-column: 1 / -1;
+  height: 8px;
   overflow: hidden;
-  border-radius: 5px;
+  border-radius: 4px;
   background: #e6ebf0;
 }
 
@@ -243,18 +245,18 @@
 
 .today {
   color: var(--color-text-sub);
-  font-size: 0.78rem;
-  text-align: right;
+  font-size: 0.72rem;
 }
 
 .total {
-  margin: 4px 0 0;
-  font-size: 0.95rem;
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 0.9rem;
   text-align: center;
 }
 
 .total strong {
-  font-size: 1.3rem;
+  font-size: 1.15rem;
 }
 
 .totalToday {
@@ -263,35 +265,50 @@
 }
 
 .notice {
+  margin-top: 0;
   margin-bottom: 0;
-  padding: 10px 14px;
+  padding: 6px 12px;
   border-radius: 10px;
   background: #e7f6e7;
   color: #23692c;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
 }
 
-/* 記録ボタン6個（2列×3行） */
+/* 記録ボタン6個（3列×2段）。アイコンの下に名前 */
 .buttons {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-  padding: 14px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  padding: 8px;
   border: 1px solid var(--color-border);
+  border-radius: var(--radius);
   background: var(--color-surface);
+}
+
+.slot {
+  position: relative;
+  display: flex;
+}
+
+.slot > .button {
+  flex: 1;
 }
 
 .button {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 8px;
-  min-height: 72px;
-  padding: 8px 10px;
+  justify-content: center;
+  gap: 2px;
+  min-height: 60px;
+  padding: 4px;
   border: 1px solid var(--color-border);
-  border-radius: 14px;
+  border-radius: 12px;
   color: #fff;
-  font-size: 1.1rem;
-  text-align: left;
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
   /* 日本語は <wbr> の位置（ワーク／開始）でだけ折り返す。幅 320px のスマホ用 */
   word-break: keep-all;
   text-decoration: none;
@@ -304,11 +321,12 @@
 .buttonText {
   display: flex;
   flex-direction: column;
-  line-height: 1.2;
+  align-items: center;
 }
 
 .buttonText small {
-  font-size: 0.75rem;
+  font-size: 0.7rem;
+  font-weight: 400;
   font-variant-numeric: tabular-nums;
 }
 
@@ -317,11 +335,11 @@
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
   background: #fff;
-  font-size: 1.25rem;
+  font-size: 1rem;
 }
 
 .meal {
@@ -356,16 +374,17 @@
   background: #f0aeb0;
 }
 
-.cancels {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
+/* 計測中のボタンの右上に重ねる「取消」 */
 .cancel {
-  min-height: 44px;
+  position: absolute;
+  top: -6px;
+  right: -4px;
+  z-index: 1;
+  padding: 1px 7px;
   border: 1px solid var(--color-error);
-  border-radius: 10px;
+  border-radius: 999px;
   background: var(--color-surface);
   color: var(--color-error);
+  font-size: 0.72rem;
+  font-weight: 700;
 }

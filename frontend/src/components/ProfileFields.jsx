@@ -31,7 +31,7 @@ export default function ProfileFields({ value, onChange }) {
           onChange={(event) => onChange({ name: event.target.value })}
         />
       </label>
-      <label className={form.field}>
+      <label className={styles.inlineField}>
         <span className={form.label}>生年月日</span>
         <input
           className={`${form.input} ${styles.birthdate}`}
@@ -42,7 +42,7 @@ export default function ProfileFields({ value, onChange }) {
           onChange={(event) => onChange({ birthdate: event.target.value })}
         />
       </label>
-      <fieldset className={form.field}>
+      <fieldset className={`${form.field} ${styles.genderSet}`}>
         <legend className={form.label}>性別（食事の目標の初期値に使います）</legend>
         <div className={styles.genders}>
           {GENDERS.map((gender) => (

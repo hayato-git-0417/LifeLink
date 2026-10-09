@@ -51,9 +51,10 @@ class SocialTest < ActionDispatch::IntegrationTest
     get "/api/v1/users/#{@alice.id}", headers: auth_headers(@me)
     assert_response :ok
     user = json["user"]
-    assert_equal %w[id name icon is_self following followers_count followings_count character].sort, user.keys.sort
+    assert_equal %w[id name icon is_self following mutual followers_count followings_count character].sort, user.keys.sort
     assert_equal false, user["is_self"]
     assert_equal false, user["following"]
+    assert_equal false, user["mutual"]
     assert_equal 1, user["followers_count"]
     assert_equal 0, user["followings_count"]
     assert_equal %w[name state state_label image_path mood total_points].sort, user["character"].keys.sort

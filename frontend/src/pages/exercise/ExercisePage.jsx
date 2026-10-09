@@ -161,7 +161,7 @@ export default function ExercisePage() {
 
             <div className={styles.chart}>
               <span className={styles.unit}>(km)</span>
-              <ResponsiveContainer width="100%" height={200}>
+              <ResponsiveContainer width="100%" height={140}>
                 <BarChart data={chart} margin={{ top: 8, right: 8, bottom: 0, left: -24 }}>
                   <CartesianGrid vertical={false} stroke="#d6e2ea" />
                   <XAxis dataKey="day" tickLine={false} fontSize={12} />

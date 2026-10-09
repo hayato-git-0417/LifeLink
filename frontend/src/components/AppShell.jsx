@@ -120,7 +120,7 @@ function MenuIcon() {
 
 function HomeIcon() {
   return (
-    <svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true">
+    <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true">
       <path fill="currentColor" d="M12 3 2 11.5l1.3 1.5L5 11.6V21h5.5v-6h3v6H19v-9.4l1.7 1.4 1.3-1.5L12 3Z" />
     </svg>
   )
@@ -128,7 +128,7 @@ function HomeIcon() {
 
 function PersonIcon() {
   return (
-    <svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true">
+    <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true">
       <circle cx="12" cy="8" r="4.5" fill="currentColor" />
       <path fill="currentColor" d="M3 21c0-4.4 4-7.5 9-7.5s9 3.1 9 7.5v1H3v-1Z" />
     </svg>

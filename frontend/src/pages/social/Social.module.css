@@ -224,3 +224,81 @@ a.count span {
   background: var(--color-surface);
   color: var(--color-primary-dark);
 }
+
+/* 相互フォローの人の詳細へ */
+.detailsLink {
+  display: block;
+  padding: 12px;
+  border: 1px solid var(--color-primary-dark);
+  border-radius: 12px;
+  background: var(--color-surface);
+  color: var(--color-primary-dark);
+  font-weight: 600;
+  text-align: center;
+  text-decoration: none;
+}
+
+/* マイページの記録グラフ（睡眠。デザイン p.3）: 左に円グラフ、右に就寝・起床・目標 */
+.sleepTop {
+  display: grid;
+  grid-template-columns: 140px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+}
+
+.sleepDonut {
+  position: relative;
+  width: 140px;
+  height: 140px;
+}
+
+.sleepDonutCenter {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.sleepDonutCenter strong {
+  font-size: 1.1rem;
+  line-height: 1.2;
+}
+
+.sleepDonutCenter span {
+  color: var(--color-text-sub);
+  font-size: 0.72rem;
+}
+
+.sleepTimes {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+}
+
+.sleepTimes div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--color-input);
+}
+
+.sleepTimes dt {
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.sleepTimes dd {
+  margin: 0;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.card .note {
+  margin: 6px 0 10px;
+  text-align: center;
+}

@@ -1,12 +1,14 @@
 // 目標変更（デザイン p.17）。新規登録③④と同じ部品（睡眠・運動タスク・ワーク・食事の目標・食事時刻）。
+// スマホでスクロールしないように「睡眠・運動・ワーク / 食事」のタブで切り替える（保存は両方まとめて）。
 // 今の目標（GET /goal）を入れた状態から始める。栄養目標は「年齢・性別から出し直す」を押したときだけ初期値で上書きする
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../../api/client.js'
 import AppShell from '../../components/AppShell.jsx'
 import ErrorList from '../../components/ErrorList.jsx'
+import GoalTabs from '../../goal/GoalTabs.jsx'
 import GoalBasicsForm from '../../goal/GoalBasicsForm.jsx'
-import { applyNutritionDefaults, goalDraftFromApi, toGoalPayload, validateBasics, validateMeals } from '../../goal/goalDraft.js'
+import { applyNutritionDefaults, goalDraftFromApi, tabWithErrors, toGoalPayload, validateBasics, validateMeals } from '../../goal/goalDraft.js'
 import MealGoalForm from '../../goal/MealGoalForm.jsx'
 import form from '../../styles/form.module.css'
 
@@ -16,6 +18,7 @@ export default function GoalEditPage() {
   const [basis, setBasis] = useState(null)
   const [errors, setErrors] = useState([])
   const [busy, setBusy] = useState(false)
+  const [tab, setTab] = useState('basics')
 
   useEffect(() => {
     let active = true
@@ -52,6 +55,7 @@ export default function GoalEditPage() {
     const found = [...validateBasics(goal), ...validateMeals(goal)]
     if (found.length) {
       setErrors(found)
+      setTab(tabWithErrors(goal))
       window.scrollTo(0, 0)
       return
     }
@@ -77,11 +81,13 @@ export default function GoalEditPage() {
       ) : (
         <form className={form.form} onSubmit={handleSubmit} noValidate>
           <ErrorList errors={errors} />
-          <p className={form.hint}>
-            変えた目標は今日のスコアから使います（過去の日のスコアも、記録を直したときは今の目標で計算し直します）。
-          </p>
-          <GoalBasicsForm value={goal} onChange={updateGoal} />
-          <MealGoalForm value={goal} onChange={updateGoal} basis={basis} onResetDefaults={resetDefaults} loadingDefaults={busy} />
+          <p className={form.hint}>変えた目標は今日のスコアから使います。</p>
+          <GoalTabs current={tab} onChange={setTab} />
+          {tab === 'basics' ? (
+            <GoalBasicsForm value={goal} onChange={updateGoal} />
+          ) : (
+            <MealGoalForm value={goal} onChange={updateGoal} basis={basis} onResetDefaults={resetDefaults} loadingDefaults={busy} />
+          )}
           <div className={`${form.actions} ${form.actionsCenter}`}>
             <button className={`${form.button} ${form.primary}`} type="submit" disabled={busy}>
               {busy ? '保存中…' : '設定を保存する'}

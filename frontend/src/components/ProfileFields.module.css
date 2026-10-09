@@ -1,9 +1,33 @@
+/* 生年月日は見出しと入力を1行に */
+.inlineField {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .birthdate {
+  flex: 1;
   max-width: 220px;
 }
 
+.genderSet {
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+/* 4つを1行に（幅 375px で収まる） */
 .genders {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px 18px;
+  gap: 6px 12px;
+}
+
+.genders label {
+  font-size: 0.95rem;
+}
+
+.genders input {
+  width: 18px;
+  height: 18px;
 }

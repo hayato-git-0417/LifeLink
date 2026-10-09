@@ -1,5 +1,5 @@
 // 詳細画面の睡眠・ワークの記録一覧。記録ごとに開始・終了日時の修正と削除ができる（spec.md 2.1）。
-// 計測中の記録は修正できない（ホームの「取り消し」を使う）。
+// 計測中の記録は修正できない（ホームの「取り消し」を使う）。readOnly（相互フォローの人の詳細）では修正・削除を出さない。
 import { useState } from 'react'
 import { api } from '../../api/client.js'
 import ErrorList from '../../components/ErrorList.jsx'
@@ -16,7 +16,7 @@ function formatShort(iso) {
   return `${date.getMonth() + 1}/${date.getDate()} ${pad(date.getHours())}:${pad(date.getMinutes())}`
 }
 
-export default function TimedRecordList({ kind, records, onChanged, onError }) {
+export default function TimedRecordList({ kind, records, readOnly = false, onChanged, onError }) {
   const config = TIMED_KINDS[kind]
   const [editingId, setEditingId] = useState(null)
 
@@ -62,7 +62,7 @@ export default function TimedRecordList({ kind, records, onChanged, onError }) {
                 </span>
               )}
             </div>
-            {!record.in_progress && (
+            {!readOnly && !record.in_progress && (
               <div className={styles.recordActions}>
                 <button type="button" className={form.linkButton} onClick={() => setEditingId(record.id)}>
                   修正

@@ -24,7 +24,7 @@
 .title {
   margin: 0;
   overflow: hidden;
-  font-size: 1.35rem;
+  font-size: 1.2rem;
   font-weight: 600;
   text-align: center;
   white-space: nowrap;
@@ -80,7 +80,7 @@
 
 .menu {
   position: absolute;
-  top: 46px;
+  top: 42px;
   right: 0;
   display: flex;
   flex-direction: column;

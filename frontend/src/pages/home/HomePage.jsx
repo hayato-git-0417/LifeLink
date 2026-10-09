@@ -1,6 +1,7 @@
 // ホーム（デザイン p.1 / p.2、spec.md 3.4・4章）。GET /api/v1/home を表示する。
 // 就寝⇔起床・ワーク開始⇔ワーク終了は画面遷移せず、その場で start / finish を呼ぶ。計測中は「取り消し」も出す。
 // 押したあとはホームを読み直すので、キャラの状態がすぐ変わる。
+// スマホ（375×667）でスクロールせずに収まるように、ゲージは2列、記録ボタンは3列×2段にしている。
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../../api/client.js'
@@ -115,11 +116,11 @@ export default function HomePage() {
             return (
               <div key={key} className={styles.gauge}>
                 <span className={styles.gaugeLabel}>{label}</span>
+                <span className={styles.today}>今日 {Math.round(score)}%</span>
+                <span className={styles.points}>{points}</span>
                 <span className={styles.bar}>
                   <span className={`${styles.fill} ${styles[`fill_${key}`]}`} style={{ width: `${(points / MAX_POINTS) * 100}%` }} />
                 </span>
-                <span className={styles.points}>{points}</span>
-                <span className={styles.today}>今日 {Math.round(score)}%</span>
               </div>
             )
           })}
@@ -136,35 +137,49 @@ export default function HomePage() {
           <Link to="/meals" className={`${styles.button} ${styles.meal}`}>
             <span className={styles.icon}>🍴</span>食事
           </Link>
-          <button
-            type="button"
-            className={`${styles.button} ${sleepTimer ? styles.wake : styles.sleep}`}
-            disabled={busy}
-            onClick={() => act('sleep_records', sleepTimer ? 'finish' : 'start')}
+          <TimerSlot
+            active={Boolean(sleepTimer)}
+            busy={busy}
+            cancelLabel="睡眠の計測を取り消す"
+            onCancel={() => act('sleep_records', 'cancel', '睡眠の計測を取り消しますか？（記録は残りません）')}
           >
-            <span className={styles.icon}>{sleepTimer ? '☀️' : '🛏️'}</span>
-            <span className={styles.buttonText}>
-              {sleepTimer ? '起床' : '就寝'}
-              {sleepTimer && <small>{formatTime(sleepTimer.slept_at)} から</small>}
-            </span>
-          </button>
-          <button
-            type="button"
-            className={`${styles.button} ${styles.work} ${workTimer ? styles.working : ''}`}
-            disabled={busy || (sleeping && !workTimer)}
-            onClick={() => act('work_records', workTimer ? 'finish' : 'start')}
-            title={sleeping ? '睡眠中はワークを開始できません' : undefined}
-          >
-            <span className={styles.icon}>📖</span>
-            <span className={styles.buttonText}>
-              <span>
-                ワーク
-                <wbr />
-                {workTimer ? '終了' : '開始'}
+            <button
+              type="button"
+              className={`${styles.button} ${sleepTimer ? styles.wake : styles.sleep}`}
+              disabled={busy}
+              onClick={() => act('sleep_records', sleepTimer ? 'finish' : 'start')}
+            >
+              <span className={styles.icon}>{sleepTimer ? '☀️' : '🛏️'}</span>
+              <span className={styles.buttonText}>
+                {sleepTimer ? '起床' : '就寝'}
+                {sleepTimer && <small>{formatTime(sleepTimer.slept_at)} から</small>}
               </span>
-              {workTimer && <small>{formatElapsed(now - new Date(workTimer.started_at).getTime())}</small>}
-            </span>
-          </button>
+            </button>
+          </TimerSlot>
+          <TimerSlot
+            active={Boolean(workTimer)}
+            busy={busy}
+            cancelLabel="ワークの計測を取り消す"
+            onCancel={() => act('work_records', 'cancel', 'ワークの計測を取り消しますか？（記録は残りません）')}
+          >
+            <button
+              type="button"
+              className={`${styles.button} ${styles.work} ${workTimer ? styles.working : ''}`}
+              disabled={busy || (sleeping && !workTimer)}
+              onClick={() => act('work_records', workTimer ? 'finish' : 'start')}
+              title={sleeping ? '睡眠中はワークを開始できません' : undefined}
+            >
+              <span className={styles.icon}>📖</span>
+              <span className={styles.buttonText}>
+                <span>
+                  ワーク
+                  <wbr />
+                  {workTimer ? '終了' : '開始'}
+                </span>
+                {workTimer && <small>{formatElapsed(now - new Date(workTimer.started_at).getTime())}</small>}
+              </span>
+            </button>
+          </TimerSlot>
           <Link to="/exercise" className={`${styles.button} ${styles.exercise}`}>
             <span className={styles.icon}>🏃</span>運動
           </Link>
@@ -182,31 +197,21 @@ export default function HomePage() {
           </button>
         </section>
 
-        {(sleepTimer || workTimer) && (
-          <div className={styles.cancels}>
-            {sleepTimer && (
-              <button
-                type="button"
-                className={styles.cancel}
-                disabled={busy}
-                onClick={() => act('sleep_records', 'cancel', '睡眠の計測を取り消しますか？（記録は残りません）')}
-              >
-                睡眠の計測を取り消す
-              </button>
-            )}
-            {workTimer && (
-              <button
-                type="button"
-                className={styles.cancel}
-                disabled={busy}
-                onClick={() => act('work_records', 'cancel', 'ワークの計測を取り消しますか？（記録は残りません）')}
-              >
-                ワークの計測を取り消す
-              </button>
-            )}
-          </div>
-        )}
       </div>
     </AppShell>
+  )
+}
+
+// 睡眠・ワークのボタン。計測中はボタンの右上に小さな「取消」を重ねる（行を増やさないため）
+function TimerSlot({ active, busy, cancelLabel, onCancel, children }) {
+  return (
+    <div className={styles.slot}>
+      {children}
+      {active && (
+        <button type="button" className={styles.cancel} disabled={busy} onClick={onCancel} aria-label={cancelLabel} title={cancelLabel}>
+          取消
+        </button>
+      )}
+    </div>
   )
 }
