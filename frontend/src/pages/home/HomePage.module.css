@@ -1,0 +1,371 @@
+/* ホームは上の余白なしでキャラの部屋を端まで出す */
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: calc(-1 * var(--gutter)) calc(-1 * var(--gutter)) 0;
+}
+
+.page > :not(.stage) {
+  margin-right: var(--gutter);
+  margin-left: var(--gutter);
+}
+
+.loading {
+  padding: 40px 0;
+  color: var(--color-text-sub);
+  text-align: center;
+}
+
+/* キャラの部屋。背景画像はまだないのでグラデーションで代用（昼／夜） */
+.stage {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  height: 300px;
+  padding-bottom: 14px;
+  overflow: hidden;
+}
+
+.stage::after {
+  position: absolute;
+  bottom: 18px;
+  left: 50%;
+  width: 190px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgb(120 84 52 / 0.35);
+  transform: translateX(-50%);
+  content: '';
+}
+
+.day {
+  background:
+    radial-gradient(circle at 85% 18%, rgb(255 244 200 / 0.9) 0 26px, transparent 28px),
+    linear-gradient(180deg, #bfe6ff 0%, #e8f7ff 60%, #f3e3c8 60%, #e9d2ad 100%);
+}
+
+.night {
+  background:
+    radial-gradient(circle at 82% 18%, #fdf6c7 0 18px, transparent 20px),
+    radial-gradient(circle at 20% 22%, #fff 0 1.5px, transparent 2px),
+    radial-gradient(circle at 35% 12%, #fff 0 1px, transparent 2px),
+    radial-gradient(circle at 62% 28%, #fff 0 1.5px, transparent 2px),
+    linear-gradient(180deg, #1d2b5a 0%, #36457e 60%, #4a4360 60%, #3c3550 100%);
+}
+
+.character {
+  position: relative;
+  z-index: 1;
+  width: 210px;
+  height: 210px;
+  object-fit: contain;
+}
+
+.stateLabel {
+  position: relative;
+  z-index: 1;
+  margin-top: 2px;
+  padding: 2px 12px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.85);
+  font-size: 0.85rem;
+}
+
+/* アニメーション: 通常はふわふわ、睡眠中はゆっくり、汗汗は小刻み（spec.md 4章） */
+.anim_normal,
+.anim_full,
+.anim_hungry,
+.anim_studying,
+.anim_sleep_deprived,
+.anim_fat {
+  animation: float 2.6s ease-in-out infinite;
+}
+
+.anim_sleeping {
+  animation: float 5s ease-in-out infinite;
+}
+
+.anim_exercising {
+  animation: shake 0.35s linear infinite;
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes shake {
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  25% {
+    transform: translate(-3px, -2px) rotate(-2deg);
+  }
+  75% {
+    transform: translate(3px, -2px) rotate(2deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .character {
+    animation: none;
+  }
+}
+
+/* 右上の気分バッジ（spec.md 3.4） */
+.mood {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 16px 4px 6px;
+  border-radius: 999px;
+  background: rgb(240 240 240 / 0.95);
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.moodFace {
+  width: 28px;
+  height: 28px;
+  border: 3px solid currentColor;
+  border-radius: 50%;
+}
+
+.mood_genki {
+  color: #12b312;
+}
+
+.mood_futsu {
+  color: #d39b00;
+}
+
+.mood_kanashii {
+  color: #3a78d8;
+}
+
+.mood_ikari {
+  color: #d93025;
+}
+
+/* 吹き出し */
+.bubble {
+  position: relative;
+  margin-top: 6px;
+  margin-bottom: 0;
+  padding: 10px 14px;
+  border: 2px solid var(--color-border-light);
+  border-radius: 14px;
+  background: var(--color-surface);
+  font-weight: 600;
+  text-align: center;
+}
+
+.bubble::before {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  border-right: 9px solid transparent;
+  border-bottom: 10px solid var(--color-border-light);
+  border-left: 9px solid transparent;
+  transform: translateX(-50%);
+  content: '';
+}
+
+/* ゲージ（ポイント 0〜1000 と今日のスコア） */
+.gauges {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  background: var(--color-surface);
+}
+
+.gauge {
+  display: grid;
+  grid-template-columns: 48px 1fr 40px 68px;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+}
+
+.gaugeLabel {
+  font-weight: 600;
+}
+
+.bar {
+  height: 10px;
+  overflow: hidden;
+  border-radius: 5px;
+  background: #e6ebf0;
+}
+
+.fill {
+  display: block;
+  height: 100%;
+  border-radius: 5px;
+  transition: width 0.4s ease;
+}
+
+.fill_sleep {
+  background: #5a8bc8;
+}
+
+.fill_meal {
+  background: #6cc3b2;
+}
+
+.fill_exercise {
+  background: #7db383;
+}
+
+.fill_work {
+  background: #8f8ad0;
+}
+
+.points {
+  font-weight: 700;
+  text-align: right;
+}
+
+.today {
+  color: var(--color-text-sub);
+  font-size: 0.78rem;
+  text-align: right;
+}
+
+.total {
+  margin: 4px 0 0;
+  font-size: 0.95rem;
+  text-align: center;
+}
+
+.total strong {
+  font-size: 1.3rem;
+}
+
+.totalToday {
+  color: var(--color-text-sub);
+  font-size: 0.8rem;
+}
+
+.notice {
+  margin-bottom: 0;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: #e7f6e7;
+  color: #23692c;
+  font-size: 0.95rem;
+}
+
+/* 記録ボタン6個（2列×3行） */
+.buttons {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 72px;
+  padding: 8px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  color: #fff;
+  font-size: 1.1rem;
+  text-align: left;
+  /* 日本語は <wbr> の位置（ワーク／開始）でだけ折り返す。幅 320px のスマホ用 */
+  word-break: keep-all;
+  text-decoration: none;
+}
+
+.button:disabled {
+  opacity: 0.55;
+}
+
+.buttonText {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.buttonText small {
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #fff;
+  font-size: 1.25rem;
+}
+
+.meal {
+  background: #6cc3b2;
+}
+
+.sleep {
+  background: #5a8bc8;
+}
+
+.wake {
+  background: #ffb54d;
+}
+
+.work {
+  background: #8f8ad0;
+}
+
+.working {
+  box-shadow: 0 0 0 3px #fff, 0 0 0 5px #8f8ad0;
+}
+
+.exercise {
+  background: #7db383;
+}
+
+.bath {
+  background: #b0c4e4;
+}
+
+.hobby {
+  background: #f0aeb0;
+}
+
+.cancels {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cancel {
+  min-height: 44px;
+  border: 1px solid var(--color-error);
+  border-radius: 10px;
+  background: var(--color-surface);
+  color: var(--color-error);
+}

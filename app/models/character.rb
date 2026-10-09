@@ -25,4 +25,19 @@ class Character < ApplicationRecord
   def animation
     CharacterAnimation.find_by(state: state)
   end
+
+  # 画像のパス（public/characters/<state>.png）。character_animations がなければ規約どおりのパス
+  def image_path
+    animation&.gif_path || "/characters/#{state}.png"
+  end
+
+  # 気分バッジ（spec.md 3.4【仮】）。総合ポイントの下限が高い順に見て最初に当てはまったもの
+  def mood
+    entry = GameConfig.mood.find { |m| total_points >= m[:min_points] } || GameConfig.mood.last
+    { key: entry[:key], label: entry[:label] }
+  end
+
+  def state_label
+    I18n.t("game.states.#{state}")
+  end
 end

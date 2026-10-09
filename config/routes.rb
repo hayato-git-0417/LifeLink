@@ -14,6 +14,40 @@ Rails.application.routes.draw do
       resource :goal, only: %i[show update] do
         get :nutrition_defaults
       end
+
+      # 記録（spec.md 8章）。睡眠・ワークは手動での新規作成がないので create はない
+      %i[sleep_records work_records].each do |records|
+        resources records, only: %i[index update destroy] do
+          collection do
+            post :start
+            post :finish
+            post :cancel
+          end
+        end
+      end
+      resources :exercise_records, only: %i[index create destroy]
+      resources :exercise_tasks, only: [] do
+        get :today, on: :collection
+        resource :completion, only: %i[create destroy], controller: "exercise_task_completions"
+      end
+      resources :meals
+
+      # ホームと詳細画面のグラフ（フェーズ4）
+      resource :home, only: :show
+      resources :daily_achievements, only: :index
+
+      # フォロー・通知（フェーズ7）
+      resources :users, only: %i[index show] do
+        member do
+          get :followers
+          get :followings
+        end
+        resource :follow, only: %i[create destroy]
+      end
+      resources :notifications, only: :index do
+        patch :read, on: :member
+        post :read_all, on: :collection
+      end
     end
   end
 

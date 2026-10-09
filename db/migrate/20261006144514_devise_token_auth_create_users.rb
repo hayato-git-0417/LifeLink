@@ -16,7 +16,7 @@ class DeviseTokenAuthCreateUsers < ActiveRecord::Migration[7.2]
       t.json :tokens
       t.timestamps
       t.index :email, unique: true
-      t.index [:uid, :provider], unique: true
+      t.index [ :uid, :provider ], unique: true
       t.index :reset_password_token, unique: true
       t.index :name
     end

@@ -6,7 +6,7 @@ class CreateExerciseTasks < ActiveRecord::Migration[7.2]
       t.integer :position, null: false, default: 0
       t.boolean :active, null: false, default: true
       t.timestamps
-      t.index [:user_id, :position]
+      t.index [ :user_id, :position ]
     end
   end
 end

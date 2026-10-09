@@ -1,0 +1,226 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.empty {
+  margin: 0;
+  padding: 16px 0;
+  color: var(--color-text-sub);
+  text-align: center;
+}
+
+.note {
+  margin: 0;
+  color: var(--color-text-sub);
+  font-size: 0.8rem;
+}
+
+.card {
+  padding: 14px;
+  border-radius: var(--radius);
+  background: var(--color-surface);
+}
+
+.heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0 0 10px;
+  font-size: 1.05rem;
+}
+
+.points {
+  color: var(--color-primary-dark);
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.more {
+  display: block;
+  margin-top: 8px;
+  font-size: 0.9rem;
+  text-align: right;
+}
+
+/* プロフィール（p.3） */
+.profile {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 0;
+}
+
+.profileBody {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.profileName {
+  margin: 0;
+  overflow: hidden;
+  font-size: 1.3rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.counts {
+  display: flex;
+  gap: 20px;
+}
+
+.count {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: var(--color-text);
+  font-size: 0.85rem;
+  text-decoration: none;
+}
+
+.count strong {
+  font-size: 1.25rem;
+}
+
+a.count span {
+  text-decoration: underline;
+}
+
+/* 他人のキャラ */
+.character {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.characterImage {
+  flex-shrink: 0;
+  width: 120px;
+  height: 120px;
+  object-fit: contain;
+}
+
+.characterBody {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.characterName {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+/* フォロー一覧（p.4） */
+.tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-bottom: 2px solid var(--color-border-light);
+}
+
+.tab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 48px;
+  margin-bottom: -2px;
+  border: none;
+  border-bottom: 3px solid transparent;
+  background: none;
+  font-size: 1.05rem;
+}
+
+.tabActive {
+  border-bottom-color: var(--color-primary);
+  color: var(--color-primary-dark);
+  font-weight: 700;
+}
+
+.tabCount {
+  min-width: 24px;
+  padding: 0 6px;
+  border-radius: 12px;
+  background: var(--color-surface);
+  font-size: 0.8rem;
+}
+
+.search {
+  display: flex;
+  gap: 8px;
+}
+
+.search input {
+  flex: 1;
+  min-width: 0;
+}
+
+.searchButton {
+  flex-shrink: 0;
+  min-width: 80px;
+  white-space: nowrap;
+}
+
+.resultHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0;
+  color: var(--color-text-sub);
+  font-size: 0.9rem;
+}
+
+.userList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.userRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.userLink {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.userName {
+  overflow: hidden;
+  font-size: 1.05rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.followButton {
+  flex-shrink: 0;
+  min-width: 108px;
+  min-height: 40px;
+  padding: 6px 12px;
+  border: 1px solid var(--color-primary-dark);
+  border-radius: 20px;
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.following {
+  background: var(--color-surface);
+  color: var(--color-primary-dark);
+}

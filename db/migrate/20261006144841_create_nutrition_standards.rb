@@ -11,7 +11,7 @@ class CreateNutritionStandards < ActiveRecord::Migration[7.2]
       t.decimal :carbs_g, precision: 5, scale: 1
       t.decimal :fiber_g, precision: 5, scale: 1
       t.timestamps
-      t.index [:gender, :age_from, :activity_level], unique: true
+      t.index [ :gender, :age_from, :activity_level ], unique: true
     end
   end
 end

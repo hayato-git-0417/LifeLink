@@ -101,6 +101,7 @@ ja:
         comment: コメント
         input_method: 入力方法
         recorded_on: 集計日
+        photo: 写真
       nutrition_standard:
         gender: 性別
         age_from: 年齢（から）
@@ -121,10 +122,68 @@ ja:
         invalid_date: は正しい日付ではありません
         exercise_tasks_required: 運動タスクを1件以上登録してください
         exercise_task_not_found: 運動タスクが見つかりません
+        photo_content_type: は画像ファイル（JPEG・PNG など）にしてください
+        photo_too_large: "は%{count}MB以下にしてください"
   devise:
     failure:
       unauthenticated: ログインしてください
+  # ゲームの文言（spec.md 4章・7章）。しきい値などの数値は config/game.yml
+  game:
+    states:
+      normal: デフォルト
+      sleeping: 睡眠中
+      sleep_deprived: 睡眠不足
+      full: 満腹
+      hungry: 空腹
+      exercising: 汗汗
+      studying: 勉強中
+      fat: 太り
+    meal_types:
+      breakfast: 朝食
+      lunch: 昼食
+      dinner: 夕食
+      snack: 間食
+    # 吹き出し（spec.md 4.2【仮】）。state_* は状態に合ったひとこと
+    messages:
+      bedtime: そろそろ寝る時間だよ
+      sleep_deprived: ねむい…今日は早く寝よう
+      hungry: おなかすいた…
+      tasks_remaining: 運動タスクが残ってるよ
+      state_normal: 今日もいっしょにがんばろう！
+      state_sleeping: すやすや…
+      state_sleep_deprived: ねむい…今日は早く寝よう
+      state_full: おなかいっぱい！
+      state_hungry: おなかすいた…
+      state_exercising: いい汗かいた！
+      state_studying: 集中してるよ！
+      state_fat: ちょっと体が重いかも…運動しよう
+    notifications:
+      sleep_deprived:
+        title: キャラが睡眠不足です
+        body: 今日は早めに寝て、睡眠時間を取り戻そう。
+      hungry:
+        title: キャラがおなかをすかせています
+        body: 食事を記録しよう。
+      bedtime:
+        title: そろそろ就寝時刻です
+        body: 目標の就寝時刻が近づいています。
+      tasks_remaining:
+        title: 運動タスクが残っています
+        body: 今日の運動タスクをチェックしよう。
+      follow:
+        title: "%{name}さんにフォローされました"
+        body: マイページのフォロー一覧から確認できます。
   api:
     errors:
       not_found: データが見つかりません
       parameter_missing: "必要な項目（%{param}）がありません"
+      invalid_date_param: "%{param}は YYYY-MM-DD の形式で指定してください"
+      invalid_time_param: "%{param}は正しい日時で指定してください"
+      date_range_order: 期間の終わり（to）は始まり（from）以降にしてください
+      date_range_too_long: "期間は%{days}日以内にしてください"
+      timer:
+        already_in_progress: "%{model}はすでに計測中です"
+        not_in_progress: "計測中の%{model}がありません"
+        cannot_start_work_while_sleeping: 睡眠中はワークを開始できません
+        in_progress_not_editable: 計測中の記録は修正できません（取り消しを使ってください）
+        finish_in_future: 終了日時は現在より前にしてください

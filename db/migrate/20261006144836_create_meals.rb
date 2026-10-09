@@ -14,8 +14,8 @@ class CreateMeals < ActiveRecord::Migration[7.2]
       t.integer :input_method, null: false, default: 0
       t.date :recorded_on, null: false
       t.timestamps
-      t.index [:user_id, :recorded_on]
-      t.index [:user_id, :eaten_at]
+      t.index [ :user_id, :recorded_on ]
+      t.index [ :user_id, :eaten_at ]
     end
   end
 end

@@ -10,7 +10,7 @@ class CreateExerciseRecords < ActiveRecord::Migration[7.2]
       t.string :memo
       t.date :recorded_on, null: false
       t.timestamps
-      t.index [:user_id, :recorded_on]
+      t.index [ :user_id, :recorded_on ]
     end
   end
 end
