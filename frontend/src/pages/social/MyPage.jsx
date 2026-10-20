@@ -3,28 +3,19 @@
 // 就寝時間・起床時間、下に直近7日の睡眠時間の棒グラフ（目標は横線）。睡眠の質は出さない（記録しない。2026-10-06 確定）
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  Pie,
-  PieChart,
-  ReferenceLine,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts'
+import { Bar, BarChart, CartesianGrid, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { api } from '../../api/client.js'
 import { useAuth } from '../../auth/useAuth.js'
 import AppShell from '../../components/AppShell.jsx'
+import { axisTick, CATEGORY_COLORS, CHART, tooltipProps } from '../../components/chartTheme.js'
+import Donut from '../../components/Donut.jsx'
 import ErrorList from '../../components/ErrorList.jsx'
+import IconBadge from '../../components/IconBadge.jsx'
+import { ChevronRightIcon, SleepIcon } from '../../components/icons.jsx'
 import { datesBetween, formatDate, formatDay, formatMinutes, formatTime, shiftDate, toDateString } from '../../lib/format.js'
+import form from '../../styles/form.module.css'
 import ProfileHeader from './ProfileHeader.jsx'
 import styles from './Social.module.css'
-
-const COLORS = { sleep: '#4a86e8', rest: '#d6e2ea', goal: '#f08a24' }
 
 export default function MyPage() {
   const { user, refreshMe } = useAuth()
@@ -56,11 +47,18 @@ export default function MyPage() {
           linkCounts
         />
         <ErrorList errors={errors} />
-        <section className={styles.card}>
+        <section className={form.card}>
+          <div className={form.panelHead}>
+            <IconBadge tone="sleep">
+              <SleepIcon size={20} />
+            </IconBadge>
+            <h2>睡眠の記録</h2>
+            <Link to="/details?tab=sleep" className={styles.more}>
+              くわしく
+              <ChevronRightIcon size={14} />
+            </Link>
+          </div>
           {sleep ? <SleepRecord {...sleep} /> : !errors.length && <p className={styles.empty}>読み込み中…</p>}
-          <Link to="/details?tab=sleep" className={styles.more}>
-            記録をくわしく見る ›
-          </Link>
         </section>
       </div>
     </AppShell>
@@ -74,11 +72,6 @@ function SleepRecord({ targetMinutes, records }) {
   const minutes = latest?.duration_minutes ?? 0
   // 目標がない（まだ登録していない）ときは、睡眠時間ぶんだけ塗る
   const target = targetMinutes || minutes || 1
-  const done = Math.min(minutes, target)
-  const donut = [
-    { name: 'sleep', value: done },
-    { name: 'rest', value: target - done },
-  ]
 
   const today = toDateString()
   const dates = datesBetween(shiftDate(today, -6), today)
@@ -101,30 +94,10 @@ function SleepRecord({ targetMinutes, records }) {
   return (
     <>
       <div className={styles.sleepTop}>
-        <div className={styles.sleepDonut}>
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={donut}
-                dataKey="value"
-                innerRadius="74%"
-                outerRadius="100%"
-                startAngle={90}
-                endAngle={-270}
-                stroke="none"
-                isAnimationActive={false}
-              >
-                {donut.map((part) => (
-                  <Cell key={part.name} fill={COLORS[part.name]} />
-                ))}
-              </Pie>
-            </PieChart>
-          </ResponsiveContainer>
-          <div className={styles.sleepDonutCenter}>
-            <strong>{latest ? formatMinutes(minutes) : '-'}</strong>
-            <span>合計睡眠時間</span>
-          </div>
-        </div>
+        <Donut ratio={minutes / target} color={CATEGORY_COLORS.sleep} size={124}>
+          <strong className={styles.donutValue}>{latest ? formatMinutes(minutes) : '-'}</strong>
+          <span className={styles.donutLabel}>合計睡眠時間</span>
+        </Donut>
         <dl className={styles.sleepTimes}>
           <div>
             <dt>就寝時間</dt>
@@ -140,24 +113,33 @@ function SleepRecord({ targetMinutes, records }) {
           </div>
         </dl>
       </div>
-      <p className={styles.note}>
-        {latest ? `${formatDate(latest.recorded_on)} に起きた睡眠` : '睡眠の記録はまだありません（ホームの「就寝」で記録できます）'}
+      <p className={styles.sleepNote}>
+        {latest ? `${formatDate(latest.recorded_on)} に起きた睡眠` : '睡眠の記録はまだありません（ホームの「睡眠」で記録できます）'}
       </p>
 
-      <h2 className={styles.heading}>睡眠時間（7日）</h2>
-      <ResponsiveContainer width="100%" height={140}>
-        <BarChart data={bars} margin={{ top: 8, right: 8, bottom: 0, left: -24 }}>
-          <CartesianGrid vertical={false} stroke="#d6e2ea" />
-          <XAxis dataKey="day" tickLine={false} fontSize={12} />
-          <YAxis domain={[0, maxHours]} ticks={ticks} tickLine={false} fontSize={11} unit="h" />
-          <Tooltip formatter={(value) => [`${value} 時間`, '睡眠時間']} />
-          <Bar dataKey="hours" fill={COLORS.sleep} radius={[4, 4, 0, 0]} isAnimationActive={false} />
+      <h3 className={styles.subheading}>睡眠時間（7日）</h3>
+      <ResponsiveContainer width="100%" height={132}>
+        <BarChart data={bars} margin={{ top: 8, right: 6, bottom: 0, left: -26 }}>
+          <CartesianGrid vertical={false} stroke={CHART.grid} />
+          <XAxis dataKey="day" tickLine={false} axisLine={{ stroke: CHART.ink, strokeWidth: 2 }} tick={axisTick} />
+          <YAxis domain={[0, maxHours]} ticks={ticks} tickLine={false} axisLine={false} tick={axisTick} unit="h" />
+          <Tooltip formatter={(value) => [`${value} 時間`, '睡眠時間']} {...tooltipProps} />
+          <Bar
+            dataKey="hours"
+            fill={CATEGORY_COLORS.sleep}
+            stroke={CHART.ink}
+            strokeWidth={2}
+            radius={[6, 6, 0, 0]}
+            maxBarSize={26}
+            isAnimationActive={false}
+          />
           {goalHours && (
             <ReferenceLine
               y={goalHours}
-              stroke={COLORS.goal}
-              strokeDasharray="5 3"
-              label={{ value: '目標', position: 'insideTopRight', fill: COLORS.goal, fontSize: 11 }}
+              stroke={CHART.ink}
+              strokeWidth={2}
+              strokeDasharray="6 4"
+              label={{ value: '目標', position: 'insideTopRight', fill: CHART.ink, fontSize: 11, fontWeight: 700 }}
             />
           )}
         </BarChart>

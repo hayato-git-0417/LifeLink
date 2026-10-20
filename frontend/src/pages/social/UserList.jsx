@@ -11,7 +11,7 @@ export default function UserList({ users, emptyText, onFollowChange, onError }) 
       {users.map((user) => (
         <li key={user.id} className={styles.userRow}>
           <Link to={`/users/${user.id}`} className={styles.userLink}>
-            <UserIcon icon={user.icon} size={52} />
+            <UserIcon icon={user.icon} size={48} />
             <span className={styles.userName}>{user.name}</span>
           </Link>
           <FollowButton

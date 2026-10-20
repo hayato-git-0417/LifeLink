@@ -1,14 +1,19 @@
 // 他人のマイページ（spec.md 5章【仮】）。公開するのは アイコン・名前・フォロー数・キャラの状態・総合ポイントだけ。
-// 相互フォローの人は「記録の詳細を見る」から詳細画面（読み取り専用）を開ける。自分の id ならマイページへ移る
+// キャラは小さな部屋に立たせて見せる。相互フォローの人は「記録の詳細を見る」から詳細画面（読み取り専用）を開ける。
+// 自分の id ならマイページへ移る
 import { useEffect, useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { api } from '../../api/client.js'
 import { useAuth } from '../../auth/useAuth.js'
 import AppShell from '../../components/AppShell.jsx'
 import ErrorList from '../../components/ErrorList.jsx'
+import { ChartIcon } from '../../components/icons.jsx'
+import form from '../../styles/form.module.css'
 import FollowButton from './FollowButton.jsx'
 import ProfileHeader from './ProfileHeader.jsx'
 import styles from './Social.module.css'
+
+const MAX_POINTS = 1000
 
 export default function UserPage() {
   const { id } = useParams()
@@ -55,26 +60,45 @@ export default function UserPage() {
               />
             </ProfileHeader>
             {user.character && (
-              <section className={`${styles.card} ${styles.character}`}>
-                <img src={user.character.image_path} alt="" width="160" height="160" className={styles.characterImage} />
+              <section className={`${form.card} ${styles.characterCard}`}>
+                <div className={styles.miniRoom}>
+                  <span className={styles.miniRug} aria-hidden="true" />
+                  <img src={user.character.image_path} alt="" width="132" height="132" className={styles.characterImage} />
+                </div>
                 <div className={styles.characterBody}>
-                  <span className={styles.characterName}>{user.character.name}</span>
-                  <span>
-                    状態: <strong>{user.character.state_label}</strong>
-                  </span>
-                  <span>
-                    気分: <strong>{user.character.mood.label}</strong>
-                  </span>
-                  <span className={styles.points}>総合 {user.character.total_points} / 1000 P</span>
+                  <h2 className={styles.characterName}>{user.character.name}</h2>
+                  <dl className={styles.characterStats}>
+                    <div>
+                      <dt>状態</dt>
+                      <dd>{user.character.state_label}</dd>
+                    </div>
+                    <div>
+                      <dt>気分</dt>
+                      <dd>{user.character.mood.label}</dd>
+                    </div>
+                  </dl>
+                  <div className={styles.points}>
+                    <span className={styles.pointsLabel}>総合ポイント</span>
+                    <strong>
+                      {user.character.total_points}
+                      <small> / {MAX_POINTS} P</small>
+                    </strong>
+                    <span className={styles.pointsBar}>
+                      {user.character.total_points > 0 && (
+                        <span style={{ width: `${Math.min(user.character.total_points / MAX_POINTS, 1) * 100}%` }} />
+                      )}
+                    </span>
+                  </div>
                 </div>
               </section>
             )}
             {user.mutual && (
-              <Link to={`/users/${user.id}/details`} className={styles.detailsLink}>
+              <Link to={`/users/${user.id}/details`} className={`${form.button} ${form.block}`}>
+                <ChartIcon size={20} />
                 記録の詳細を見る（相互フォロー）
               </Link>
             )}
-            <p className={styles.note}>※ キャラの状態とポイントは、その人が最後にアプリを開いたときのものです。</p>
+            <p className={styles.note}>キャラの状態とポイントは、その人が最後にアプリを開いたときのものです。</p>
           </>
         )}
       </div>

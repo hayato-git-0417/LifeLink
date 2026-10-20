@@ -11,20 +11,20 @@ export default function ProfileHeader({ user, followersCount, followingsCount, l
   ]
   return (
     <section className={styles.profile}>
-      <UserIcon icon={user.icon} size={96} />
+      <UserIcon icon={user.icon} size={84} />
       <div className={styles.profileBody}>
         <h2 className={styles.profileName}>{user.name}</h2>
         <div className={styles.counts}>
           {counts.map((count) =>
             linkCounts ? (
-              <Link key={count.tab} to={`/follows?tab=${count.tab}`} className={styles.count}>
+              <Link key={count.tab} to={`/follows?tab=${count.tab}`} className={`${styles.count} ${styles.countLink}`}>
                 <strong>{count.value}</strong>
-                <span>{count.label}</span>
+                {count.label}
               </Link>
             ) : (
               <span key={count.tab} className={styles.count}>
                 <strong>{count.value}</strong>
-                <span>{count.label}</span>
+                {count.label}
               </span>
             ),
           )}
