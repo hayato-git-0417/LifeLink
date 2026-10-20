@@ -1,18 +1,20 @@
 // ホーム（spec.md 3.4・4章）。GET /api/v1/home を表示する。
-// レイアウト: 部屋の背景を画面いっぱいに出し、左上にユーザー（押すとマイページ）、右上に通知ベル、
-// その下に「生活リズム」カード（今日の達成度）、中央にキャラ、下に記録ボタン4つ（食事・ワーク・運動・睡眠）。
-// 上部ヘッダーは出さない。下部ナビ（ホーム／マイページ）はほかの画面と同じく出す。
+// レイアウト: 部屋のイラスト（Room.jsx）を画面いっぱいに出し、左上にユーザー（押すとマイページ）、右上に通知ベルとメニュー、
+// その下に「生活リズム」カード（今日の達成度。押すと記録の詳細）、中央にキャラと吹き出し、下に記録ボタン4つ（食事・ワーク・運動・睡眠）。
+// 上部ヘッダー・下部ナビは出さない（マイページはユーザー、設定などはメニューから）。
 // 睡眠・ワークは画面遷移せず、その場で start / finish を呼ぶ。計測中は「取消」も出す。
-// 押したあとはホームを読み直すので、キャラの状態がすぐ変わる。
+// 押したあとはホームを読み直すので、キャラの状態がすぐ変わる。睡眠中は夜の部屋になる
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../../api/client.js'
 import { useAuth } from '../../auth/useAuth.js'
-import AppShell from '../../components/AppShell.jsx'
+import AppShell, { HeaderActions } from '../../components/AppShell.jsx'
 import ErrorList from '../../components/ErrorList.jsx'
+import { ChevronRightIcon, ExerciseIcon, FlameIcon, MealIcon, SleepIcon, SunIcon, WorkIcon } from '../../components/icons.jsx'
 import UserIcon from '../../components/UserIcon.jsx'
 import { formatElapsed, formatMinutes, formatTime } from '../../lib/format.js'
 import styles from './HomePage.module.css'
+import Room from './Room.jsx'
 
 // 生活リズムカードの並び（デザインの順）
 const ITEMS = [
@@ -21,6 +23,7 @@ const ITEMS = [
   { key: 'exercise', label: '運動' },
   { key: 'sleep', label: '睡眠' },
 ]
+const NOTICE_SECONDS = 5
 
 // 計測中は1秒ごとに今の時刻を更新する（ワークの経過時間）
 function useNow(active) {
@@ -34,7 +37,7 @@ function useNow(active) {
 }
 
 export default function HomePage() {
-  const { user, unreadCount, setUnreadCount } = useAuth()
+  const { user, setUnreadCount } = useAuth()
   const [home, setHome] = useState(null)
   const [errors, setErrors] = useState([])
   const [notice, setNotice] = useState('')
@@ -49,6 +52,13 @@ export default function HomePage() {
   useEffect(() => {
     load().catch((error) => setErrors(error.messages))
   }, [load])
+
+  // お知らせ（おはよう・おつかれさま）は少したったら消す
+  useEffect(() => {
+    if (!notice) return undefined
+    const timer = setTimeout(() => setNotice(''), NOTICE_SECONDS * 1000)
+    return () => clearTimeout(timer)
+  }, [notice])
 
   const sleepTimer = home?.timers.sleep
   const workTimer = home?.timers.work
@@ -83,68 +93,82 @@ export default function HomePage() {
   const sleeping = home?.character.state === 'sleeping'
 
   return (
-    <AppShell noHeader>
+    <AppShell bare>
       <div className={`${styles.room} ${sleeping ? styles.night : ''}`}>
+        <Room />
+
         <header className={styles.top}>
-          <Link to="/mypage" className={styles.userCard} aria-label="マイページ">
-            <UserIcon icon={user?.icon} size={44} />
+          <Link to="/mypage" className={styles.userCard}>
+            <UserIcon icon={user?.icon} size={42} />
             <span className={styles.userName}>{user?.name}</span>
             <span className={styles.streak}>
-              <span>継続日数</span>
+              <span className={styles.streakLabel}>継続日数</span>
               {/* 継続日数を返す API はまだないので仮表示（decisions.md） */}
-              <span>〇日🔥</span>
+              <span className={styles.streakValue}>
+                〇日
+                <FlameIcon size={16} />
+              </span>
             </span>
+            <span className={styles.srOnly}>（マイページを開く）</span>
           </Link>
-          <Link to="/notifications" className={styles.bell} aria-label={`通知（未読 ${unreadCount} 件）`}>
-            <BellIcon />
-            {unreadCount > 0 && <span className={styles.badge}>{unreadCount > 99 ? '99+' : unreadCount}</span>}
-          </Link>
+          <div className={styles.actions}>
+            <HeaderActions />
+          </div>
         </header>
 
         {home && (
-          <section className={styles.rhythm} aria-label="今日の生活リズム">
-            <p className={styles.rhythmTitle}>
-              生活リズム <strong>{Math.round(home.today.total_percent)}%</strong>
-            </p>
+          <Link to="/details" className={styles.rhythm}>
+            <span className={styles.rhythmHead}>
+              <span className={styles.rhythmTitle}>生活リズム</span>
+              <strong className={styles.rhythmTotal}>{Math.round(home.today.total_percent)}%</strong>
+              <ChevronRightIcon size={16} className={styles.rhythmMore} />
+            </span>
             {ITEMS.map(({ key, label }) => {
               const score = Math.round(home.today.scores[key])
               return (
-                <div key={key} className={styles.row}>
+                <span key={key} className={styles.row}>
                   <span className={styles.rowLabel}>{label}</span>
                   <span className={styles.bar}>
                     {/* ワークは 100% を超えることがあるので、ゲージは 100 で頭打ち */}
-                    <span className={`${styles.fill} ${styles[`fill_${key}`]}`} style={{ width: `${Math.min(score, 100)}%` }} />
+                    {score > 0 && (
+                      <span className={`${styles.fill} ${styles[`fill_${key}`]}`} style={{ width: `${Math.min(score, 100)}%` }} />
+                    )}
                   </span>
                   <span className={styles.percent}>{score}%</span>
-                </div>
+                </span>
               )
             })}
-          </section>
+            <span className={styles.srOnly}>（記録の詳細を見る）</span>
+          </Link>
         )}
 
-        <div className={styles.messages}>
-          {!home && !errors.length && <p className={styles.loading}>読み込み中…</p>}
-          {notice && <p className={styles.notice}>{notice}</p>}
-          <ErrorList errors={errors} />
-        </div>
-
         <section className={styles.stage}>
-          {home && (
+          {!home ? (
+            !errors.length && <p className={styles.loading}>読み込み中…</p>
+          ) : (
             <>
               {home.message && <p className={styles.bubble}>{home.message}</p>}
-              <img
-                className={`${styles.character} ${styles[`anim_${home.character.state}`] || styles.anim_normal}`}
-                src={home.character.image_path}
-                alt={`${home.character.name}（${home.character.state_label}）`}
-              />
+              <div className={styles.spot}>
+                <span className={styles.rug} aria-hidden="true" />
+                <img
+                  className={`${styles.character} ${styles[`anim_${home.character.state}`] || styles.anim_normal}`}
+                  src={home.character.image_path}
+                  alt={`${home.character.name}（${home.character.state_label}）`}
+                />
+              </div>
             </>
           )}
         </section>
 
+        <div className={styles.toasts} aria-live="polite">
+          {notice && <p className={styles.notice}>{notice}</p>}
+          <ErrorList errors={errors} />
+        </div>
+
         {home && (
           <nav className={styles.buttons} aria-label="記録">
             <Link to="/meals" className={`${styles.button} ${styles.meal}`}>
-              <MealIcon />
+              <MealIcon className={styles.buttonIcon} />
               <span>食事</span>
             </Link>
             <TimerSlot
@@ -161,14 +185,14 @@ export default function HomePage() {
                 title={sleeping ? '睡眠中はワークを開始できません' : undefined}
                 aria-label={workTimer ? 'ワーク終了' : 'ワーク開始'}
               >
-                <WorkIcon />
+                <WorkIcon className={styles.buttonIcon} />
                 <span className={styles.timerText}>
                   {workTimer ? formatElapsed(now - new Date(workTimer.started_at).getTime()) : 'ワーク'}
                 </span>
               </button>
             </TimerSlot>
             <Link to="/exercise" className={`${styles.button} ${styles.exercise}`}>
-              <ExerciseIcon />
+              <ExerciseIcon className={styles.buttonIcon} />
               <span>運動</span>
             </Link>
             <TimerSlot
@@ -184,8 +208,9 @@ export default function HomePage() {
                 onClick={() => act('sleep_records', sleepTimer ? 'finish' : 'start')}
                 aria-label={sleepTimer ? `起床（${formatTime(sleepTimer.slept_at)} から睡眠中）` : '就寝'}
               >
-                <SleepIcon />
-                <span className={styles.timerText}>{sleepTimer ? `${formatTime(sleepTimer.slept_at)}〜` : '睡眠'}</span>
+                {sleepTimer ? <SunIcon className={styles.buttonIcon} /> : <SleepIcon className={styles.buttonIcon} />}
+                <span className={styles.timerText}>{sleepTimer ? '起床' : '睡眠'}</span>
+                {sleepTimer && <small className={styles.since}>{formatTime(sleepTimer.slept_at)}〜</small>}
               </button>
             </TimerSlot>
           </nav>
@@ -206,68 +231,5 @@ function TimerSlot({ active, busy, cancelLabel, onCancel, children }) {
         </button>
       )}
     </div>
-  )
-}
-
-function BellIcon() {
-  return (
-    <svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true">
-      <path
-        fill="currentColor"
-        d="M12 22a2.5 2.5 0 0 0 2.45-2h-4.9A2.5 2.5 0 0 0 12 22Zm7-6V11a7 7 0 0 0-5.5-6.84V3.5a1.5 1.5 0 0 0-3 0v.66A7 7 0 0 0 5 11v5l-2 2v1h18v-1l-2-2Z"
-      />
-    </svg>
-  )
-}
-
-// 記録ボタンのアイコン（デザインの線画に合わせた SVG）
-function MealIcon() {
-  return (
-    <svg viewBox="0 0 32 32" className={styles.buttonIcon} aria-hidden="true">
-      <path fill="currentColor" d="M7 3h2v8h1.5V3h2v8H14V3h2v9a4 4 0 0 1-3 3.87V29h-3V15.87A4 4 0 0 1 7 12V3Z" />
-      <path fill="currentColor" d="M22 3c3 0 4 4 4 8s-1.5 5-3 5.5V29h-3V3h2Z" />
-    </svg>
-  )
-}
-
-function WorkIcon() {
-  return (
-    <svg viewBox="0 0 32 32" className={styles.buttonIcon} aria-hidden="true">
-      <path
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2.2"
-        strokeLinejoin="round"
-        d="M3 8c4-1.5 8-1.5 12 1v17c-4-2.5-8-2.5-12-1V8Zm12 1c3-1.8 6-2.3 9-1.6M15 26c3-1.8 6-2.3 9-1.6V20"
-      />
-      <path fill="currentColor" d="m26.5 6 2.5 2.5-9 9-3.5 1 1-3.5 9-9Z" />
-    </svg>
-  )
-}
-
-function ExerciseIcon() {
-  return (
-    <svg viewBox="0 0 32 32" className={styles.buttonIcon} aria-hidden="true">
-      <rect x="3" y="11" width="4" height="10" rx="1.2" fill="currentColor" />
-      <rect x="7.5" y="8" width="4" height="16" rx="1.2" fill="currentColor" />
-      <rect x="11.5" y="14.5" width="9" height="3" fill="currentColor" />
-      <rect x="20.5" y="8" width="4" height="16" rx="1.2" fill="currentColor" />
-      <rect x="25" y="11" width="4" height="10" rx="1.2" fill="currentColor" />
-    </svg>
-  )
-}
-
-function SleepIcon() {
-  return (
-    <svg viewBox="0 0 32 32" className={styles.buttonIcon} aria-hidden="true">
-      <path
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2.2"
-        strokeLinejoin="round"
-        d="M3 6v21M3 21h26v6M3 16h26v5M11 16v-3a2 2 0 0 1 2-2h12a4 4 0 0 1 4 4v1"
-      />
-      <rect x="5" y="12" width="5" height="4" rx="1.5" fill="currentColor" />
-    </svg>
   )
 }
