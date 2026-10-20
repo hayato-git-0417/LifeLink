@@ -7,6 +7,7 @@ import HomePage from './pages/home/HomePage.jsx'
 import LoginPage from './pages/LoginPage.jsx'
 import MealFormPage from './pages/meals/MealFormPage.jsx'
 import MealListPage from './pages/meals/MealListPage.jsx'
+import MealsPage from './pages/meals/MealsPage.jsx'
 import NotificationsPage from './pages/notifications/NotificationsPage.jsx'
 import GoalEditPage from './pages/settings/GoalEditPage.jsx'
 import ProfileEditPage from './pages/settings/ProfileEditPage.jsx'
@@ -15,8 +16,8 @@ import FollowsPage from './pages/social/FollowsPage.jsx'
 import UserPage from './pages/social/UserPage.jsx'
 import SignupPage from './signup/SignupPage.jsx'
 
-// グラフ（Recharts）を使う画面は開いたときに読み込む（最初に読む JS を小さくするため）
-const MealsPage = lazy(() => import('./pages/meals/MealsPage.jsx'))
+// グラフ（Recharts）を使う画面は開いたときに読み込む（最初に読む JS を小さくするため）。
+// 食事トップの円グラフは CSS で描くので（components/Donut.jsx）ふつうに読み込む
 const ExercisePage = lazy(() => import('./pages/exercise/ExercisePage.jsx'))
 const DetailsPage = lazy(() => import('./pages/details/DetailsPage.jsx'))
 const MyPage = lazy(() => import('./pages/social/MyPage.jsx'))

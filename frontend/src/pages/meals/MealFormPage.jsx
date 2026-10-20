@@ -1,12 +1,13 @@
 // 食事を記録（デザイン p.14）／修正（/meals/:id/edit）。写真・内容・区分・時間・栄養値・コメント。
 // 写真はスマホのカメラ／ファイル選択（capture="environment"）。送信は multipart（meal[photo]）。
 // 今回は手入力だけ（spec.md 6章）。デザインの内容の候補ボタンはスキャン用なので、自由入力の1行にする。
-// スマホ（375×667）でスクロールしないように、写真は小さな枠で内容・時間の横に置き、栄養は2列、コメントは折りたたむ
+// スマホ（375×667）でスクロールを減らすため、写真は小さな枠で内容・時間の横に置き、栄養は2列、コメントは折りたたむ
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { api } from '../../api/client.js'
 import AppShell from '../../components/AppShell.jsx'
 import ErrorList from '../../components/ErrorList.jsx'
+import { CameraIcon } from '../../components/icons.jsx'
 import { fromDateTimeLocal, toDateTimeLocal } from '../../lib/format.js'
 import form from '../../styles/form.module.css'
 import styles from './Meals.module.css'
@@ -125,119 +126,127 @@ export default function MealFormPage() {
     <AppShell title={editing ? '食事を修正' : '食事を記録'} backTo="/meals">
       <ErrorList errors={errors} />
       {!meal ? (
-        !errors.length && <p className={styles.loading}>読み込み中…</p>
+        !errors.length && <p className={form.loading}>読み込み中…</p>
       ) : (
-        <form className={`${form.form} ${styles.mealForm}`} onSubmit={handleSubmit} noValidate>
-          <div className={styles.formTop}>
-            <div className={styles.photoCol}>
-              <label className={styles.photoBox}>
-                {shownPhoto ? (
-                  <img src={shownPhoto} alt="食事の写真" className={styles.photo} />
-                ) : (
-                  <span className={styles.photoEmpty}>
-                    <span className={styles.photoPlus}>＋</span>
-                    撮影する
-                  </span>
+        <form className={form.form} onSubmit={handleSubmit} noValidate>
+          <section className={`${form.card} ${styles.mealForm}`}>
+            <div className={styles.formTop}>
+              <div className={styles.photoCol}>
+                <label className={`${styles.photoBox} ${shownPhoto ? styles.photoBoxFilled : ''}`}>
+                  {shownPhoto ? (
+                    <img src={shownPhoto} alt="食事の写真" className={styles.photo} />
+                  ) : (
+                    <span className={styles.photoEmpty}>
+                      <CameraIcon size={28} />
+                      写真を撮る
+                    </span>
+                  )}
+                  <input
+                    ref={fileInput}
+                    className={styles.fileInput}
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    onChange={choosePhoto}
+                  />
+                </label>
+                {shownPhoto && (
+                  <button type="button" className={`${form.linkButton} ${styles.smallLink}`} onClick={clearPhoto}>
+                    写真を外す
+                  </button>
                 )}
-                <input
-                  ref={fileInput}
-                  className={styles.fileInput}
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  onChange={choosePhoto}
-                />
-              </label>
-              {shownPhoto && (
-                <button type="button" className={`${form.linkButton} ${styles.smallLink}`} onClick={clearPhoto}>
-                  写真を外す
-                </button>
-              )}
-            </div>
+              </div>
 
-            <div className={styles.topFields}>
-              <label className={form.field}>
-                <span className={styles.smallLabel}>内容</span>
-                <input
-                  className={form.input}
-                  type="text"
-                  maxLength={255}
-                  placeholder="例: ご飯、焼き魚"
-                  value={meal.content}
-                  onChange={(event) => update({ content: event.target.value })}
-                />
-              </label>
-              <label className={form.field}>
-                <span className={styles.smallLabel}>時間</span>
-                <input
-                  className={form.input}
-                  type="datetime-local"
-                  value={meal.eaten_at}
-                  onChange={(event) => update({ eaten_at: event.target.value })}
-                />
-              </label>
-            </div>
-          </div>
-
-          <fieldset className={styles.typeRow}>
-            <legend className={styles.smallLabel}>区分</legend>
-            <div className={styles.mealTypes}>
-              {MEAL_TYPES.map(({ key, label }) => (
-                <label key={key} className={`${styles.chip} ${meal.meal_type === key ? styles.chipOn : ''}`}>
+              <div className={styles.topFields}>
+                <label className={styles.field}>
+                  <span className={styles.smallLabel}>内容</span>
                   <input
-                    type="radio"
-                    name="meal_type"
-                    checked={meal.meal_type === key}
-                    onChange={() => update({ meal_type: key })}
+                    className={`${form.input} ${styles.compactInput}`}
+                    type="text"
+                    maxLength={255}
+                    placeholder="例: ご飯、焼き魚"
+                    value={meal.content}
+                    onChange={(event) => update({ content: event.target.value })}
                   />
-                  {label}
                 </label>
-              ))}
-            </div>
-          </fieldset>
-
-          <fieldset className={styles.nutrientSet}>
-            <legend className={styles.smallLabel}>栄養（分かる範囲で）</legend>
-            <div className={styles.nutrientInputs}>
-              {NUTRIENTS.map(({ key, label, unit, step }) => (
-                <label key={key} className={styles.nutrientRow}>
-                  <span>{label}</span>
+                <label className={styles.field}>
+                  <span className={styles.smallLabel}>時間</span>
                   <input
-                    className={`${form.input} ${styles.number}`}
-                    type="number"
-                    inputMode="decimal"
-                    min="0"
-                    step={step}
-                    value={meal[key]}
-                    onChange={(event) => update({ [key]: event.target.value })}
+                    className={`${form.input} ${styles.compactInput}`}
+                    type="datetime-local"
+                    value={meal.eaten_at}
+                    onChange={(event) => update({ eaten_at: event.target.value })}
                   />
-                  <span>{unit}</span>
                 </label>
-              ))}
+              </div>
             </div>
-          </fieldset>
 
-          <details className={styles.commentBox} open={Boolean(meal.comment)}>
-            <summary className={styles.smallLabel}>コメント（任意）</summary>
-            <textarea
-              className={`${form.input} ${styles.comment}`}
-              rows={2}
-              aria-label="コメント"
-              value={meal.comment}
-              onChange={(event) => update({ comment: event.target.value })}
-            />
-          </details>
+            <fieldset className={styles.typeRow}>
+              <legend className={styles.smallLabel}>区分</legend>
+              <div className={styles.mealTypes}>
+                {MEAL_TYPES.map(({ key, label }) => (
+                  <label key={key} className={`${styles.chip} ${meal.meal_type === key ? styles.chipOn : ''}`}>
+                    <input
+                      type="radio"
+                      name="meal_type"
+                      checked={meal.meal_type === key}
+                      onChange={() => update({ meal_type: key })}
+                    />
+                    {label}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
 
-          <div className={`${form.actions} ${editing ? form.actionsBetween : form.actionsCenter}`}>
-            {editing && (
-              <button type="button" className={`${form.button} ${styles.danger}`} onClick={handleDelete} disabled={busy}>
+            <fieldset className={styles.nutrientSet}>
+              <legend className={styles.smallLabel}>栄養（分かる範囲で）</legend>
+              <div className={styles.nutrientInputs}>
+                {NUTRIENTS.map(({ key, label, unit, step }) => (
+                  <label key={key} className={styles.nutrientField}>
+                    <span className={styles.nutrientFieldLabel}>{label}</span>
+                    <span className={styles.withUnit}>
+                      <input
+                        className={`${form.input} ${styles.number}`}
+                        type="number"
+                        inputMode="decimal"
+                        min="0"
+                        step={step}
+                        value={meal[key]}
+                        onChange={(event) => update({ [key]: event.target.value })}
+                      />
+                      <span className={styles.unit}>{unit}</span>
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+
+            <details className={styles.commentBox} open={Boolean(meal.comment)}>
+              <summary className={styles.smallLabel}>コメント（任意）</summary>
+              <textarea
+                className={`${form.input} ${styles.comment}`}
+                rows={2}
+                aria-label="コメント"
+                value={meal.comment}
+                onChange={(event) => update({ comment: event.target.value })}
+              />
+            </details>
+          </section>
+
+          {editing ? (
+            <div className={`${form.actions} ${form.actionsBetween}`}>
+              <button type="button" className={`${form.button} ${form.danger}`} onClick={handleDelete} disabled={busy}>
                 削除
               </button>
-            )}
-            <button type="submit" className={`${form.button} ${form.primary}`} disabled={busy}>
-              {busy ? '送信中…' : editing ? '保存する' : '記録する'}
+              <button type="submit" className={`${form.button} ${form.primary}`} disabled={busy}>
+                {busy ? '送信中…' : '保存する'}
+              </button>
+            </div>
+          ) : (
+            <button type="submit" className={`${form.button} ${form.primary} ${form.block}`} disabled={busy}>
+              {busy ? '送信中…' : '記録する'}
             </button>
-          </div>
+          )}
         </form>
       )}
     </AppShell>
