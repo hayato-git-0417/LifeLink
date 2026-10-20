@@ -16,6 +16,14 @@ function formatShort(iso) {
   return `${date.getMonth() + 1}/${date.getDate()} ${pad(date.getHours())}:${pad(date.getMinutes())}`
 }
 
+// 終了は開始と同じ日なら時刻だけ（"15:30"）、日をまたいだら "10/7 06:30"
+function formatFinish(startIso, finishIso) {
+  const start = new Date(startIso)
+  const finish = new Date(finishIso)
+  if (start.toDateString() !== finish.toDateString()) return formatShort(finishIso)
+  return `${pad(finish.getHours())}:${pad(finish.getMinutes())}`
+}
+
 export default function TimedRecordList({ kind, records, readOnly = false, onChanged, onError }) {
   const config = TIMED_KINDS[kind]
   const [editingId, setEditingId] = useState(null)
@@ -52,22 +60,30 @@ export default function TimedRecordList({ kind, records, readOnly = false, onCha
           <li key={record.id} className={styles.record}>
             <div className={styles.recordMain}>
               {config.hasTitle && record.title && <span className={styles.recordTitle}>{record.title}</span>}
-              <span>
-                {config.startLabel} {formatShort(record[config.start])} → {config.finishLabel}{' '}
-                {record.in_progress ? '（計測中）' : formatShort(record[config.finish])}
+              <span className={styles.recordTimes}>
+                <span className={styles.nowrap}>
+                  {config.startLabel} <b>{formatShort(record[config.start])}</b>
+                </span>
+                <span className={styles.arrow} aria-hidden="true">
+                  →
+                </span>
+                <span className={styles.nowrap}>
+                  {config.finishLabel}{' '}
+                  <b>{record.in_progress ? '計測中' : formatFinish(record[config.start], record[config.finish])}</b>
+                </span>
               </span>
               {!record.in_progress && (
-                <span className={styles.recordDuration}>
-                  {config.durationLabel} {formatMinutes(record.duration_minutes)}
+                <span className={styles.recordSub}>
+                  {config.durationLabel} <b>{formatMinutes(record.duration_minutes)}</b>
                 </span>
               )}
             </div>
             {!readOnly && !record.in_progress && (
               <div className={styles.recordActions}>
-                <button type="button" className={form.linkButton} onClick={() => setEditingId(record.id)}>
+                <button type="button" className={styles.smallButton} onClick={() => setEditingId(record.id)}>
                   修正
                 </button>
-                <button type="button" className={`${form.linkButton} ${styles.danger}`} onClick={() => remove(record)}>
+                <button type="button" className={`${styles.smallButton} ${styles.smallDanger}`} onClick={() => remove(record)}>
                   削除
                 </button>
               </div>
