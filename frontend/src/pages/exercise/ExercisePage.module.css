@@ -1,39 +1,54 @@
-.loading,
-.empty {
-  padding: 16px 0;
-  color: var(--color-text-sub);
-  text-align: center;
-}
-
+/* 運動。運動の色（ピンク）を印・チェック・グラフに使う */
 .page {
   display: flex;
   flex-direction: column;
   gap: 14px;
 }
 
-.heading {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 4px 14px;
-  margin: 0 0 6px;
-  color: var(--color-text-sub);
-  font-size: 1.1rem;
-  font-weight: 500;
-}
-
-.warning {
-  color: var(--color-error);
+.empty {
+  margin: 0;
+  padding: 8px 0;
+  color: var(--ink-soft);
   font-size: 0.9rem;
 }
 
+.progress {
+  padding: 1px 10px;
+  border: var(--line);
+  border-radius: 999px;
+  background: var(--paper);
+  font-size: 0.85rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.progressDone {
+  background: var(--exercise);
+}
+
+/* 未完了の警告 */
+.warning {
+  display: inline-block;
+  margin: 0 0 8px;
+  padding: 2px 10px;
+  border-radius: 8px;
+  background: var(--danger-soft);
+  color: var(--danger);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+/* タスク（パネルの中を点線で区切る） */
 .tasks {
   display: flex;
   flex-direction: column;
-  gap: 8px;
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+.tasks li + li {
+  border-top: var(--dash);
 }
 
 .task {
@@ -41,12 +56,13 @@
   align-items: center;
   gap: 12px;
   width: 100%;
-  min-height: 46px;
-  padding: 6px 12px;
+  min-height: 50px;
+  padding: 6px 2px;
   border: none;
-  border-radius: 12px;
-  background: var(--color-surface);
-  font-size: 1.05rem;
+  background: none;
+  color: var(--ink);
+  font-size: 1rem;
+  font-weight: 700;
   text-align: left;
 }
 
@@ -57,66 +73,73 @@
   justify-content: center;
   width: 28px;
   height: 28px;
-  border: 2px solid var(--color-text);
-  border-radius: 6px;
-  background: var(--color-surface);
-  color: #fff;
-  font-size: 1.3rem;
+  border: var(--line);
+  border-radius: 9px;
+  background: var(--paper);
+  color: var(--ink);
 }
 
 .done .check {
-  border-color: #6f93b3;
-  background: #8aaecb;
-}
-
-.done .taskTitle {
-  color: var(--color-text-sub);
+  background: var(--exercise);
 }
 
 .taskTitle {
   flex: 1;
+  min-width: 0;
 }
 
-.fire {
-  font-size: 1.4rem;
-}
-
-.progress {
-  margin: 4px 0 0;
-  color: var(--color-text-sub);
-  font-size: 0.85rem;
-  text-align: right;
+.doneLabel {
+  flex-shrink: 0;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: var(--exercise);
+  font-size: 0.75rem;
 }
 
 /* 距離・km・メモ・記録ボタンを1行に */
 .distanceForm {
   display: grid;
-  grid-template-columns: 72px auto minmax(0, 1fr) auto;
+  grid-template-columns: 96px minmax(0, 1fr) auto;
   align-items: center;
   gap: 8px;
 }
 
-.km,
-.memo {
-  min-height: 44px;
+.kmField {
+  position: relative;
+  display: flex;
 }
 
 .km {
+  padding-right: 34px;
   text-align: right;
+}
+
+.kmUnit {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  color: var(--ink-soft);
+  font-size: 0.85rem;
+  font-weight: 700;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.memo {
+  min-width: 0;
 }
 
 .add {
   min-width: 0;
-  min-height: 44px;
-  padding: 0 14px;
+  padding: 0 16px;
 }
 
+/* 今日の記録 */
 .records {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  max-height: 84px;
-  margin: 8px 0 0;
+  max-height: 96px;
+  margin: 10px 0 0;
   padding: 0;
   overflow-y: auto;
   list-style: none;
@@ -125,27 +148,53 @@
 .records li {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 2px 10px;
-  border-radius: 8px;
-  background: var(--color-surface);
+  gap: 10px;
+  min-height: 36px;
   font-size: 0.9rem;
 }
 
+.records li + li {
+  border-top: var(--dash);
+}
+
+.recordTime {
+  color: var(--ink-soft);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.recordKm {
+  font-weight: 700;
+}
+
+.recordMemo {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ink-soft);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
 .remove {
-  width: 32px;
-  height: 32px;
-  border: 1px solid var(--color-border-light);
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 2px solid var(--line-soft);
   border-radius: 50%;
-  background: var(--color-surface);
-  color: var(--color-text-sub);
+  background: var(--paper);
+  color: var(--ink-soft);
 }
 
 .chart {
-  margin-top: 8px;
+  margin-top: 12px;
 }
 
 .unit {
-  color: var(--color-text-sub);
-  font-size: 0.8rem;
+  color: var(--ink-soft);
+  font-size: 0.78rem;
+  font-weight: 700;
 }
