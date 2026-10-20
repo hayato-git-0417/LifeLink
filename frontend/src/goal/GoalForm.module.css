@@ -1,86 +1,176 @@
-.section {
+/* 目標の入力（睡眠・運動・ワーク・食事）。項目ごとにパネルを分け、見出しに項目の色の印をつける */
+.sections {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 12px;
 }
 
-/* 見出しと選択肢を1行に（睡眠） */
-.titleRow {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 4px 20px;
-}
-
-/* 「睡眠・運動・ワーク / 食事」のタブ */
 .tabs {
-  display: grid;
   grid-template-columns: 3fr 2fr;
-  gap: 4px;
+  grid-auto-flow: row;
+}
+
+.below {
+  margin-top: 8px;
+}
+
+/* 睡眠の「時間帯／時間」の切り替え（見出しの右） */
+.switch {
+  flex-shrink: 0;
   padding: 3px;
-  border: 1px solid var(--color-border-light);
-  border-radius: var(--radius);
-  background: var(--color-input);
+  border-radius: 12px;
 }
 
-.tab {
-  min-height: 34px;
-  border: none;
+.switchItem {
+  position: relative;
+  min-height: 30px;
+  padding: 2px 12px;
   border-radius: 8px;
-  background: transparent;
-  font-size: 0.95rem;
+  font-size: 0.85rem;
+  cursor: pointer;
 }
 
-.tabActive {
-  background: var(--color-primary);
-  color: var(--color-on-primary);
+.switchItem input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.switchItem:has(input:focus-visible) {
+  outline: 3px solid rgb(74 58 46 / 0.45);
+  outline-offset: 1px;
+}
+
+/* 「7 時間 30 分」 */
+.hoursMinutes {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-weight: 700;
 }
 
-/* 運動タスク: 「項目1」・入力・削除を1行に */
+.count {
+  color: var(--ink-soft);
+  font-size: 0.82rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 運動タスク: 印・入力・削除を1行に */
+.tasks {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
 .task {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.taskLabel {
+.taskDot {
   flex-shrink: 0;
-  width: 3.2em;
-  color: var(--color-text-sub);
-  font-size: 0.85rem;
+  width: 10px;
+  height: 10px;
+  border: 2px solid var(--ink);
+  border-radius: 50%;
+  background: var(--exercise);
 }
 
 .taskInput {
   flex: 1;
   min-width: 0;
-  min-height: 40px;
-  border-radius: 4px;
+  min-height: 42px;
 }
 
 .remove {
+  display: inline-flex;
   flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
   width: 36px;
   height: 36px;
-  border: 1px solid var(--color-border-light);
+  border: 2px solid var(--line-soft);
   border-radius: 50%;
-  background: var(--color-surface);
-  color: var(--color-text-sub);
-  font-size: 1.1rem;
+  background: var(--paper);
+  color: var(--ink-soft);
 }
 
-/* 栄養5項目は2列 */
+.remove:hover {
+  border-color: var(--ink);
+  color: var(--ink);
+}
+
+/* 項目を追加（点線の枠） */
+.add {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  min-height: 42px;
+  margin-top: 10px;
+  border: 2px dashed var(--line-soft);
+  border-radius: 12px;
+  background: transparent;
+  color: var(--ink);
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.add:hover {
+  border-color: var(--ink-soft);
+}
+
+/* 栄養5項目は2列（名前の下に入力と単位） */
 .nutrients {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 6px 10px;
+  gap: 8px 12px;
 }
 
 .nutrient {
-  display: grid;
-  grid-template-columns: 4.8em minmax(0, 1fr) 2.3em;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.nutrientLabel {
+  color: var(--ink-soft);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.withUnit {
+  display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
+}
+
+.nutrientInput {
+  min-width: 0;
+  min-height: 40px;
+  padding: 4px 10px;
+  text-align: right;
+}
+
+.unit {
+  flex-shrink: 0;
+  width: 2.2em;
+  color: var(--ink-soft);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.reset {
+  display: block;
+  margin: 10px 0 0 auto;
+  padding: 0;
   font-size: 0.85rem;
 }
 
@@ -95,38 +185,15 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
-  font-size: 0.85rem;
 }
 
 .timeInput {
   min-width: 0;
-  min-height: 40px;
-  padding: 6px;
-}
-
-.nutrientLabel {
-  color: var(--color-text-sub);
-}
-
-.nutrientInput {
-  min-height: 38px;
-  padding: 4px 8px;
-  text-align: right;
-}
-
-.unit {
-  color: var(--color-text-sub);
-}
-
-.titleRowBetween {
-  justify-content: space-between;
-}
-
-.smallLink {
-  padding: 0;
-  font-size: 0.85rem;
+  min-height: 42px;
+  padding: 6px 8px;
 }
 
 .basis {
+  margin-bottom: 10px;
   font-size: 0.75rem;
 }

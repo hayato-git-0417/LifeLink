@@ -84,11 +84,9 @@ export default function GoalSetupPage() {
             loadingDefaults={busy}
           />
         )}
-        <div className={`${styles.actions} ${styles.actionsCenter}`}>
-          <button className={`${styles.button} ${styles.primary}`} type="submit" disabled={busy}>
-            {busy ? '保存中…' : '保存してはじめる'}
-          </button>
-        </div>
+        <button className={`${styles.button} ${styles.primary} ${styles.block}`} type="submit" disabled={busy}>
+          {busy ? '保存中…' : '保存してはじめる'}
+        </button>
       </form>
     </AppShell>
   )

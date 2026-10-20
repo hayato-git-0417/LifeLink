@@ -81,18 +81,16 @@ export default function GoalEditPage() {
       ) : (
         <form className={form.form} onSubmit={handleSubmit} noValidate>
           <ErrorList errors={errors} />
-          <p className={form.hint}>変えた目標は今日のスコアから使います。</p>
           <GoalTabs current={tab} onChange={setTab} />
           {tab === 'basics' ? (
             <GoalBasicsForm value={goal} onChange={updateGoal} />
           ) : (
             <MealGoalForm value={goal} onChange={updateGoal} basis={basis} onResetDefaults={resetDefaults} loadingDefaults={busy} />
           )}
-          <div className={`${form.actions} ${form.actionsCenter}`}>
-            <button className={`${form.button} ${form.primary}`} type="submit" disabled={busy}>
-              {busy ? '保存中…' : '設定を保存する'}
-            </button>
-          </div>
+          <button className={`${form.button} ${form.primary} ${form.block}`} type="submit" disabled={busy}>
+            {busy ? '保存中…' : '設定を保存する'}
+          </button>
+          <p className={`${form.hint} ${form.center}`}>変えた目標は今日のスコアから使います。</p>
         </form>
       )}
     </AppShell>
