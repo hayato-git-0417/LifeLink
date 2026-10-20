@@ -43,12 +43,10 @@ export default function ProfileEditPage() {
       <form className={form.form} onSubmit={handleSubmit} noValidate>
         <ErrorList errors={errors} />
         <ProfileFields value={profile} onChange={(changes) => setProfile((current) => ({ ...current, ...changes }))} />
-        <p className={form.hint}>※ 生年月日・性別を変えても、食事の目標は変わりません。変えるときは「目標の設定」で初期値を出し直してください。</p>
-        <div className={`${form.actions} ${form.actionsCenter}`}>
-          <button type="submit" className={`${form.button} ${form.primary}`} disabled={saving}>
-            {saving ? '保存中…' : '変更を保存する'}
-          </button>
-        </div>
+        <p className={form.hint}>生年月日・性別を変えても、食事の目標は変わりません。変えるときは「目標の設定」で初期値を出し直してください。</p>
+        <button type="submit" className={`${form.button} ${form.primary} ${form.block}`} disabled={saving}>
+          {saving ? '保存中…' : '変更を保存する'}
+        </button>
       </form>
     </AppShell>
   )

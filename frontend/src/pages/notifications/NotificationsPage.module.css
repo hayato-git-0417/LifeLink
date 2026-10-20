@@ -1,44 +1,30 @@
-.empty {
-  margin: 0;
-  padding: 40px 0;
-  color: var(--color-text-sub);
-  text-align: center;
-}
-
+/* 通知: 1枚のパネルの中を点線で区切る。未読は若葉色の「未読」と太字 */
 .list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
   margin: 0;
-  padding: 0;
+  padding: 4px 14px;
   list-style: none;
 }
 
 .item {
   display: flex;
   gap: 12px;
-  padding: 12px;
-  border: 1px solid var(--color-border-light);
-  border-radius: var(--radius);
-  background: rgb(255 255 255 / 0.6);
-  color: var(--color-text-sub);
+  padding: 12px 0;
+  color: var(--ink-soft);
+}
+
+.item + .item {
+  border-top: var(--dash);
 }
 
 .unread {
-  border-color: var(--color-primary);
-  border-left-width: 5px;
-  background: var(--color-surface);
-  color: var(--color-text);
+  color: var(--ink);
 }
 
 .mark {
   display: flex;
   flex-shrink: 0;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  font-size: 1.6rem;
 }
 
 .body {
@@ -49,22 +35,19 @@
 }
 
 .title {
-  font-size: 0.98rem;
-}
-
-.unread .title {
+  font-size: 0.96rem;
   font-weight: 700;
 }
 
 .newBadge {
   display: inline-block;
   margin-right: 6px;
-  padding: 0 6px;
-  border-radius: 8px;
-  background: var(--color-error);
-  color: var(--color-on-primary);
+  padding: 0 7px;
+  border: 2px solid var(--leaf);
+  border-radius: 999px;
+  background: var(--leaf-soft);
+  color: var(--leaf-text);
   font-size: 0.7rem;
-  font-weight: 700;
   vertical-align: 2px;
 }
 
@@ -76,10 +59,36 @@
   display: flex;
   flex-wrap: wrap;
   gap: 4px 12px;
-  color: var(--color-text-sub);
-  font-size: 0.78rem;
+  color: var(--ink-soft);
+  font-size: 0.76rem;
+  font-weight: 700;
 }
 
 .actorLink {
-  font-size: 0.82rem;
+  color: var(--ink);
+}
+
+/* 通知がないとき */
+.emptyBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin-top: 24px;
+  padding: 26px 18px;
+  border: 2px dashed var(--line-soft);
+  border-radius: var(--radius);
+  color: var(--ink-soft);
+  text-align: center;
+}
+
+.emptyTitle {
+  margin: 4px 0 0;
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.emptyText {
+  margin: 0;
+  font-size: 0.85rem;
 }
