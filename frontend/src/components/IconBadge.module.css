@@ -1,0 +1,30 @@
+.badge {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border: var(--line);
+  border-radius: 30%;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.meal {
+  background: var(--meal);
+}
+
+.work {
+  background: var(--work);
+}
+
+.exercise {
+  background: var(--exercise);
+}
+
+.sleep {
+  background: var(--sleep);
+}
+
+.leaf {
+  background: var(--leaf-soft);
+}

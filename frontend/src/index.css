@@ -1,29 +1,66 @@
-/* 共通の色・大きさ（docs/design の青いヘッダーと水色の背景）。各画面は CSS Modules で書き、色はここの変数を使う */
+/* 共通の色・文字・大きさ。キャラ（めばえ）の線画に合わせて「ココアの線・クリームの面・4色のパステル」で描く。
+   項目の色は 食事＝黄・ワーク＝緑・運動＝ピンク・睡眠＝青 に固定し、その項目のものにだけ使う。
+   各画面は CSS Modules で書き、色はここの変数を使う */
 :root {
-  --color-primary: #4287f5;
-  --color-primary-dark: #2f6fd6;
-  --color-bg: #e0fcff;
-  --color-surface: #ffffff;
-  --color-input: #eeeeee;
-  --color-border: #555555;
-  --color-border-light: #d0d7de;
-  --color-text: #333333;
-  --color-text-sub: #5f6b76;
-  --color-on-primary: #ffffff;
-  --color-step-done: #00e000;
-  --color-error: #d93025;
-  --color-error-bg: #fdecea;
+  /* 線と文字（キャラの輪郭の色） */
+  --ink: #4a3a2e;
+  --ink-strong: #2f241b;
+  --ink-soft: #7b6656;
+  --line-soft: #dccbb3;
+
+  /* 面 */
+  --paper: #fffbf0; /* パネル（キャラの体の色） */
+  --paper-deep: #f5ead8; /* 押せない面・グラフの残り */
+  --wall: #f6ecdc; /* 画面の背景（部屋の壁） */
+  --wall-stripe: #f3e7d5;
+
+  /* 項目の色（面 / 濃いめ＝ゲージ・グラフ） */
+  --meal: #fbe1a0;
+  --meal-deep: #ebbb4a;
+  --work: #c6e3b1;
+  --work-deep: #86c069;
+  --exercise: #f6b5ae;
+  --exercise-deep: #e47f76;
+  --sleep: #b9d7f2;
+  --sleep-deep: #75a9dc;
+
+  /* 状態 */
+  --leaf: #6aae57;
+  --leaf-soft: #e3f2d7;
+  --leaf-text: #3d7631;
+  --danger: #b23a2f;
+  --danger-soft: #fde8e3;
+
+  /* 以前からの名前（各画面の CSS が使っている） */
+  --color-primary: var(--ink);
+  --color-primary-dark: var(--ink-strong);
+  --color-bg: var(--wall);
+  --color-surface: var(--paper);
+  --color-input: #fffdf8;
+  --color-border: var(--ink);
+  --color-border-light: var(--line-soft);
+  --color-text: var(--ink);
+  --color-text-sub: var(--ink-soft);
+  --color-on-primary: var(--paper);
+  --color-step-done: var(--leaf);
+  --color-error: var(--danger);
+  --color-error-bg: var(--danger-soft);
 
   --max-width: 430px;
-  --header-height: 48px;
-  --nav-height: 52px;
-  --radius: 12px;
-  --gutter: 12px;
+  --header-height: 56px;
+  --nav-height: 60px;
+  --radius: 18px;
+  --radius-small: 12px;
+  --gutter: 14px;
+  --line: 2px solid var(--ink);
+  --dash: 2px dashed var(--line-soft);
 
-  font-family: system-ui, -apple-system, "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif;
-  line-height: 1.5;
-  color: var(--color-text);
+  font-family: "Zen Maru Gothic", "Hiragino Maru Gothic ProN", "BIZ UDPGothic", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
+  font-weight: 500;
+  line-height: 1.55;
+  color: var(--ink);
   -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
 }
 
 *,
@@ -36,7 +73,7 @@ html,
 body {
   margin: 0;
   min-height: 100%;
-  background: #cfeef2;
+  background: #e9dbc4;
 }
 
 button,
@@ -53,9 +90,25 @@ button {
 
 button:disabled {
   cursor: not-allowed;
-  opacity: 0.6;
+  opacity: 0.55;
 }
 
 a {
-  color: var(--color-primary-dark);
+  color: var(--ink);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+
+:focus-visible {
+  outline: 3px solid rgb(74 58 46 / 0.45);
+  outline-offset: 2px;
+}
+
+::placeholder {
+  color: #a8957f;
+  opacity: 1;
+}
+
+::selection {
+  background: var(--meal);
 }
