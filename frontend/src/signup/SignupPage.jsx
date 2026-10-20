@@ -137,39 +137,41 @@ export default function SignupPage() {
 
       {step === 1 && (
         <form className={styles.form} onSubmit={submitAccount} noValidate>
-          <label className={styles.field}>
-            <span className={styles.label}>メールアドレス</span>
-            <input
-              className={styles.input}
-              type="email"
-              autoComplete="email"
-              value={account.email}
-              onChange={(event) => setAccount({ ...account, email: event.target.value })}
-            />
-          </label>
-          <label className={styles.field}>
-            <span className={styles.label}>パスワード</span>
-            <input
-              className={styles.input}
-              type="password"
-              autoComplete="new-password"
-              value={account.password}
-              onChange={(event) => setAccount({ ...account, password: event.target.value })}
-            />
-            <span className={styles.hint}>{PASSWORD_MIN}文字以上</span>
-          </label>
-          <label className={styles.field}>
-            <span className={styles.label}>パスワード（確認用）</span>
-            <input
-              className={styles.input}
-              type="password"
-              autoComplete="new-password"
-              value={account.password_confirmation}
-              onChange={(event) => setAccount({ ...account, password_confirmation: event.target.value })}
-            />
-          </label>
+          <section className={`${styles.card} ${styles.form}`}>
+            <label className={styles.field}>
+              <span className={styles.label}>メールアドレス</span>
+              <input
+                className={styles.input}
+                type="email"
+                autoComplete="email"
+                value={account.email}
+                onChange={(event) => setAccount({ ...account, email: event.target.value })}
+              />
+            </label>
+            <label className={styles.field}>
+              <span className={styles.label}>パスワード</span>
+              <input
+                className={styles.input}
+                type="password"
+                autoComplete="new-password"
+                value={account.password}
+                onChange={(event) => setAccount({ ...account, password: event.target.value })}
+              />
+              <span className={styles.hint}>{PASSWORD_MIN}文字以上</span>
+            </label>
+            <label className={styles.field}>
+              <span className={styles.label}>パスワード（確認用）</span>
+              <input
+                className={styles.input}
+                type="password"
+                autoComplete="new-password"
+                value={account.password_confirmation}
+                onChange={(event) => setAccount({ ...account, password_confirmation: event.target.value })}
+              />
+            </label>
+          </section>
           <div className={styles.actions}>
-            <button className={styles.button} type="submit" disabled={busy}>
+            <button className={`${styles.button} ${styles.primary}`} type="submit" disabled={busy}>
               {busy ? '確認中…' : '次へ'}
             </button>
           </div>
@@ -186,7 +188,7 @@ export default function SignupPage() {
             <button className={styles.button} type="button" onClick={() => go(1)}>
               戻る
             </button>
-            <button className={styles.button} type="submit">
+            <button className={`${styles.button} ${styles.primary}`} type="submit">
               次へ
             </button>
           </div>
@@ -195,13 +197,13 @@ export default function SignupPage() {
 
       {step === 3 && (
         <form className={styles.form} onSubmit={submitBasics} noValidate>
-          <h2 className={signup.heading}>目標設定</h2>
+          <p className={signup.lead}>理想の生活リズムを決めましょう。キャラはこの目標に沿って暮らします。</p>
           <GoalBasicsForm value={goal} onChange={updateGoal} />
           <div className={`${styles.actions} ${styles.actionsBetween}`}>
             <button className={styles.button} type="button" onClick={() => go(2)}>
               戻る
             </button>
-            <button className={styles.button} type="submit">
+            <button className={`${styles.button} ${styles.primary}`} type="submit">
               次へ
             </button>
           </div>
@@ -210,7 +212,6 @@ export default function SignupPage() {
 
       {step === 4 && (
         <form className={styles.form} onSubmit={submitAll} noValidate>
-          <h2 className={signup.heading}>食事の目標</h2>
           <MealGoalForm
             value={goal}
             onChange={updateGoal}

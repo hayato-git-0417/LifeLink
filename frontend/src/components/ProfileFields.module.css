@@ -1,12 +1,4 @@
-/* 生年月日は見出しと入力を1行に */
-.inlineField {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
 .birthdate {
-  flex: 1;
   max-width: 220px;
 }
 
@@ -16,18 +8,28 @@
   border: none;
 }
 
-/* 4つを1行に（幅 375px で収まる） */
-.genders {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px 12px;
+.legend {
+  margin-bottom: 6px;
+  padding: 0;
 }
 
-.genders label {
-  font-size: 0.95rem;
+/* 4つを1行に（幅 375px で収まるように文字は少し小さく） */
+.gender {
+  position: relative;
+  padding: 4px 2px;
+  font-size: 0.84rem;
+  cursor: pointer;
 }
 
-.genders input {
-  width: 18px;
-  height: 18px;
+/* ラジオボタンは隠して、ラベル全体を押せるようにする */
+.gender input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.gender:has(input:focus-visible) {
+  outline: 3px solid rgb(74 58 46 / 0.45);
+  outline-offset: 1px;
 }

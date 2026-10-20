@@ -16,48 +16,54 @@ export default function ProfileFields({ value, onChange }) {
   return (
     <>
       <section className={form.card}>
-        <h3 className={form.cardTitle}>アイコンを選択</h3>
+        <h2 className={form.cardTitle}>アイコン</h2>
         <UserIconPicker value={value.icon} onChange={(icon) => onChange({ icon })} />
       </section>
-      <label className={`${form.card} ${form.field}`}>
-        <span className={form.cardTitle}>ユーザー名</span>
-        <input
-          className={form.input}
-          type="text"
-          maxLength={50}
-          placeholder="名前を入力"
-          autoComplete="nickname"
-          value={value.name}
-          onChange={(event) => onChange({ name: event.target.value })}
-        />
-      </label>
-      <label className={styles.inlineField}>
-        <span className={form.label}>生年月日</span>
-        <input
-          className={`${form.input} ${styles.birthdate}`}
-          type="date"
-          min="1900-01-01"
-          max={toDateString()}
-          value={value.birthdate}
-          onChange={(event) => onChange({ birthdate: event.target.value })}
-        />
-      </label>
-      <fieldset className={`${form.field} ${styles.genderSet}`}>
-        <legend className={form.label}>性別（食事の目標の初期値に使います）</legend>
-        <div className={styles.genders}>
-          {GENDERS.map((gender) => (
-            <label key={gender.value} className={form.radio}>
-              <input
-                type="radio"
-                name="gender"
-                checked={value.gender === gender.value}
-                onChange={() => onChange({ gender: gender.value })}
-              />
-              {gender.label}
-            </label>
-          ))}
-        </div>
-      </fieldset>
+      <section className={`${form.card} ${form.form}`}>
+        <label className={form.field}>
+          <span className={form.label}>ユーザー名</span>
+          <input
+            className={form.input}
+            type="text"
+            maxLength={50}
+            placeholder="名前を入力"
+            autoComplete="nickname"
+            value={value.name}
+            onChange={(event) => onChange({ name: event.target.value })}
+          />
+        </label>
+        <label className={form.field}>
+          <span className={form.label}>生年月日</span>
+          <input
+            className={`${form.input} ${styles.birthdate}`}
+            type="date"
+            min="1900-01-01"
+            max={toDateString()}
+            value={value.birthdate}
+            onChange={(event) => onChange({ birthdate: event.target.value })}
+          />
+        </label>
+        <fieldset className={`${form.field} ${styles.genderSet}`}>
+          <legend className={`${form.label} ${styles.legend}`}>性別</legend>
+          <div className={`${form.segmented} ${styles.genders}`}>
+            {GENDERS.map((gender) => (
+              <label
+                key={gender.value}
+                className={`${form.segment} ${styles.gender} ${value.gender === gender.value ? form.segmentActive : ''}`}
+              >
+                <input
+                  type="radio"
+                  name="gender"
+                  checked={value.gender === gender.value}
+                  onChange={() => onChange({ gender: gender.value })}
+                />
+                {gender.label}
+              </label>
+            ))}
+          </div>
+          <span className={form.hint}>食事の目標の初期値に使います</span>
+        </fieldset>
+      </section>
     </>
   )
 }
