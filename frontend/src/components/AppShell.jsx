@@ -2,12 +2,21 @@
 // ログイン・新規登録の画面は guest にして、ベル・メニュー・下部ナビを出さない（spec.md 5章）。
 //   <AppShell title="ログイン" guest>...</AppShell>
 //   <AppShell title="食事" backTo="/">...</AppShell>  … 左上に戻るボタン（←）
+//   <AppShell noHeader>...</AppShell>  … 上部ヘッダーを出さず、余白なしで中身を描く（ホーム）。下部ナビは出す
 import { useEffect, useRef, useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth.js'
 import styles from './AppShell.module.css'
 
-export default function AppShell({ title, guest = false, backTo, children }) {
+export default function AppShell({ title, guest = false, backTo, noHeader = false, children }) {
+  if (noHeader) {
+    return (
+      <div className={styles.frame}>
+        <main className={styles.withNav}>{children}</main>
+        <BottomNav />
+      </div>
+    )
+  }
   return (
     <div className={styles.frame}>
       <header className={styles.header}>
