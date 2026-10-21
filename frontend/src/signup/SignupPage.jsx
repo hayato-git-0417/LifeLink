@@ -144,6 +144,7 @@ export default function SignupPage() {
                 className={styles.input}
                 type="email"
                 autoComplete="email"
+                placeholder="例：name@example.com"  // emailのプレースホルダ
                 value={account.email}
                 onChange={(event) => setAccount({ ...account, email: event.target.value })}
               />
