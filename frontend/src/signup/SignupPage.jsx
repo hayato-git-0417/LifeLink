@@ -24,6 +24,7 @@ export default function SignupPage() {
   const [errors, setErrors] = useState([])
   const [busy, setBusy] = useState(false) //「通信などの処理中です」という状態に切り替える命令、true になるとボタンが押せなくなり、連打による二重送信を防げる
   const [account, setAccount] = useState({ email: '', password: '', password_confirmation: '' })
+  const [showPassword, setShowPassword] = useState(false) // パスワードを隠すやつ　false は非表示、true は表示
   const [profile, setProfile] = useState({ icon: 'person_blue', name: '', birthdate: '', gender: 'unspecified' })
   const [goal, setGoal] = useState(newGoalDraft)
   // 栄養目標の初期値を出した「生年月日・性別」。②を変えたら④で出し直す
@@ -166,17 +167,38 @@ export default function SignupPage() {
                 onChange={(event) => setAccount({ ...account, email: event.target.value })}
               />
             </label>
-            <label className={styles.field}>
-              <span className={styles.label}>パスワード</span>
-              <input
-                className={styles.input}
-                type="password"
-                autoComplete="new-password"
-                value={account.password}
-                onChange={(event) => setAccount({ ...account, password: event.target.value })}
-              />
-              <span className={styles.hint}>{PASSWORD_MIN}文字以上の半角英数字・記号も使用可能</span>
-            </label>
+            <div className={styles.field}>
+              <label className={styles.label} htmlFor="password">
+                パスワード
+              </label>
+
+              <div className={signup.passwordWrap}>
+                <input
+                  id="password"
+                  className={styles.input}
+                  type={showPassword ? 'text' : 'password'}
+                  autoComplete="new-password"
+                  value={account.password}
+                  onChange={(event) =>
+                    setAccount({ ...account, password: event.target.value })
+                  }
+                />
+                <button
+                  className={signup.passwordToggle}
+                  type="button"
+                  onClick={() => setShowPassword((current) => !current)}
+                  aria-label={
+                    showPassword ? 'パスワードを隠す' : 'パスワードを表示する'
+                  }
+                >
+                  <img src={showPassword ? '../icons/eye-open.svg' : '../icons/eye-closed.svg'} alt="" width="24" height="24"/>
+                </button>
+              </div>
+
+              <span className={styles.hint}>
+                {PASSWORD_MIN}文字以上・半角英字と数字を両方含む（記号使用可）
+              </span>
+            </div>
             <label className={styles.field}>
               <span className={styles.label}>パスワード（確認用）</span>
               <input
