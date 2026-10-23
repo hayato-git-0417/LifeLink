@@ -16,13 +16,13 @@ import styles from '../styles/form.module.css'
 import StepIndicator from './StepIndicator.jsx'
 import signup from './Signup.module.css'
 
-const PASSWORD_MIN = 6
+const PASSWORD_MIN = 8 // パスワードの最低文字数
 export default function SignupPage() {
   const navigate = useNavigate()
   const { refreshMe } = useAuth()
   const [step, setStep] = useState(1)
   const [errors, setErrors] = useState([])
-  const [busy, setBusy] = useState(false)
+  const [busy, setBusy] = useState(false) //「通信などの処理中です」という状態に切り替える命令、true になるとボタンが押せなくなり、連打による二重送信を防げる
   const [account, setAccount] = useState({ email: '', password: '', password_confirmation: '' })
   const [profile, setProfile] = useState({ icon: 'person_blue', name: '', birthdate: '', gender: 'unspecified' })
   const [goal, setGoal] = useState(newGoalDraft)
@@ -32,10 +32,11 @@ export default function SignupPage() {
 
   const updateGoal = (changes) => setGoal((current) => ({ ...current, ...changes }))
 
+  /* ページを切り替える関数 */
   function go(nextStep) {
-    setErrors([])
-    setStep(nextStep)
-    window.scrollTo(0, 0)
+    setErrors([]) // 前のエラーメッセージを消す
+    setStep(nextStep) // 表示するステップを次に変更
+    window.scrollTo(0, 0) // 画面を一番上までスクロール
   }
 
   // ④を開いたら、年齢・性別から栄養目標の初期値を出す（ログイン前なので生年月日・性別を渡す）
@@ -63,29 +64,42 @@ export default function SignupPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step])
 
+
+  /*「次へ」を押してフォームを送信したときの処理 */
   async function submitAccount(event) {
-    event.preventDefault()
-    const found = []
+    event.preventDefault()  //  ブラウザ標準のフォーム送信によるページ移動・再読み込みを防ぐ処理
+    const found = []  //  入力チェックで見つかったエラーメッセージを格納する配列
+
+    //.test(account.password)：パスワードの中に、そのパターンに当てはまる部分があるか確認する
+    const hasLetter = /[a-zA-Z]/.test(account.password)
+    const hasNumber = /[0-9]/.test(account.password)
+    if (!hasLetter || !hasNumber) {
+      found.push('パスワードは英字と数字をそれぞれ1文字以上含めてください')
+    }
+
+    //  エラーメッセージをfoundにpush（格納する）
     if (!account.email.trim()) found.push('メールアドレスを入力してください')
     if (account.password.length < PASSWORD_MIN) found.push(`パスワードは${PASSWORD_MIN}文字以上にしてください`)
     if (account.password !== account.password_confirmation) found.push('パスワード（確認用）が一致しません')
     if (found.length) return setErrors(found)
 
-    setBusy(true)
+    setBusy(true) //  送信ボタンを押せなくする
+    // 入力されたメールアドレスが登録に使えるかをRailsに問い合わせ、返ってきた結果を data に入れる処理
     try {
       const data = await api('/registrations/email_available', { params: { email: account.email.trim() } })
       if (!data.available) {
         setErrors(['このメールアドレスはすでに登録されています'])
         return
       }
-      go(2)
+      go(2) // 新規登録の2つ目の画面へ切り替える
     } catch (error) {
       setErrors(error.messages)
-    } finally {
+    } finally { //  通信に失敗した場合
       setBusy(false)
     }
   }
 
+  /* 名前や生年月日などを、フロント側でチェックする */
   function submitProfile(event) {
     event.preventDefault()
     const found = validateProfile(profile)
@@ -93,6 +107,7 @@ export default function SignupPage() {
     go(3)
   }
 
+  /* 睡眠・ワーク・運動の目標を、フロント側でチェックする */
   function submitBasics(event) {
     event.preventDefault()
     const found = validateBasics(goal)
@@ -100,9 +115,10 @@ export default function SignupPage() {
     go(4)
   }
 
+  /* 最後の画面で登録ボタンを押したときに、Railsと通信して登録を完了する処理 */
   async function submitAll(event) {
-    event.preventDefault()
-    const found = validateMeals(goal)
+    event.preventDefault() // .preventDefault ブラウザが標準で行う動作を止める
+    const found = validateMeals(goal) // 食事の目標をチェックする
     if (found.length) return setErrors(found)
 
     setBusy(true)
@@ -120,11 +136,12 @@ export default function SignupPage() {
     }
 
     try {
+      // 目標を保存する
       await api('/goal', { method: 'PUT', body: toGoalPayload(goal) })
       await refreshMe()
       navigate('/', { replace: true })
     } catch (error) {
-      // アカウントはできたので、目標設定画面で入力の続きから直してもらう
+      // ログイン中のユーザー情報を取得し、ホームへ移動する
       await refreshMe().catch(() => {})
       navigate('/goal-setup', { replace: true, state: { draft: goal, errors: error.messages } })
     }
@@ -158,7 +175,7 @@ export default function SignupPage() {
                 value={account.password}
                 onChange={(event) => setAccount({ ...account, password: event.target.value })}
               />
-              <span className={styles.hint}>{PASSWORD_MIN}文字以上</span>
+              <span className={styles.hint}>{PASSWORD_MIN}文字以上の半角英数字・記号も使用可能</span>
             </label>
             <label className={styles.field}>
               <span className={styles.label}>パスワード（確認用）</span>
