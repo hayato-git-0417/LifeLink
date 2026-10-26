@@ -33,3 +33,15 @@
   outline: 3px solid rgb(74 58 46 / 0.45);
   outline-offset: 1px;
 }
+
+.bodyMeasurements {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.bodyMeasurements input {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}

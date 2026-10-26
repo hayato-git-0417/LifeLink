@@ -25,7 +25,14 @@ export default function SignupPage() {
   const [busy, setBusy] = useState(false) //「通信などの処理中です」という状態に切り替える命令、true になるとボタンが押せなくなり、連打による二重送信を防げる
   const [account, setAccount] = useState({ email: '', password: '', password_confirmation: '' })
   const [showPassword, setShowPassword] = useState(false) // パスワードを隠すやつ　false は非表示、true は表示
-  const [profile, setProfile] = useState({ icon: 'person_blue', name: '', birthdate: '', gender: 'unspecified' })
+  const [profile, setProfile] = useState({
+    icon: 'person_blue',
+    name: '',
+    birthdate: '',
+    gender: 'unspecified' ,
+    height_cm: '',
+    weight_kg: '',
+  })
   const [goal, setGoal] = useState(newGoalDraft)
   // 栄養目標の初期値を出した「生年月日・性別」。②を変えたら④で出し直す
   const [defaultsKey, setDefaultsKey] = useState(null)
