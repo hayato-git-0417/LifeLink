@@ -1,4 +1,4 @@
-/* フォームの共通部品（ログイン・新規登録・目標設定・設定で使う） */
+/* フォームとパネルの共通部品（ログイン・新規登録・目標・設定ほか、各画面で使う） */
 .form {
   display: flex;
   flex-direction: column;
@@ -12,41 +12,70 @@
 }
 
 .label {
-  color: var(--color-text-sub);
-  font-size: 1.05rem;
+  font-size: 0.92rem;
+  font-weight: 700;
 }
 
 .input {
   width: 100%;
-  min-height: 44px;
-  padding: 8px 12px;
-  border: 1px solid var(--color-border);
-  border-radius: 10px;
+  min-height: 46px;
+  padding: 8px 14px;
+  border: 2px solid var(--line-soft);
+  border-radius: var(--radius-small);
   background: var(--color-input);
   font-size: 1rem;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.input:hover {
+  border-color: #cdb79a;
 }
 
 .input:focus {
-  border-color: var(--color-primary);
-  outline: 2px solid rgb(66 135 245 / 0.35);
+  border-color: var(--ink);
+  outline: none;
+  box-shadow: 0 0 0 3px rgb(74 58 46 / 0.15);
 }
 
 .hint {
   margin: 0;
-  color: var(--color-text-sub);
-  font-size: 0.85rem;
+  color: var(--ink-soft);
+  font-size: 0.82rem;
 }
 
+.center {
+  text-align: center;
+}
+
+/* パネル: クリームの面にココアの線（キャラと同じ線） */
 .card {
-  padding: 12px;
-  border: 1px solid var(--color-border-light);
+  padding: 14px;
+  border: var(--line);
   border-radius: var(--radius);
-  background: var(--color-surface);
+  background: var(--paper);
 }
 
 .cardTitle {
-  margin: 0 0 8px;
-  font-size: 0.95rem;
+  margin: 0 0 10px;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+/* パネルの見出し: 項目の印（IconBadge）＋見出し＋右に補足 */
+.panelHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 34px;
+  margin-bottom: 10px;
+}
+
+.panelHead > h2,
+.panelHead > h3 {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: 1.02rem;
   font-weight: 700;
 }
 
@@ -54,103 +83,144 @@
   display: flex;
   justify-content: flex-end;
   gap: 12px;
-  margin-top: 8px;
+  margin-top: 6px;
 }
 
 .actionsBetween {
   justify-content: space-between;
 }
 
-.actionsCenter {
+/* ボタン: ココアで縁どり、下に厚み。押すと沈む */
+.button {
+  display: inline-flex;
+  align-items: center;
   justify-content: center;
+  gap: 8px;
+  min-width: 120px;
+  min-height: 48px;
+  padding: 8px 22px;
+  border: var(--line);
+  border-radius: 14px;
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.2;
+  text-decoration: none;
+  box-shadow: 0 3px 0 var(--ink);
+  transition: transform 0.08s ease, box-shadow 0.08s ease;
 }
 
-.button {
-  min-width: 120px;
-  min-height: 44px;
-  padding: 8px 18px;
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
-  background: var(--color-input);
-  font-size: 1rem;
+.button:active:not(:disabled) {
+  box-shadow: 0 0 0 var(--ink);
+  transform: translateY(3px);
 }
 
 .primary {
-  border-color: var(--color-primary-dark);
-  background: var(--color-primary);
-  color: var(--color-on-primary);
-  font-weight: 600;
+  background: var(--ink);
+  color: var(--paper);
+  box-shadow: 0 3px 0 var(--ink-strong);
+}
+
+.danger {
+  border-color: var(--danger);
+  background: var(--paper);
+  color: var(--danger);
+  box-shadow: 0 3px 0 var(--danger);
+}
+
+/* 横いっぱいのボタン */
+.block {
+  width: 100%;
 }
 
 .linkButton {
-  padding: 4px;
+  padding: 4px 2px;
   border: none;
   background: none;
-  color: var(--color-primary-dark);
-  font-size: 0.95rem;
+  color: var(--ink);
+  font-size: 0.92rem;
+  font-weight: 700;
   text-decoration: underline;
+  text-decoration-color: var(--line-soft);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
 }
 
 .errors {
   margin: 0;
-  padding: 12px 14px 12px 32px;
-  border: 1px solid var(--color-error);
-  border-radius: 10px;
-  background: var(--color-error-bg);
-  color: var(--color-error);
-  font-size: 0.95rem;
+  padding: 10px 14px 10px 32px;
+  border: 2px solid var(--danger);
+  border-radius: 14px;
+  background: var(--danger-soft);
+  color: var(--danger);
+  font-size: 0.92rem;
+  font-weight: 700;
 }
 
 /* 画面の main の直下に置いたとき（gap のある入れ物の中でないとき）は、下の要素と間をあける */
 main > .errors {
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 }
 
-.row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
+/* うまくいったときのお知らせ */
+.notice {
+  margin: 0;
+  padding: 10px 14px;
+  border: 2px solid var(--leaf);
+  border-radius: 14px;
+  background: var(--leaf-soft);
+  color: var(--leaf-text);
+  font-size: 0.92rem;
+  font-weight: 700;
 }
 
 .small {
-  width: 84px;
-  min-height: 44px;
+  width: 76px;
   text-align: center;
 }
 
 .time {
-  width: 120px;
-  min-height: 44px;
+  width: 128px;
 }
 
-.radioGroup {
-  display: flex;
-  gap: 24px;
+/* タブ・切り替え: クリームの入れ物の中で、選んだものだけココアで塗る */
+.segmented {
+  display: grid;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+  gap: 4px;
+  padding: 4px;
+  border: var(--line);
+  border-radius: 16px;
+  background: var(--paper);
 }
 
-.radio {
+.segment {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
-  font-size: 1.05rem;
+  min-height: 38px;
+  padding: 4px 8px;
+  border: none;
+  border-radius: 11px;
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: 0.92rem;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
-.radio input {
-  width: 22px;
-  height: 22px;
-  accent-color: var(--color-text);
+.segmentActive {
+  background: var(--ink);
+  color: var(--paper);
 }
 
-.sectionTitle {
-  margin: 4px 0 0;
-  color: var(--color-text-sub);
-  font-size: 1.1rem;
-  font-weight: 600;
-}
-
+/* 読み込み中 */
 .loading {
-  padding: 40px 0;
-  color: var(--color-text-sub);
+  margin: 0;
+  padding: 36px 0;
+  color: var(--ink-soft);
   text-align: center;
 }

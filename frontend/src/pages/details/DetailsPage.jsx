@@ -1,4 +1,4 @@
-// 詳細（記録の履歴。デザイン p.5）。タブ: 睡眠／食事／運動／ワーク。
+// 詳細（記録の履歴。デザイン p.5）。タブ: 睡眠／食事／運動／ワーク（タブは項目の色）。
 // 7日ずつ表示し、前の週・次の週へ移れる。期間の合計（1行）と、「グラフ / 記録」の切り替えを出す。
 // スマホ（375×667）でページがスクロールしないように、グラフは残りの高さいっぱいに描き、記録の一覧はその枠の中だけスクロールする。
 // 睡眠・ワークのタブでは記録ごとに開始・終了日時の修正と削除ができる。睡眠の質は表示しない（spec.md 5章）
@@ -7,26 +7,40 @@ import { useCallback, useEffect, useState } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import { api } from '../../api/client.js'
 import AppShell from '../../components/AppShell.jsx'
+import { CATEGORY_COLORS } from '../../components/chartTheme.js'
+import DurationChart from '../../components/DurationChart.jsx'
 import ErrorList from '../../components/ErrorList.jsx'
+import { ChevronLeftIcon, ChevronRightIcon, ExerciseIcon, MealIcon, SleepIcon, WorkIcon } from '../../components/icons.jsx'
 import ScoreTrendChart from '../../components/ScoreTrendChart.jsx'
 import { datesBetween, formatDate, formatDay, formatMinutes, formatNumber, shiftDate, toDateString } from '../../lib/format.js'
+import form from '../../styles/form.module.css'
 import { NUTRIENTS, sumNutrients } from '../meals/mealTypes.js'
 import styles from './Details.module.css'
 import TimedRecordList from './TimedRecordList.jsx'
 import { TIMED_KINDS } from './timedKinds.js'
 
 const TABS = [
-  { key: 'sleep', label: '睡眠', path: '/sleep_records' },
-  { key: 'meal', label: '食事', path: '/meals' },
-  { key: 'exercise', label: '運動', path: '/exercise_records' },
-  { key: 'work', label: 'ワーク', path: '/work_records' },
+  { key: 'sleep', label: '睡眠', path: '/sleep_records', Icon: SleepIcon },
+  { key: 'meal', label: '食事', path: '/meals', Icon: MealIcon },
+  { key: 'exercise', label: '運動', path: '/exercise_records', Icon: ExerciseIcon },
+  { key: 'work', label: 'ワーク', path: '/work_records', Icon: WorkIcon },
 ]
 
 const RANGE_DAYS = 7
+// 表示の切り替え。睡眠・ワークは「時間」（日ごとの時間の棒グラフ）と「記録」の2つ（スコア・目標は今後なくすので出さない）
 const VIEWS = [
   { key: 'chart', label: 'グラフ' },
   { key: 'list', label: '記録' },
 ]
+const TIMED_VIEWS = [
+  { key: 'hours', label: '時間' },
+  { key: 'list', label: '記録' },
+]
+// 時間のグラフの説明（集計日の決まり。spec.md 2.1）
+const HOURS_NOTES = {
+  sleep: '起きた日にまとめています。計測中の睡眠は入りません。',
+  work: '始めた日にまとめています。計測中のワークは入りません。',
+}
 
 export default function DetailsPage() {
   const { id: userId } = useParams()
@@ -34,7 +48,8 @@ export default function DetailsPage() {
   const today = toDateString()
   const [searchParams, setSearchParams] = useSearchParams()
   const tab = TABS.find((entry) => entry.key === searchParams.get('tab')) || TABS[0]
-  const view = VIEWS.find((entry) => entry.key === searchParams.get('view')) || VIEWS[0]
+  const views = TIMED_KINDS[tab.key] ? TIMED_VIEWS : VIEWS
+  const view = views.find((entry) => entry.key === searchParams.get('view')) || views[0]
   const [to, setTo] = useState(today)
   const from = shiftDate(to, -(RANGE_DAYS - 1))
 
@@ -98,7 +113,8 @@ export default function DetailsPage() {
   const changeTab = (key) => {
     if (key === tab.key) return
     reset()
-    setSearchParams({ tab: key, view: view.key }, { replace: true })
+    // 「記録」を見ていたら記録のまま。グラフ系はそのタブの最初の表示（睡眠・ワークは時間）にする
+    setSearchParams(view.key === 'list' ? { tab: key, view: 'list' } : { tab: key }, { replace: true })
   }
   const changeView = (key) => setSearchParams({ tab: tab.key, view: key }, { replace: true })
   const changeWeek = (days) => {
@@ -122,9 +138,11 @@ export default function DetailsPage() {
               type="button"
               role="tab"
               aria-selected={entry.key === tab.key}
+              data-kind={entry.key}
               className={`${styles.tab} ${entry.key === tab.key ? styles.tabActive : ''}`}
               onClick={() => changeTab(entry.key)}
             >
+              <entry.Icon size={18} />
               {entry.label}
             </button>
           ))}
@@ -132,9 +150,9 @@ export default function DetailsPage() {
 
         <div className={styles.week}>
           <button type="button" className={styles.weekButton} onClick={() => changeWeek(-RANGE_DAYS)} aria-label="前の週">
-            ‹
+            <ChevronLeftIcon size={18} />
           </button>
-          <span>
+          <span className={styles.range}>
             {formatDate(from)} 〜 {formatDate(to)}
           </span>
           <button
@@ -144,25 +162,25 @@ export default function DetailsPage() {
             disabled={to >= today}
             aria-label="次の週"
           >
-            ›
+            <ChevronRightIcon size={18} />
           </button>
         </div>
 
         <ErrorList errors={errors} />
         {loading ? (
-          !errors.length && <p className={styles.loading}>読み込み中…</p>
+          !errors.length && <p className={form.loading}>読み込み中…</p>
         ) : (
           <>
             <Summary tab={tab.key} records={records} achievements={achievements.daily_achievements} />
 
-            <div className={styles.views} role="tablist" aria-label="表示">
-              {VIEWS.map((entry) => (
+            <div className={`${form.segmented} ${styles.views}`} role="tablist" aria-label="表示">
+              {views.map((entry) => (
                 <button
                   key={entry.key}
                   type="button"
                   role="tab"
                   aria-selected={entry.key === view.key}
-                  className={`${styles.view} ${entry.key === view.key ? styles.viewActive : ''}`}
+                  className={`${form.segment} ${styles.view} ${entry.key === view.key ? form.segmentActive : ''}`}
                   onClick={() => changeView(entry.key)}
                 >
                   {entry.label}
@@ -170,13 +188,26 @@ export default function DetailsPage() {
               ))}
             </div>
 
-            {view.key === 'chart' ? (
+            {view.key === 'hours' ? (
+              <section className={`${styles.card} ${styles.panel} ${styles.chartPanel}`}>
+                <h2 className={styles.heading}>日ごとの{TIMED_KINDS[tab.key].durationLabel}</h2>
+                <div className={styles.chart}>
+                  <DurationChart
+                    rows={durationRows(dates, records[`${tab.key}_records`])}
+                    color={CATEGORY_COLORS[tab.key]}
+                    label={TIMED_KINDS[tab.key].durationLabel}
+                    height="100%"
+                  />
+                </div>
+                <p className={styles.note}>{HOURS_NOTES[tab.key]}</p>
+              </section>
+            ) : view.key === 'chart' ? (
               <section className={`${styles.card} ${styles.panel} ${styles.chartPanel}`}>
                 <h2 className={styles.heading}>{tab.label}のスコアとポイントの推移</h2>
                 <div className={styles.chart}>
-                  <ScoreTrendChart rows={chartRows(tab.key, dates, achievements, today)} height="100%" />
+                  <ScoreTrendChart rows={chartRows(tab.key, dates, achievements, today)} color={CATEGORY_COLORS[tab.key]} height="100%" />
                 </div>
-                <p className={styles.note}>棒: その日のスコア（%）／線: 確定したポイント（今日は現在の値）</p>
+                <p className={styles.note}>ポイントは日ごとに確定した値です（今日は現在の値）。</p>
               </section>
             ) : (
               <section className={`${styles.card} ${styles.panel}`}>
@@ -200,6 +231,17 @@ export default function DetailsPage() {
       </div>
     </AppShell>
   )
+}
+
+// 時間のグラフの行。終わった記録を集計日（recorded_on）ごとに合計する。記録のない日は null
+function durationRows(dates, records) {
+  const minutesByDate = {}
+  records
+    .filter((record) => !record.in_progress)
+    .forEach((record) => {
+      minutesByDate[record.recorded_on] = (minutesByDate[record.recorded_on] ?? 0) + record.duration_minutes
+    })
+  return dates.map((date) => ({ date, minutes: minutesByDate[date] ?? null }))
 }
 
 // グラフの行。行のない日・確定前のポイントは null。今日のポイントは現在の値
@@ -269,10 +311,11 @@ function MealDays({ dates, meals }) {
           <li key={day.date} className={styles.record}>
             <div className={styles.recordMain}>
               <span className={styles.recordTitle}>
-                {formatDate(day.date)}　{day.count}食
+                {formatDate(day.date)}
+                <span className={styles.recordTag}>{day.count}食</span>
               </span>
-              <span>{formatNumber(day.totals.calories)} kcal</span>
-              <span className={styles.recordDuration}>
+              <span className={styles.recordStrong}>{formatNumber(day.totals.calories)} kcal</span>
+              <span className={styles.recordSub}>
                 {NUTRIENTS.filter((n) => n.key !== 'calories')
                   .map((n) => `${n.label} ${formatNumber(day.totals[n.key])}${n.unit}`)
                   .join('　')}
@@ -294,9 +337,9 @@ function ExerciseDays({ dates, distance, achievements }) {
         <li key={date} className={styles.record}>
           <div className={styles.recordMain}>
             <span className={styles.recordTitle}>{formatDate(date)}</span>
-            <span>
-              タスク達成 {byDate[date] ? `${Math.round(byDate[date].exercise_score)}%` : '-'}　移動距離{' '}
-              {formatNumber(kmByDate[date] ?? 0)} km
+            <span className={styles.recordSub}>
+              タスク達成 <b>{byDate[date] ? `${Math.round(byDate[date].exercise_score)}%` : '-'}</b>　移動距離{' '}
+              <b>{formatNumber(kmByDate[date] ?? 0)} km</b>
             </span>
           </div>
         </li>

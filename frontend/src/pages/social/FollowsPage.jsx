@@ -6,6 +6,7 @@ import { api } from '../../api/client.js'
 import { useAuth } from '../../auth/useAuth.js'
 import AppShell from '../../components/AppShell.jsx'
 import ErrorList from '../../components/ErrorList.jsx'
+import { SearchIcon } from '../../components/icons.jsx'
 import form from '../../styles/form.module.css'
 import styles from './Social.module.css'
 import UserList from './UserList.jsx'
@@ -84,37 +85,43 @@ export default function FollowsPage() {
   return (
     <AppShell title="フォロー一覧" backTo="/mypage">
       <div className={styles.page}>
-        <div className={styles.tabs} role="tablist">
-          {TABS.map((entry) => (
-            <button
-              key={entry.key}
-              type="button"
-              role="tab"
-              aria-selected={!results && entry.key === tab.key}
-              className={`${styles.tab} ${!results && entry.key === tab.key ? styles.tabActive : ''}`}
-              onClick={() => changeTab(entry.key)}
-            >
-              {entry.label}
-              <span className={styles.tabCount}>
-                {entry.key === 'followers' ? (user.followers_count ?? 0) : (user.followings_count ?? 0)}
-              </span>
-            </button>
-          ))}
+        <div className={form.segmented} role="tablist">
+          {TABS.map((entry) => {
+            const selected = !results && entry.key === tab.key
+            return (
+              <button
+                key={entry.key}
+                type="button"
+                role="tab"
+                aria-selected={selected}
+                className={`${form.segment} ${styles.tab} ${selected ? form.segmentActive : ''}`}
+                onClick={() => changeTab(entry.key)}
+              >
+                {entry.label}
+                <span className={styles.tabCount}>
+                  {entry.key === 'followers' ? (user.followers_count ?? 0) : (user.followings_count ?? 0)}
+                </span>
+              </button>
+            )
+          })}
         </div>
 
         <form className={styles.search} onSubmit={search} role="search">
-          <input
-            className={form.input}
-            type="search"
-            placeholder="ユーザー名で検索"
-            value={query}
-            maxLength={50}
-            onChange={(event) => {
-              setQuery(event.target.value)
-              if (!event.target.value && results) clearSearch()
-            }}
-            aria-label="ユーザー名で検索"
-          />
+          <span className={styles.searchField}>
+            <SearchIcon size={18} className={styles.searchIcon} />
+            <input
+              className={`${form.input} ${styles.searchInput}`}
+              type="search"
+              placeholder="ユーザー名で検索"
+              value={query}
+              maxLength={50}
+              onChange={(event) => {
+                setQuery(event.target.value)
+                if (!event.target.value && results) clearSearch()
+              }}
+              aria-label="ユーザー名で検索"
+            />
+          </span>
           <button type="submit" className={`${form.button} ${form.primary} ${styles.searchButton}`} disabled={searching}>
             検索
           </button>
@@ -122,22 +129,19 @@ export default function FollowsPage() {
 
         <ErrorList errors={errors} />
         {results ? (
-          <>
+          <section className={form.card}>
             <p className={styles.resultHead}>
               「{query.trim()}」の検索結果（{results.length}件{results.length >= 20 ? '・上位20件' : ''}）
               <button type="button" className={form.linkButton} onClick={clearSearch}>
                 検索をやめる
               </button>
             </p>
-            <UserList
-              users={results}
-              emptyText="見つかりませんでした。"
-              onFollowChange={handleFollowChange}
-              onError={setErrors}
-            />
-          </>
+            <UserList users={results} emptyText="見つかりませんでした。" onFollowChange={handleFollowChange} onError={setErrors} />
+          </section>
         ) : users ? (
-          <UserList users={users} emptyText={tab.empty} onFollowChange={handleFollowChange} onError={setErrors} />
+          <section className={form.card}>
+            <UserList users={users} emptyText={tab.empty} onFollowChange={handleFollowChange} onError={setErrors} />
+          </section>
         ) : (
           !errors.length && <p className={styles.empty}>読み込み中…</p>
         )}

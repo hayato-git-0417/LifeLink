@@ -1,23 +1,29 @@
-// ホーム（デザイン p.1 / p.2、spec.md 3.4・4章）。GET /api/v1/home を表示する。
-// 就寝⇔起床・ワーク開始⇔ワーク終了は画面遷移せず、その場で start / finish を呼ぶ。計測中は「取り消し」も出す。
-// 押したあとはホームを読み直すので、キャラの状態がすぐ変わる。
-// スマホ（375×667）でスクロールせずに収まるように、ゲージは2列、記録ボタンは3列×2段にしている。
+// ホーム（spec.md 3.4・4章）。GET /api/v1/home を表示する。
+// レイアウト: 部屋のイラスト（Room.jsx）を画面いっぱいに出し、左上にユーザー（押すとマイページ）、右上に通知ベルとメニュー、
+// その下に「生活リズム」カード（今日の達成度。押すと記録の詳細）、中央にキャラと吹き出し、下に記録ボタン4つ（食事・ワーク・運動・睡眠）。
+// 上部ヘッダー・下部ナビは出さない（マイページはユーザー、設定などはメニューから）。
+// 睡眠・ワークは画面遷移せず、その場で start / finish を呼ぶ。計測中は「取消」も出す。
+// 押したあとはホームを読み直すので、キャラの状態がすぐ変わる。睡眠中は夜の部屋になる
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../../api/client.js'
 import { useAuth } from '../../auth/useAuth.js'
-import AppShell from '../../components/AppShell.jsx'
+import AppShell, { HeaderActions } from '../../components/AppShell.jsx'
 import ErrorList from '../../components/ErrorList.jsx'
+import { ChevronRightIcon, ExerciseIcon, FlameIcon, MealIcon, SleepIcon, SunIcon, WorkIcon } from '../../components/icons.jsx'
+import UserIcon from '../../components/UserIcon.jsx'
 import { formatElapsed, formatMinutes, formatTime } from '../../lib/format.js'
 import styles from './HomePage.module.css'
+import Room from './Room.jsx'
 
+// 生活リズムカードの並び（デザインの順）
 const ITEMS = [
-  { key: 'sleep', label: '睡眠' },
   { key: 'meal', label: '食事' },
-  { key: 'exercise', label: '運動' },
   { key: 'work', label: 'ワーク' },
+  { key: 'exercise', label: '運動' },
+  { key: 'sleep', label: '睡眠' },
 ]
-const MAX_POINTS = 1000
+const NOTICE_SECONDS = 5
 
 // 計測中は1秒ごとに今の時刻を更新する（ワークの経過時間）
 function useNow(active) {
@@ -31,7 +37,7 @@ function useNow(active) {
 }
 
 export default function HomePage() {
-  const { setUnreadCount } = useAuth()
+  const { user, setUnreadCount } = useAuth()
   const [home, setHome] = useState(null)
   const [errors, setErrors] = useState([])
   const [notice, setNotice] = useState('')
@@ -46,6 +52,13 @@ export default function HomePage() {
   useEffect(() => {
     load().catch((error) => setErrors(error.messages))
   }, [load])
+
+  // お知らせ（おはよう・おつかれさま）は少したったら消す
+  useEffect(() => {
+    if (!notice) return undefined
+    const timer = setTimeout(() => setNotice(''), NOTICE_SECONDS * 1000)
+    return () => clearTimeout(timer)
+  }, [notice])
 
   const sleepTimer = home?.timers.sleep
   const workTimer = home?.timers.work
@@ -77,132 +90,137 @@ export default function HomePage() {
     }
   }
 
-  if (!home) {
-    return (
-      <AppShell title="">
-        <ErrorList errors={errors} />
-        {!errors.length && <p className={styles.loading}>読み込み中…</p>}
-      </AppShell>
-    )
-  }
-
-  const { character, today } = home
-  const sleeping = character.state === 'sleeping'
+  const sleeping = home?.character.state === 'sleeping'
 
   return (
-    <AppShell title="">
-      <div className={styles.page}>
-        <section className={`${styles.stage} ${sleeping ? styles.night : styles.day}`}>
-          <span className={`${styles.mood} ${styles[`mood_${character.mood.key}`] || ''}`}>
-            <span className={styles.moodFace} aria-hidden="true" />
-            {character.mood.label}
-          </span>
-          <img
-            className={`${styles.character} ${styles[`anim_${character.state}`] || styles.anim_normal}`}
-            src={character.image_path}
-            alt={`${character.name}（${character.state_label}）`}
-          />
-          <span className={styles.stateLabel}>
-            {character.name}・{character.state_label}
-          </span>
-        </section>
+    <AppShell bare>
+      <div className={`${styles.room} ${sleeping ? styles.night : ''}`}>
+        <Room />
 
-        <p className={styles.bubble}>{home.message}</p>
+        <header className={styles.top}>
+          <Link to="/mypage" className={styles.userCard}>
+            <UserIcon icon={user?.icon} size={42} />
+            <span className={styles.userName}>{user?.name}</span>
+            <span className={styles.streak}>
+              <span className={styles.streakLabel}>継続日数</span>
+              {/* 継続日数を返す API はまだないので仮表示（decisions.md） */}
+              <span className={styles.streakValue}>
+                〇日
+                <FlameIcon size={16} />
+              </span>
+            </span>
+            <span className={styles.srOnly}>（マイページを開く）</span>
+          </Link>
+          <div className={styles.actions}>
+            <HeaderActions />
+          </div>
+        </header>
 
-        <section className={styles.gauges} aria-label="ポイント">
-          {ITEMS.map(({ key, label }) => {
-            const points = character.points[key]
-            const score = today.scores[key]
-            return (
-              <div key={key} className={styles.gauge}>
-                <span className={styles.gaugeLabel}>{label}</span>
-                <span className={styles.today}>今日 {Math.round(score)}%</span>
-                <span className={styles.points}>{points}</span>
-                <span className={styles.bar}>
-                  <span className={`${styles.fill} ${styles[`fill_${key}`]}`} style={{ width: `${(points / MAX_POINTS) * 100}%` }} />
+        {home && (
+          <Link to="/details" className={styles.rhythm}>
+            <span className={styles.rhythmHead}>
+              <span className={styles.rhythmTitle}>生活リズム</span>
+              <strong className={styles.rhythmTotal}>{Math.round(home.today.total_percent)}%</strong>
+              <ChevronRightIcon size={16} className={styles.rhythmMore} />
+            </span>
+            {ITEMS.map(({ key, label }) => {
+              const score = Math.round(home.today.scores[key])
+              return (
+                <span key={key} className={styles.row}>
+                  <span className={styles.rowLabel}>{label}</span>
+                  <span className={styles.bar}>
+                    {/* ワークは 100% を超えることがあるので、ゲージは 100 で頭打ち */}
+                    {score > 0 && (
+                      <span className={`${styles.fill} ${styles[`fill_${key}`]}`} style={{ width: `${Math.min(score, 100)}%` }} />
+                    )}
+                  </span>
+                  <span className={styles.percent}>{score}%</span>
                 </span>
+              )
+            })}
+            <span className={styles.srOnly}>（記録の詳細を見る）</span>
+          </Link>
+        )}
+
+        <section className={styles.stage}>
+          {!home ? (
+            !errors.length && <p className={styles.loading}>読み込み中…</p>
+          ) : (
+            <>
+              {home.message && <p className={styles.bubble}>{home.message}</p>}
+              <div className={styles.spot}>
+                <span className={styles.rug} aria-hidden="true" />
+                <img
+                  className={`${styles.character} ${styles[`anim_${home.character.state}`] || styles.anim_normal}`}
+                  src={home.character.image_path}
+                  alt={`${home.character.name}（${home.character.state_label}）`}
+                />
               </div>
-            )
-          })}
-          <p className={styles.total}>
-            総合 <strong>{character.points.total}</strong> / {MAX_POINTS} P
-            <span className={styles.totalToday}>（今日の達成度 {today.total_percent}%）</span>
-          </p>
+            </>
+          )}
         </section>
 
-        {notice && <p className={styles.notice}>{notice}</p>}
-        <ErrorList errors={errors} />
+        <div className={styles.toasts} aria-live="polite">
+          {notice && <p className={styles.notice}>{notice}</p>}
+          <ErrorList errors={errors} />
+        </div>
 
-        <section className={styles.buttons} aria-label="記録">
-          <Link to="/meals" className={`${styles.button} ${styles.meal}`}>
-            <span className={styles.icon}>🍴</span>食事
-          </Link>
-          <TimerSlot
-            active={Boolean(sleepTimer)}
-            busy={busy}
-            cancelLabel="睡眠の計測を取り消す"
-            onCancel={() => act('sleep_records', 'cancel', '睡眠の計測を取り消しますか？（記録は残りません）')}
-          >
-            <button
-              type="button"
-              className={`${styles.button} ${sleepTimer ? styles.wake : styles.sleep}`}
-              disabled={busy}
-              onClick={() => act('sleep_records', sleepTimer ? 'finish' : 'start')}
+        {home && (
+          <nav className={styles.buttons} aria-label="記録">
+            <Link to="/meals" className={`${styles.button} ${styles.meal}`}>
+              <MealIcon className={styles.buttonIcon} />
+              <span>食事</span>
+            </Link>
+            <TimerSlot
+              active={Boolean(workTimer)}
+              busy={busy}
+              cancelLabel="ワークの計測を取り消す"
+              onCancel={() => act('work_records', 'cancel', 'ワークの計測を取り消しますか？（記録は残りません）')}
             >
-              <span className={styles.icon}>{sleepTimer ? '☀️' : '🛏️'}</span>
-              <span className={styles.buttonText}>
-                {sleepTimer ? '起床' : '就寝'}
-                {sleepTimer && <small>{formatTime(sleepTimer.slept_at)} から</small>}
-              </span>
-            </button>
-          </TimerSlot>
-          <TimerSlot
-            active={Boolean(workTimer)}
-            busy={busy}
-            cancelLabel="ワークの計測を取り消す"
-            onCancel={() => act('work_records', 'cancel', 'ワークの計測を取り消しますか？（記録は残りません）')}
-          >
-            <button
-              type="button"
-              className={`${styles.button} ${styles.work} ${workTimer ? styles.working : ''}`}
-              disabled={busy || (sleeping && !workTimer)}
-              onClick={() => act('work_records', workTimer ? 'finish' : 'start')}
-              title={sleeping ? '睡眠中はワークを開始できません' : undefined}
-            >
-              <span className={styles.icon}>📖</span>
-              <span className={styles.buttonText}>
-                <span>
-                  ワーク
-                  <wbr />
-                  {workTimer ? '終了' : '開始'}
+              <button
+                type="button"
+                className={`${styles.button} ${styles.work} ${workTimer ? styles.running : ''}`}
+                disabled={busy || (sleeping && !workTimer)}
+                onClick={() => act('work_records', workTimer ? 'finish' : 'start')}
+                title={sleeping ? '睡眠中はワークを開始できません' : undefined}
+                aria-label={workTimer ? 'ワーク終了' : 'ワーク開始'}
+              >
+                <WorkIcon className={styles.buttonIcon} />
+                <span className={styles.timerText}>
+                  {workTimer ? formatElapsed(now - new Date(workTimer.started_at).getTime()) : 'ワーク'}
                 </span>
-                {workTimer && <small>{formatElapsed(now - new Date(workTimer.started_at).getTime())}</small>}
-              </span>
-            </button>
-          </TimerSlot>
-          <Link to="/exercise" className={`${styles.button} ${styles.exercise}`}>
-            <span className={styles.icon}>🏃</span>運動
-          </Link>
-          <button type="button" className={`${styles.button} ${styles.bath}`} disabled>
-            <span className={styles.icon}>🛁</span>
-            <span className={styles.buttonText}>
-              入浴<small>準備中</small>
-            </span>
-          </button>
-          <button type="button" className={`${styles.button} ${styles.hobby}`} disabled>
-            <span className={styles.icon}>🎵</span>
-            <span className={styles.buttonText}>
-              趣味<small>準備中</small>
-            </span>
-          </button>
-        </section>
-
+              </button>
+            </TimerSlot>
+            <Link to="/exercise" className={`${styles.button} ${styles.exercise}`}>
+              <ExerciseIcon className={styles.buttonIcon} />
+              <span>運動</span>
+            </Link>
+            <TimerSlot
+              active={Boolean(sleepTimer)}
+              busy={busy}
+              cancelLabel="睡眠の計測を取り消す"
+              onCancel={() => act('sleep_records', 'cancel', '睡眠の計測を取り消しますか？（記録は残りません）')}
+            >
+              <button
+                type="button"
+                className={`${styles.button} ${styles.sleep} ${sleepTimer ? styles.running : ''}`}
+                disabled={busy}
+                onClick={() => act('sleep_records', sleepTimer ? 'finish' : 'start')}
+                aria-label={sleepTimer ? `起床（${formatTime(sleepTimer.slept_at)} から睡眠中）` : '就寝'}
+              >
+                {sleepTimer ? <SunIcon className={styles.buttonIcon} /> : <SleepIcon className={styles.buttonIcon} />}
+                <span className={styles.timerText}>{sleepTimer ? '起床' : '睡眠'}</span>
+                {sleepTimer && <small className={styles.since}>{formatTime(sleepTimer.slept_at)}〜</small>}
+              </button>
+            </TimerSlot>
+          </nav>
+        )}
       </div>
     </AppShell>
   )
 }
 
-// 睡眠・ワークのボタン。計測中はボタンの右上に小さな「取消」を重ねる（行を増やさないため）
+// 睡眠・ワークのボタン。計測中はボタンの右上に小さな「取消」を重ねる
 function TimerSlot({ active, busy, cancelLabel, onCancel, children }) {
   return (
     <div className={styles.slot}>

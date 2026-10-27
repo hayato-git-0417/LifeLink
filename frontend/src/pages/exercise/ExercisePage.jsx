@@ -4,7 +4,10 @@ import { useCallback, useEffect, useState } from 'react'
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { api } from '../../api/client.js'
 import AppShell from '../../components/AppShell.jsx'
+import { axisTick, CATEGORY_COLORS, CHART, tooltipProps } from '../../components/chartTheme.js'
 import ErrorList from '../../components/ErrorList.jsx'
+import IconBadge from '../../components/IconBadge.jsx'
+import { CheckIcon, CloseIcon, ExerciseIcon, RouteIcon } from '../../components/icons.jsx'
 import { formatDay, formatNumber, formatTime, toDateString } from '../../lib/format.js'
 import form from '../../styles/form.module.css'
 import styles from './ExercisePage.module.css'
@@ -74,14 +77,20 @@ export default function ExercisePage() {
     <AppShell title="運動" backTo="/">
       <ErrorList errors={errors} />
       {!tasks || !distance ? (
-        !errors.length && <p className={styles.loading}>読み込み中…</p>
+        !errors.length && <p className={form.loading}>読み込み中…</p>
       ) : (
         <div className={styles.page}>
-          <section>
-            <h2 className={styles.heading}>
-              ◯タスク
-              {remaining > 0 && <span className={styles.warning}>※ 未完のタスクがあります</span>}
-            </h2>
+          <section className={form.card}>
+            <div className={form.panelHead}>
+              <IconBadge tone="exercise">
+                <ExerciseIcon size={20} />
+              </IconBadge>
+              <h2>今日のタスク</h2>
+              <span className={`${styles.progress} ${remaining === 0 && tasks.total_count > 0 ? styles.progressDone : ''}`}>
+                {tasks.completed_count} / {tasks.total_count}
+              </span>
+            </div>
+            {remaining > 0 && <p className={styles.warning}>未完のタスクがあります</p>}
             {tasks.exercise_tasks.length === 0 ? (
               <p className={styles.empty}>運動タスクがありません。設定 → 目標の設定 から登録してください。</p>
             ) : (
@@ -97,44 +106,44 @@ export default function ExercisePage() {
                       disabled={busyTask === task.id}
                     >
                       <span className={styles.check} aria-hidden="true">
-                        {task.completed ? '✔' : ''}
+                        {task.completed && <CheckIcon size={18} strokeWidth={3.2} />}
                       </span>
                       <span className={styles.taskTitle}>{task.title}</span>
-                      {task.completed && (
-                        <span className={styles.fire} aria-label="達成">
-                          🔥
-                        </span>
-                      )}
+                      {task.completed && <span className={styles.doneLabel}>できた</span>}
                     </button>
                   </li>
                 ))}
               </ul>
             )}
-            <p className={styles.progress}>
-              今日の達成 {tasks.completed_count} / {tasks.total_count}
-            </p>
           </section>
 
-          <section>
-            <h2 className={styles.heading}>◯移動距離</h2>
+          <section className={form.card}>
+            <div className={form.panelHead}>
+              <IconBadge tone="exercise">
+                <RouteIcon size={20} />
+              </IconBadge>
+              <h2>移動距離</h2>
+            </div>
             <form className={styles.distanceForm} onSubmit={addDistance} noValidate>
-              <input
-                className={`${form.input} ${styles.km}`}
-                type="number"
-                inputMode="decimal"
-                min="0"
-                step="0.01"
-                placeholder="2.5"
-                value={km}
-                onChange={(event) => setKm(event.target.value)}
-                aria-label="移動距離（km）"
-              />
-              <span>km</span>
+              <span className={styles.kmField}>
+                <input
+                  className={`${form.input} ${styles.km}`}
+                  type="number"
+                  inputMode="decimal"
+                  min="0"
+                  step="0.01"
+                  placeholder="2.5"
+                  value={km}
+                  onChange={(event) => setKm(event.target.value)}
+                  aria-label="移動距離（km）"
+                />
+                <span className={styles.kmUnit}>km</span>
+              </span>
               <input
                 className={`${form.input} ${styles.memo}`}
                 type="text"
                 maxLength={255}
-                placeholder="メモ（ジョギングなど）"
+                placeholder="メモ（任意）"
                 value={memo}
                 onChange={(event) => setMemo(event.target.value)}
                 aria-label="メモ"
@@ -147,12 +156,11 @@ export default function ExercisePage() {
               <ul className={styles.records}>
                 {todayRecords.map((record) => (
                   <li key={record.id}>
-                    <span>
-                      {formatTime(record.started_at)}　{formatNumber(record.distance_km)} km
-                      {record.memo && `（${record.memo}）`}
-                    </span>
+                    <span className={styles.recordTime}>{formatTime(record.started_at)}</span>
+                    <span className={styles.recordKm}>{formatNumber(record.distance_km)} km</span>
+                    <span className={styles.recordMemo}>{record.memo}</span>
                     <button type="button" className={styles.remove} onClick={() => removeDistance(record)} aria-label="削除">
-                      ×
+                      <CloseIcon size={14} />
                     </button>
                   </li>
                 ))}
@@ -160,14 +168,22 @@ export default function ExercisePage() {
             )}
 
             <div className={styles.chart}>
-              <span className={styles.unit}>(km)</span>
-              <ResponsiveContainer width="100%" height={140}>
-                <BarChart data={chart} margin={{ top: 8, right: 8, bottom: 0, left: -24 }}>
-                  <CartesianGrid vertical={false} stroke="#d6e2ea" />
-                  <XAxis dataKey="day" tickLine={false} fontSize={12} />
-                  <YAxis allowDecimals={false} tickLine={false} fontSize={12} />
-                  <Tooltip formatter={(value) => [`${value} km`, '移動距離']} />
-                  <Bar dataKey="km" fill="#a9c4e8" radius={[4, 4, 0, 0]} isAnimationActive={false} />
+              <span className={styles.unit}>7日間（km）</span>
+              <ResponsiveContainer width="100%" height={136}>
+                <BarChart data={chart} margin={{ top: 8, right: 4, bottom: 0, left: -26 }}>
+                  <CartesianGrid vertical={false} stroke={CHART.grid} />
+                  <XAxis dataKey="day" tickLine={false} axisLine={{ stroke: CHART.ink, strokeWidth: 2 }} tick={axisTick} />
+                  <YAxis allowDecimals={false} tickLine={false} axisLine={false} tick={axisTick} />
+                  <Tooltip formatter={(value) => [`${value} km`, '移動距離']} {...tooltipProps} />
+                  <Bar
+                    dataKey="km"
+                    fill={CATEGORY_COLORS.exercise}
+                    stroke={CHART.ink}
+                    strokeWidth={2}
+                    radius={[6, 6, 0, 0]}
+                    maxBarSize={28}
+                    isAnimationActive={false}
+                  />
                 </BarChart>
               </ResponsiveContainer>
             </div>

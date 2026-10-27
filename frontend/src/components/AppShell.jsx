@@ -1,20 +1,23 @@
-// 画面の共通の枠: 上部ヘッダー（タイトル・通知ベル・メニュー≡）と下部ナビ（ホーム／マイページ）。
-// ログイン・新規登録の画面は guest にして、ベル・メニュー・下部ナビを出さない（spec.md 5章）。
-//   <AppShell title="ログイン" guest>...</AppShell>
-//   <AppShell title="食事" backTo="/">...</AppShell>  … 左上に戻るボタン（←）
+// 画面の共通の枠: 上部ヘッダー（戻る・タイトル・通知ベル・メニュー）と下部ナビ（ホーム／マイページ）。
+// クリームの帯にココアの線、ボタンは丸く縁どる（キャラの線画に合わせる）。
+//   <AppShell title="新規登録" guest>...</AppShell>  … ベル・メニュー・下部ナビを出さない（ログイン・新規登録。spec.md 5章）
+//   <AppShell title="食事" backTo="/">...</AppShell>  … 左上に戻るボタン
+//   <AppShell bare>...</AppShell>  … ヘッダーも下部ナビも出さず、中身だけを画面いっぱいに描く（ホーム・ログイン）
 import { useEffect, useRef, useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth.js'
 import styles from './AppShell.module.css'
+import { BackIcon, BellIcon, ChartIcon, DoorIcon, HomeIcon, MenuIcon, PersonIcon, SlidersIcon } from './icons.jsx'
 
-export default function AppShell({ title, guest = false, backTo, children }) {
+export default function AppShell({ title, guest = false, backTo, bare = false, children }) {
+  if (bare) return <div className={styles.frame}>{children}</div>
   return (
     <div className={styles.frame}>
       <header className={styles.header}>
         <span className={styles.side}>
           {backTo && (
-            <Link to={backTo} className={styles.iconButton} aria-label="戻る">
-              <BackIcon />
+            <Link to={backTo} className={styles.roundButton} aria-label="戻る">
+              <BackIcon size={22} />
             </Link>
           )}
         </span>
@@ -27,7 +30,8 @@ export default function AppShell({ title, guest = false, backTo, children }) {
   )
 }
 
-function HeaderActions() {
+// 通知ベル（未読数）とメニュー。ホームの右上でも使う
+export function HeaderActions() {
   const { unreadCount, logout } = useAuth()
   const [open, setOpen] = useState(false)
   const menuRef = useRef(null)
@@ -44,26 +48,36 @@ function HeaderActions() {
 
   return (
     <>
-      <Link to="/notifications" className={styles.iconButton} aria-label={`通知（未読 ${unreadCount} 件）`}>
-        <BellIcon />
+      <Link to="/notifications" className={styles.roundButton} aria-label={`通知（未読 ${unreadCount} 件）`}>
+        <BellIcon size={22} />
         {unreadCount > 0 && <span className={styles.badge}>{unreadCount > 99 ? '99+' : unreadCount}</span>}
       </Link>
       <div className={styles.menuWrap} ref={menuRef}>
         <button
           type="button"
-          className={styles.iconButton}
+          className={styles.roundButton}
           aria-label="メニュー"
           aria-expanded={open}
           onClick={() => setOpen((value) => !value)}
         >
-          <MenuIcon />
+          <MenuIcon size={22} />
         </button>
         {open && (
           <nav className={styles.menu} onClick={() => setOpen(false)}>
-            <Link to="/settings">設定</Link>
-            <Link to="/notifications">通知</Link>
-            <Link to="/details">記録の詳細</Link>
-            <button type="button" onClick={logout}>
+            <Link to="/details">
+              <ChartIcon size={20} />
+              記録の詳細
+            </Link>
+            <Link to="/notifications">
+              <BellIcon size={20} />
+              通知
+            </Link>
+            <Link to="/settings">
+              <SlidersIcon size={20} />
+              設定
+            </Link>
+            <button type="button" className={styles.logout} onClick={logout}>
+              <DoorIcon size={20} />
               ログアウト
             </button>
           </nav>
@@ -78,59 +92,17 @@ function BottomNav() {
   return (
     <nav className={styles.nav}>
       <NavLink to="/" end className={linkClass}>
-        <HomeIcon />
-        <span>ホーム</span>
+        <span className={styles.navIcon}>
+          <HomeIcon size={22} />
+        </span>
+        ホーム
       </NavLink>
       <NavLink to="/mypage" className={linkClass}>
-        <PersonIcon />
-        <span>マイページ</span>
+        <span className={styles.navIcon}>
+          <PersonIcon size={22} />
+        </span>
+        マイページ
       </NavLink>
     </nav>
-  )
-}
-
-function BackIcon() {
-  return (
-    <svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true">
-      <path fill="currentColor" d="M10.5 5 3.5 12l7 7 1.4-1.4L7.3 13H21v-2H7.3l4.6-4.6L10.5 5Z" />
-    </svg>
-  )
-}
-
-function BellIcon() {
-  return (
-    <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true">
-      <path
-        fill="currentColor"
-        d="M12 22a2.5 2.5 0 0 0 2.45-2h-4.9A2.5 2.5 0 0 0 12 22Zm7-6V11a7 7 0 0 0-5.5-6.84V3.5a1.5 1.5 0 0 0-3 0v.66A7 7 0 0 0 5 11v5l-2 2v1h18v-1l-2-2Z"
-      />
-    </svg>
-  )
-}
-
-function MenuIcon() {
-  return (
-    <svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true">
-      <rect x="3" y="5" width="18" height="3" rx="1.5" fill="currentColor" />
-      <rect x="3" y="10.5" width="18" height="3" rx="1.5" fill="currentColor" />
-      <rect x="3" y="16" width="18" height="3" rx="1.5" fill="currentColor" />
-    </svg>
-  )
-}
-
-function HomeIcon() {
-  return (
-    <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true">
-      <path fill="currentColor" d="M12 3 2 11.5l1.3 1.5L5 11.6V21h5.5v-6h3v6H19v-9.4l1.7 1.4 1.3-1.5L12 3Z" />
-    </svg>
-  )
-}
-
-function PersonIcon() {
-  return (
-    <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true">
-      <circle cx="12" cy="8" r="4.5" fill="currentColor" />
-      <path fill="currentColor" d="M3 21c0-4.4 4-7.5 9-7.5s9 3.1 9 7.5v1H3v-1Z" />
-    </svg>
   )
 }

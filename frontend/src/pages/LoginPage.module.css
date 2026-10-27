@@ -1,14 +1,84 @@
+/* ログイン: 上にキャラとアプリ名、下にフォームのパネル（画面の高さのまん中に置く） */
+.screen {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 18px;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: 24px var(--gutter) calc(24px + env(safe-area-inset-bottom));
+}
+
+.hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.character {
+  width: 132px;
+  height: 132px;
+  animation: float 3s ease-in-out infinite;
+}
+
+/* 足もとの影 */
+.shadow {
+  width: 92px;
+  height: 12px;
+  margin-top: -14px;
+  border-radius: 50%;
+  background: rgb(74 58 46 / 0.13);
+}
+
+.appName {
+  margin: 10px 0 0;
+  font-size: 2.1rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  line-height: 1.1;
+}
+
+.tagline {
+  margin: 6px 0 0;
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
 .form {
-  gap: 32px;
-  padding: 72px 16px 0;
+  padding: 18px 16px 20px;
+}
+
+.title {
+  margin: 0;
+  font-size: 1.12rem;
+  text-align: center;
 }
 
 .submit {
-  margin-top: 48px;
+  margin-top: 6px;
 }
 
 .signup {
   margin: 0;
-  color: var(--color-text-sub);
+  color: var(--ink-soft);
+  font-weight: 700;
   text-align: center;
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-7px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .character {
+    animation: none;
+  }
 }

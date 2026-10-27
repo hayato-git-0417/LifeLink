@@ -1,9 +1,14 @@
-
+// 食事を記録（デザイン p.14）／修正（/meals/:id/edit）。写真・内容・区分・時間・栄養値・コメント。
+// 写真はスマホのカメラ／ファイル選択（capture="environment"）。送信は multipart（meal[photo]）。
+// 写真を選ぶと自動で圧縮（JPEG・長辺1000px以下・1MB未満）し、解析API（/meals/scan）で内容・栄養値を自動入力する。
+// 解析結果は手で修正できるよう、内容・栄養値は入力欄のまま残す。
+// スマホ（375×667）でスクロールを減らすため、写真は小さな枠で内容・時間の横に置き、栄養は2列、コメントは折りたたむ
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { api } from '../../api/client.js'
 import AppShell from '../../components/AppShell.jsx'
 import ErrorList from '../../components/ErrorList.jsx'
+import { CameraIcon } from '../../components/icons.jsx'
 import { fromDateTimeLocal, toDateTimeLocal } from '../../lib/format.js'
 import form from '../../styles/form.module.css'
 import styles from './Meals.module.css'
@@ -148,6 +153,9 @@ export default function MealFormPage() {
   const [errors, setErrors] = useState([])
   const [busy, setBusy] = useState(false)
   const [scanning, setScanning] = useState(false)
+
+  // 解析中・送信中は入力を止める
+  const locked = busy || scanning
 
   // 編集画面では保存済みの内容を読み込む
   // 新規画面では目標に合わせて食事区分を初期設定する
@@ -305,7 +313,7 @@ export default function MealFormPage() {
   async function handleSubmit(event) {
     event.preventDefault()
 
-    if (busy || scanning) return
+    if (locked) return
 
     // 食事写真を必須にする
     if (!photoFile && (removePhoto || !currentPhotoUrl)) {
@@ -331,25 +339,15 @@ export default function MealFormPage() {
     setErrors([])
 
     try {
-      const mealToSave = { ...meal }
       const body = new FormData()
 
-      body.append('meal[meal_type]', mealToSave.meal_type)
-      body.append(
-        'meal[eaten_at]',
-        fromDateTimeLocal(mealToSave.eaten_at)
-      )
-      body.append(
-        'meal[content]',
-        (mealToSave.content ?? '').trim()
-      )
-      body.append(
-        'meal[comment]',
-        (mealToSave.comment ?? '').trim()
-      )
+      body.append('meal[meal_type]', meal.meal_type)
+      body.append('meal[eaten_at]', fromDateTimeLocal(meal.eaten_at))
+      body.append('meal[content]', (meal.content ?? '').trim())
+      body.append('meal[comment]', (meal.comment ?? '').trim())
 
       NUTRIENTS.forEach(({ key }) => {
-        body.append(`meal[${key}]`, mealToSave[key] ?? '')
+        body.append(`meal[${key}]`, meal[key] ?? '')
       })
 
       // 保存する写真も、解析時に圧縮したJPEGを使う
@@ -379,7 +377,7 @@ export default function MealFormPage() {
 
   // 食事記録を削除する
   async function handleDelete() {
-    if (busy || scanning) return
+    if (locked) return
 
     if (!window.confirm('この食事の記録を削除しますか？')) {
       return
@@ -403,197 +401,153 @@ export default function MealFormPage() {
   const shownPhoto =
     photoPreview || (!removePhoto && currentPhotoUrl)
 
+  // 送信ボタンの文言
+  const submitLabel = scanning
+    ? '解析中…'
+    : busy
+      ? '送信中…'
+      : editing
+        ? '保存する'
+        : '記録する'
+
   return (
-    <AppShell
-      title={editing ? '食事を修正' : '食事を記録'}
-      backTo="/meals"
-    >
+    <AppShell title={editing ? '食事を修正' : '食事を記録'} backTo="/meals">
       <ErrorList errors={errors} />
 
       {!meal ? (
-        !errors.length && (
-          <p className={styles.loading}>読み込み中…</p>
-        )
+        !errors.length && <p className={form.loading}>読み込み中…</p>
       ) : (
-        <form
-          className={`${form.form} ${styles.mealForm}`}
-          onSubmit={handleSubmit}
-          noValidate
-        >
-          <div className={styles.formTop}>
-            <div className={styles.photoCol}>
-              <label className={styles.photoBox}>
-                {shownPhoto ? (
-                  <img
-                    src={shownPhoto}
-                    alt="食事の写真"
-                    className={styles.photo}
-                  />
-                ) : (
-                  <span className={styles.photoEmpty}>
-                    <span className={styles.photoPlus}>＋</span>
-                    撮影する
-                  </span>
-                )}
-
-                <input
-                  ref={fileInput}
-                  className={styles.fileInput}
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  onChange={choosePhoto}
-                  disabled={scanning || busy}
-                />
-              </label>
-
-              {shownPhoto && (
-                <button
-                  type="button"
-                  className={`${form.linkButton} ${styles.smallLink}`}
-                  onClick={clearPhoto}
-                  disabled={scanning || busy}
-                >
-                  写真を外す
-                </button>
-              )}
-            </div>
-
-            <div className={styles.topFields}>
-              <label className={form.field}>
-                <span className={styles.smallLabel}>料理名</span>
-                <input
-                  className={form.input}
-                  type="text"
-                  value={meal.content ?? ''}
-                  placeholder={
-                    scanning
-                      ? '写真を解析中...'
-                      : '写真を撮影すると料理名が表示されます'
-                  }
-                  disabled={scanning || busy}
-                  onChange={(event) =>
-                    update({ content: event.target.value })
-                  }
-                />
-              </label>
-
-              <label className={form.field}>
-                <span className={styles.smallLabel}>食事時間</span>
-                <input
-                  className={form.input}
-                  type="datetime-local"
-                  value={meal.eaten_at}
-                  disabled={busy || scanning}
-                  onChange={(event) =>
-                    update({ eaten_at: event.target.value })
-                  }
-                />
-              </label>
-            </div>
-          </div>
-
-          <fieldset
-            className={styles.typeRow}
-            disabled={busy || scanning}
-          >
-            <legend className={styles.smallLabel}>区分</legend>
-
-            <div className={styles.mealTypes}>
-              {MEAL_TYPES.map(({ key, label }) => (
-                <label
-                  key={key}
-                  className={`${styles.chip} ${
-                    meal.meal_type === key ? styles.chipOn : ''
-                  }`}
-                >
+        <form className={form.form} onSubmit={handleSubmit} noValidate>
+          <section className={`${form.card} ${styles.mealForm}`}>
+            <div className={styles.formTop}>
+              <div className={styles.photoCol}>
+                <label className={`${styles.photoBox} ${shownPhoto ? styles.photoBoxFilled : ''}`}>
+                  {shownPhoto ? (
+                    <img src={shownPhoto} alt="食事の写真" className={styles.photo} />
+                  ) : (
+                    <span className={styles.photoEmpty}>
+                      <CameraIcon size={28} />
+                      {scanning ? '解析中…' : '写真を撮る'}
+                    </span>
+                  )}
                   <input
-                    type="radio"
-                    name="meal_type"
-                    value={key}
-                    checked={meal.meal_type === key}
-                    onChange={() => update({ meal_type: key })}
+                    ref={fileInput}
+                    className={styles.fileInput}
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    onChange={choosePhoto}
+                    disabled={locked}
                   />
-                  {label}
                 </label>
-              ))}
+                {shownPhoto && (
+                  <button
+                    type="button"
+                    className={`${form.linkButton} ${styles.smallLink}`}
+                    onClick={clearPhoto}
+                    disabled={locked}
+                  >
+                    写真を外す
+                  </button>
+                )}
+              </div>
+
+              <div className={styles.topFields}>
+                <label className={styles.field}>
+                  <span className={styles.smallLabel}>内容</span>
+                  <input
+                    className={`${form.input} ${styles.compactInput}`}
+                    type="text"
+                    maxLength={255}
+                    placeholder={scanning ? '写真を解析中…' : '例: ご飯、焼き魚'}
+                    value={meal.content ?? ''}
+                    disabled={locked}
+                    onChange={(event) => update({ content: event.target.value })}
+                  />
+                </label>
+                <label className={styles.field}>
+                  <span className={styles.smallLabel}>時間</span>
+                  <input
+                    className={`${form.input} ${styles.compactInput}`}
+                    type="datetime-local"
+                    value={meal.eaten_at}
+                    disabled={locked}
+                    onChange={(event) => update({ eaten_at: event.target.value })}
+                  />
+                </label>
+              </div>
             </div>
-          </fieldset>
 
-          <fieldset
-            className={styles.nutrientSet}
-            disabled={busy || scanning}
-          >
-            <legend className={styles.smallLabel}>
-              栄養素（写真解析結果）
-            </legend>
+            <fieldset className={styles.typeRow} disabled={locked}>
+              <legend className={styles.smallLabel}>区分</legend>
+              <div className={styles.mealTypes}>
+                {MEAL_TYPES.map(({ key, label }) => (
+                  <label key={key} className={`${styles.chip} ${meal.meal_type === key ? styles.chipOn : ''}`}>
+                    <input
+                      type="radio"
+                      name="meal_type"
+                      value={key}
+                      checked={meal.meal_type === key}
+                      onChange={() => update({ meal_type: key })}
+                    />
+                    {label}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
 
-            {scanning && <p>栄養素を計算中...</p>}
+            <fieldset className={styles.nutrientSet} disabled={locked}>
+              <legend className={styles.smallLabel}>
+                {scanning ? '栄養（写真を解析中…）' : '栄養（写真から自動入力・修正できます）'}
+              </legend>
+              <div className={styles.nutrientInputs}>
+                {NUTRIENTS.map(({ key, label, unit, step }) => (
+                  <label key={key} className={styles.nutrientField}>
+                    <span className={styles.nutrientFieldLabel}>{label}</span>
+                    <span className={styles.withUnit}>
+                      <input
+                        className={`${form.input} ${styles.number}`}
+                        type="number"
+                        inputMode="decimal"
+                        min="0"
+                        step={step}
+                        value={meal[key] ?? ''}
+                        onChange={(event) => update({ [key]: event.target.value })}
+                      />
+                      <span className={styles.unit}>{unit}</span>
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
 
-            <div className={styles.nutrientInputs}>
-              {NUTRIENTS.map(({ key, label, unit }) => (
-                <div key={key} className={styles.nutrientRow}>
-                  <span>{label}</span>
-                  <strong>
-                    {meal[key] !== '' && meal[key] != null
-                      ? `${meal[key]} ${unit}`
-                      : '未取得'}
-                  </strong>
-                </div>
-              ))}
-            </div>
-          </fieldset>
+            <details className={styles.commentBox} open={Boolean(meal.comment)}>
+              <summary className={styles.smallLabel}>コメント（任意）</summary>
+              <textarea
+                className={`${form.input} ${styles.comment}`}
+                rows={2}
+                aria-label="コメント"
+                value={meal.comment ?? ''}
+                disabled={locked}
+                onChange={(event) => update({ comment: event.target.value })}
+              />
+            </details>
+          </section>
 
-          <details
-            className={styles.commentBox}
-            open={Boolean(meal.comment)}
-          >
-            <summary className={styles.smallLabel}>
-              コメント（任意）
-            </summary>
-
-            <textarea
-              className={`${form.input} ${styles.comment}`}
-              rows={2}
-              aria-label="コメント"
-              value={meal.comment ?? ''}
-              disabled={busy || scanning}
-              onChange={(event) =>
-                update({ comment: event.target.value })
-              }
-            />
-          </details>
-
-          <div
-            className={`${form.actions} ${
-              editing ? form.actionsBetween : form.actionsCenter
-            }`}
-          >
-            {editing && (
-              <button
-                type="button"
-                className={`${form.button} ${styles.danger}`}
-                onClick={handleDelete}
-                disabled={busy || scanning}
-              >
+          {editing ? (
+            <div className={`${form.actions} ${form.actionsBetween}`}>
+              <button type="button" className={`${form.button} ${form.danger}`} onClick={handleDelete} disabled={locked}>
                 削除
               </button>
-            )}
-
-            <button
-              type="submit"
-              className={`${form.button} ${form.primary}`}
-              disabled={busy || scanning}
-            >
-              {scanning
-                ? '解析中...'
-                : busy
-                  ? '記録中...'
-                  : editing
-                    ? '保存する'
-                    : '記録する'}
+              <button type="submit" className={`${form.button} ${form.primary}`} disabled={locked}>
+                {submitLabel}
+              </button>
+            </div>
+          ) : (
+            <button type="submit" className={`${form.button} ${form.primary} ${form.block}`} disabled={locked}>
+              {submitLabel}
             </button>
-          </div>
+          )}
         </form>
       )}
     </AppShell>

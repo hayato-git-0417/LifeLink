@@ -1,87 +1,484 @@
-/* ホームは上の余白なしでキャラの部屋を端まで出す */
-.page {
+/* ホーム: 部屋のイラストの上に、カード・キャラ・記録ボタンを重ねる。
+   部屋の色は変数にまとめ、睡眠中（.night）は夜の色に入れ替える */
+.room {
+  --floor-h: clamp(190px, 33%, 300px);
+  --room-wall: var(--wall);
+  --room-stripe: var(--wall-stripe);
+  --room-floor: #ddb98f;
+  --room-plank: rgb(74 58 46 / 0.15);
+  --room-base: var(--paper);
+  --sky: #cfe8f8;
+  --sky-low: #e9f5fc;
+  --hill: #a9d38e;
+  --cloud: #ffffff;
+  --curtain: #f7e1c4;
+  --frame-wood: #e9cfa8;
+  --leaf-a: #8cc46f;
+  --leaf-b: #a9d38e;
+  --pot: #f1dcc0;
+  --pot-rim: #f8e9d4;
+  --rug: var(--paper);
+  --rug-ring: var(--line-soft);
+  --decor-paper: var(--paper);
+
+  position: relative;
+  isolation: isolate;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin: calc(-1 * var(--gutter)) calc(-1 * var(--gutter)) 0;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: 12px var(--gutter) calc(14px + env(safe-area-inset-bottom));
+  overflow: hidden;
+  background-color: var(--room-wall);
+  background-image: repeating-linear-gradient(90deg, transparent 0 18px, var(--room-stripe) 18px 36px);
+  transition: background-color 0.6s ease;
 }
 
-.page > :not(.stage) {
-  margin-right: var(--gutter);
-  margin-left: var(--gutter);
+.night {
+  --room-wall: #4a4e7c;
+  --room-stripe: #464a77;
+  --room-floor: #625677;
+  --room-plank: rgb(20 16 40 / 0.22);
+  --room-base: #9a95b8;
+  --sky: #27305c;
+  --sky-low: #34407a;
+  --hill: #3f5d57;
+  --curtain: #8f86ab;
+  --frame-wood: #8f84a8;
+  --leaf-a: #5a856b;
+  --leaf-b: #679379;
+  --pot: #a497b5;
+  --pot-rim: #b3a8c4;
+  --rug: #d6d0e4;
+  --rug-ring: #aaa1c2;
+  --decor-paper: #dcd7ea;
 }
 
-.loading {
-  padding: 40px 0;
-  color: var(--color-text-sub);
-  text-align: center;
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
-/* キャラの部屋。背景画像はまだないのでグラデーションで代用（昼／夜） */
-.stage {
+/* ---------- 部屋のイラスト（Room.jsx） ---------- */
+.decor {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.floor {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: var(--floor-h);
+  background-color: var(--room-floor);
+  background-image: repeating-linear-gradient(180deg, transparent 0 34px, var(--room-plank) 34px 36px);
+  transition: background-color 0.6s ease;
+}
+
+/* 幅木（壁と床のさかい） */
+.floor::before {
+  position: absolute;
+  top: -12px;
+  right: 0;
+  left: 0;
+  height: 14px;
+  border-top: var(--line);
+  border-bottom: var(--line);
+  background: var(--room-base);
+  content: '';
+}
+
+/* 窓は上（生活リズムカードの横）。時計と額は床を基準に置き、背の高い画面でもキャラのまわりにまとめる。
+   ただし低い画面では、カードや窓と重ならない高さ（上から約 296px より下）にとどめる */
+.window {
+  position: absolute;
+  top: 80px;
+  right: 8px;
+  width: 29%;
+  max-width: 128px;
+  height: auto;
+}
+
+.clock {
+  position: absolute;
+  right: 10%;
+  bottom: min(calc(var(--floor-h) + 150px), calc(100% - 296px));
+  width: 15%;
+  max-width: 64px;
+  height: auto;
+}
+
+.picture {
+  position: absolute;
+  bottom: min(calc(var(--floor-h) + 150px), calc(100% - 296px));
+  left: 7%;
+  width: 58px;
+  height: auto;
+}
+
+.plant {
+  position: absolute;
+  bottom: calc(var(--floor-h) - 104px);
+  left: -16px;
+  width: 100px;
+  height: auto;
+}
+
+.ink {
+  stroke: var(--ink);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.paperFill {
+  fill: var(--decor-paper);
+}
+
+.inkFill {
+  fill: var(--ink);
+}
+
+.sky {
+  fill: var(--sky);
+}
+
+.skyLow {
+  fill: var(--sky-low);
+}
+
+.hill {
+  fill: var(--hill);
+}
+
+.cloud {
+  fill: var(--cloud);
+}
+
+.moon {
+  fill: #fdf1bf;
+}
+
+.star {
+  fill: #fff4cf;
+}
+
+.curtain {
+  fill: var(--curtain);
+}
+
+.clockRing {
+  stroke: var(--line-soft);
+}
+
+.frameWood {
+  fill: var(--frame-wood);
+}
+
+.leafA {
+  fill: var(--leaf-a);
+}
+
+.leafB {
+  fill: var(--leaf-b);
+}
+
+.pot {
+  fill: var(--pot);
+}
+
+.potRim {
+  fill: var(--pot-rim);
+}
+
+.room:not(.night) .nightOnly,
+.night .cloud {
+  display: none;
+}
+
+/* ---------- 上段: ユーザーと、通知ベル・メニュー ---------- */
+.top,
+.rhythm,
+.stage,
+.toasts,
+.buttons {
   position: relative;
+  z-index: 1;
+}
+
+.top {
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.userCard {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  max-width: 270px;
+  padding: 5px 16px 5px 5px;
+  border: var(--line);
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--ink);
+  text-decoration: none;
+  box-shadow: 0 3px 0 var(--ink);
+}
+
+.userCard:active {
+  box-shadow: 0 0 0 var(--ink);
+  transform: translateY(3px);
+}
+
+.userName {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 1.08rem;
+  font-weight: 700;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.streak {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-end;
-  height: 160px;
-  padding-bottom: 8px;
-  overflow: hidden;
+  line-height: 1.25;
 }
 
-.stage::after {
+.streakLabel {
+  color: var(--ink-soft);
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.streakValue {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 8px;
+  margin-left: auto;
+}
+
+/* ---------- 生活リズムカード（押すと記録の詳細） ---------- */
+.rhythm {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  width: min(63%, 250px);
+  margin-top: 12px;
+  padding: 9px 12px 12px;
+  border: var(--line);
+  border-radius: var(--radius);
+  background: var(--paper);
+  color: var(--ink);
+  text-decoration: none;
+  box-shadow: 0 3px 0 var(--ink);
+}
+
+.rhythm:active {
+  box-shadow: 0 0 0 var(--ink);
+  transform: translateY(3px);
+}
+
+.rhythmHead {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: 1px;
+}
+
+.rhythmTitle {
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.rhythmTotal {
+  font-size: 1.45rem;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.rhythmMore {
+  align-self: center;
+  margin-left: auto;
+  color: var(--ink-soft);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 3.1em minmax(0, 1fr) 2.6em;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+}
+
+.rowLabel {
+  font-weight: 700;
+}
+
+.bar {
+  height: 12px;
+  overflow: hidden;
+  border: var(--line);
+  border-radius: 6px;
+  background: var(--paper-deep);
+}
+
+.fill {
+  display: block;
+  height: 100%;
+  border-right: 2px solid var(--ink);
+  transition: width 0.5s ease;
+}
+
+.fill_meal {
+  background: var(--meal-deep);
+}
+
+.fill_work {
+  background: var(--work-deep);
+}
+
+.fill_exercise {
+  background: var(--exercise-deep);
+}
+
+.fill_sleep {
+  background: var(--sleep-deep);
+}
+
+.percent {
+  color: var(--ink-soft);
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- キャラ（ラグの上に立つ）と吹き出し ---------- */
+.stage {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  min-height: 210px;
+  padding-bottom: 4px;
+}
+
+.loading {
+  margin: auto 0;
+  padding: 6px 16px;
+  border: var(--line);
+  border-radius: 999px;
+  background: var(--paper);
+  font-weight: 700;
+}
+
+.bubble {
+  position: relative;
+  max-width: 76%;
+  margin: 0 0 14px;
+  padding: 7px 16px;
+  border: var(--line);
+  border-radius: 18px;
+  background: var(--paper);
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1.45;
+  text-align: center;
+}
+
+/* 吹き出しのしっぽ（キャラのほうを向く） */
+.bubble::before,
+.bubble::after {
   position: absolute;
-  bottom: 12px;
   left: 50%;
-  width: 130px;
-  height: 24px;
-  border-radius: 50%;
-  background: rgb(120 84 52 / 0.35);
+  border-style: solid;
+  border-color: transparent;
   transform: translateX(-50%);
   content: '';
 }
 
-.day {
-  background:
-    radial-gradient(circle at 85% 18%, rgb(255 244 200 / 0.9) 0 26px, transparent 28px),
-    linear-gradient(180deg, #bfe6ff 0%, #e8f7ff 60%, #f3e3c8 60%, #e9d2ad 100%);
+.bubble::before {
+  bottom: -12px;
+  border-width: 12px 9px 0;
+  border-top-color: var(--ink);
 }
 
-.night {
-  background:
-    radial-gradient(circle at 82% 18%, #fdf6c7 0 18px, transparent 20px),
-    radial-gradient(circle at 20% 22%, #fff 0 1.5px, transparent 2px),
-    radial-gradient(circle at 35% 12%, #fff 0 1px, transparent 2px),
-    radial-gradient(circle at 62% 28%, #fff 0 1.5px, transparent 2px),
-    linear-gradient(180deg, #1d2b5a 0%, #36457e 60%, #4a4360 60%, #3c3550 100%);
+.bubble::after {
+  bottom: -8.5px;
+  border-width: 9px 6.5px 0;
+  border-top-color: var(--paper);
 }
 
+.spot {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+/* ラグ（キャラの足もと） */
+.rug {
+  position: absolute;
+  bottom: 2px;
+  left: 50%;
+  width: min(70%, 280px);
+  height: 60px;
+  border: 2.5px solid var(--ink);
+  border-radius: 50%;
+  background: var(--rug);
+  transform: translateX(-50%);
+  transition: background-color 0.6s ease;
+}
+
+.rug::after {
+  position: absolute;
+  inset: 6px 10px;
+  border: 2px dashed var(--rug-ring);
+  border-radius: 50%;
+  content: '';
+}
+
+/* 背の高い画面ではキャラも大きくする */
 .character {
   position: relative;
-  z-index: 1;
-  width: 116px;
-  height: 116px;
+  width: min(54vw, clamp(150px, 26vh, 230px));
+  width: min(54vw, clamp(150px, 26dvh, 230px));
+  height: auto;
+  aspect-ratio: 1;
   object-fit: contain;
 }
 
-.stateLabel {
-  position: relative;
-  z-index: 1;
-  margin-top: 2px;
-  padding: 0 10px;
-  border-radius: 999px;
-  background: rgb(255 255 255 / 0.85);
-  font-size: 0.8rem;
-}
-
-/* アニメーション: 通常はふわふわ、睡眠中はゆっくり、汗汗は小刻み（spec.md 4章） */
+/* アニメーション: 通常はふわふわ、睡眠中はゆっくり、運動中は小刻み（spec.md 4章） */
 .anim_normal,
 .anim_full,
 .anim_hungry,
 .anim_studying,
 .anim_sleep_deprived,
 .anim_fat {
-  animation: float 2.6s ease-in-out infinite;
+  animation: float 2.8s ease-in-out infinite;
 }
 
 .anim_sleeping {
@@ -98,7 +495,7 @@
     transform: translateY(0);
   }
   50% {
-    transform: translateY(-10px);
+    transform: translateY(-8px);
   }
 }
 
@@ -119,170 +516,50 @@
   .character {
     animation: none;
   }
+
+  .room,
+  .floor,
+  .rug,
+  .fill {
+    transition: none;
+  }
 }
 
-/* 右上の気分バッジ（spec.md 3.4） */
-.mood {
+/* ---------- お知らせ（記録ボタンの上に重ねる） ---------- */
+.toasts {
   position: absolute;
-  top: 8px;
-  right: 8px;
+  right: var(--gutter);
+  bottom: calc(env(safe-area-inset-bottom) + 132px);
+  left: var(--gutter);
   z-index: 2;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 2px 12px 2px 4px;
-  border-radius: 999px;
-  background: rgb(240 240 240 / 0.95);
-  font-size: 0.9rem;
-  font-weight: 700;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
-.moodFace {
-  width: 20px;
-  height: 20px;
-  border: 3px solid currentColor;
-  border-radius: 50%;
-}
-
-.mood_genki {
-  color: #12b312;
-}
-
-.mood_futsu {
-  color: #d39b00;
-}
-
-.mood_kanashii {
-  color: #3a78d8;
-}
-
-.mood_ikari {
-  color: #d93025;
-}
-
-/* 吹き出し */
-.bubble {
-  position: relative;
-  margin-top: 4px;
-  margin-bottom: 0;
-  padding: 5px 12px;
-  border: 2px solid var(--color-border-light);
-  border-radius: 14px;
-  background: var(--color-surface);
-  font-size: 0.95rem;
-  font-weight: 600;
-  text-align: center;
-}
-
-.bubble::before {
-  position: absolute;
-  top: -10px;
-  left: 50%;
-  border-right: 9px solid transparent;
-  border-bottom: 10px solid var(--color-border-light);
-  border-left: 9px solid transparent;
-  transform: translateX(-50%);
-  content: '';
-}
-
-/* ゲージ（ポイント 0〜1000 と今日のスコア）。2列×2段 */
-.gauges {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 6px 14px;
-  padding: 8px 12px;
-  border-radius: var(--radius);
-  background: var(--color-surface);
-}
-
-.gauge {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: baseline;
-  gap: 2px 6px;
-  font-size: 0.85rem;
-}
-
-.gaugeLabel {
-  font-weight: 600;
-}
-
-.bar {
-  grid-column: 1 / -1;
-  height: 8px;
-  overflow: hidden;
-  border-radius: 4px;
-  background: #e6ebf0;
-}
-
-.fill {
-  display: block;
-  height: 100%;
-  border-radius: 5px;
-  transition: width 0.4s ease;
-}
-
-.fill_sleep {
-  background: #5a8bc8;
-}
-
-.fill_meal {
-  background: #6cc3b2;
-}
-
-.fill_exercise {
-  background: #7db383;
-}
-
-.fill_work {
-  background: #8f8ad0;
-}
-
-.points {
-  font-weight: 700;
-  text-align: right;
-}
-
-.today {
-  color: var(--color-text-sub);
-  font-size: 0.72rem;
-}
-
-.total {
-  grid-column: 1 / -1;
-  margin: 0;
-  font-size: 0.9rem;
-  text-align: center;
-}
-
-.total strong {
-  font-size: 1.15rem;
-}
-
-.totalToday {
-  color: var(--color-text-sub);
-  font-size: 0.8rem;
+.toasts:empty {
+  display: none;
 }
 
 .notice {
-  margin-top: 0;
-  margin-bottom: 0;
-  padding: 6px 12px;
-  border-radius: 10px;
-  background: #e7f6e7;
-  color: #23692c;
-  font-size: 0.9rem;
+  margin: 0;
+  padding: 10px 14px;
+  border: 2px solid var(--leaf);
+  border-radius: 14px;
+  background: var(--leaf-soft);
+  color: var(--leaf-text);
+  font-size: 0.92rem;
+  font-weight: 700;
+  text-align: center;
+  box-shadow: 0 6px 16px rgb(74 58 46 / 0.18);
 }
 
-/* 記録ボタン6個（3列×2段）。アイコンの下に名前 */
+/* ---------- 記録ボタン4つ（食事・ワーク・運動・睡眠） ---------- */
 .buttons {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
-  padding: 8px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
-  background: var(--color-surface);
+  margin-top: 12px;
 }
 
 .slot {
@@ -300,91 +577,80 @@
   align-items: center;
   justify-content: center;
   gap: 2px;
-  min-height: 60px;
-  padding: 4px;
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
-  color: #fff;
-  font-size: 0.95rem;
-  font-weight: 600;
-  line-height: 1.2;
-  text-align: center;
-  /* 日本語は <wbr> の位置（ワーク／開始）でだけ折り返す。幅 320px のスマホ用 */
-  word-break: keep-all;
+  aspect-ratio: 1;
+  min-width: 0;
+  padding: 4px 2px;
+  border: 3px solid var(--ink);
+  border-radius: 20px;
+  color: var(--ink);
+  font-size: 0.86rem;
+  font-weight: 700;
+  line-height: 1.15;
   text-decoration: none;
+  box-shadow: inset 0 0 0 3px rgb(255 251 240 / 0.75), 0 4px 0 var(--ink);
+  transition: transform 0.08s ease, box-shadow 0.08s ease, background-color 0.3s ease;
+}
+
+.button:active:not(:disabled) {
+  box-shadow: inset 0 0 0 3px rgb(255 251 240 / 0.75), 0 0 0 var(--ink);
+  transform: translateY(4px);
 }
 
 .button:disabled {
-  opacity: 0.55;
+  opacity: 0.6;
 }
 
-.buttonText {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+.buttonIcon {
+  width: 46%;
+  height: auto;
 }
 
-.buttonText small {
-  font-size: 0.7rem;
-  font-weight: 400;
+.timerText {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.since {
+  font-size: 0.68rem;
   font-variant-numeric: tabular-nums;
 }
 
-.icon {
-  display: inline-flex;
-  flex-shrink: 0;
-  align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  background: #fff;
-  font-size: 1rem;
-}
-
 .meal {
-  background: #6cc3b2;
-}
-
-.sleep {
-  background: #5a8bc8;
-}
-
-.wake {
-  background: #ffb54d;
+  background: var(--meal);
 }
 
 .work {
-  background: #8f8ad0;
-}
-
-.working {
-  box-shadow: 0 0 0 3px #fff, 0 0 0 5px #8f8ad0;
+  background: var(--work);
 }
 
 .exercise {
-  background: #7db383;
+  background: var(--exercise);
 }
 
-.bath {
-  background: #b0c4e4;
+.sleep {
+  background: var(--sleep);
 }
 
-.hobby {
-  background: #f0aeb0;
+/* 計測中: 濃い色にして、動いていることがわかるようにする */
+.work.running {
+  background: var(--work-deep);
+}
+
+.sleep.running {
+  background: #8db9e4;
 }
 
 /* 計測中のボタンの右上に重ねる「取消」 */
 .cancel {
   position: absolute;
-  top: -6px;
-  right: -4px;
+  top: -10px;
+  right: -6px;
   z-index: 1;
-  padding: 1px 7px;
-  border: 1px solid var(--color-error);
+  padding: 1px 8px;
+  border: 2px solid var(--danger);
   border-radius: 999px;
-  background: var(--color-surface);
-  color: var(--color-error);
-  font-size: 0.72rem;
+  background: var(--paper);
+  color: var(--danger);
+  font-size: 0.7rem;
   font-weight: 700;
 }

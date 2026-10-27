@@ -1,3 +1,4 @@
+/* マイページ・フォロー一覧・他人のマイページ */
 .page {
   display: flex;
   flex-direction: column;
@@ -7,146 +8,174 @@
 .empty {
   margin: 0;
   padding: 16px 0;
-  color: var(--color-text-sub);
+  color: var(--ink-soft);
   text-align: center;
 }
 
 .note {
   margin: 0;
-  color: var(--color-text-sub);
+  color: var(--ink-soft);
   font-size: 0.8rem;
 }
 
-.card {
-  padding: 14px;
-  border-radius: var(--radius);
-  background: var(--color-surface);
-}
-
-.heading {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 8px;
-  margin: 0 0 10px;
-  font-size: 1.05rem;
-}
-
-.points {
-  color: var(--color-primary-dark);
-  font-size: 0.95rem;
-  font-weight: 700;
-}
-
+/* パネルの見出しの右「くわしく」 */
 .more {
-  display: block;
-  margin-top: 8px;
-  font-size: 0.9rem;
-  text-align: right;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 32px;
+  padding: 2px 8px 2px 12px;
+  border: var(--line);
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-decoration: none;
+  box-shadow: 0 2px 0 var(--ink);
 }
 
-/* プロフィール（p.3） */
+.more:active {
+  box-shadow: none;
+  transform: translateY(2px);
+}
+
+/* ---------- プロフィール（p.3） ---------- */
 .profile {
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 8px 0;
+  padding: 4px 2px;
 }
 
 .profileBody {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   gap: 8px;
   min-width: 0;
 }
 
 .profileName {
+  max-width: 100%;
   margin: 0;
   overflow: hidden;
-  font-size: 1.3rem;
+  font-size: 1.35rem;
+  line-height: 1.25;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .counts {
   display: flex;
-  gap: 20px;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .count {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  color: var(--color-text);
-  font-size: 0.85rem;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  padding: 3px 12px;
+  border: 2px solid var(--line-soft);
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 0.8rem;
+  font-weight: 700;
   text-decoration: none;
 }
 
 .count strong {
-  font-size: 1.25rem;
+  font-size: 1.05rem;
+  font-variant-numeric: tabular-nums;
 }
 
-a.count span {
-  text-decoration: underline;
+/* 自分のページでは押せる（フォロー一覧へ） */
+.countLink {
+  border-color: var(--ink);
+  box-shadow: 0 2px 0 var(--ink);
 }
 
-/* 他人のキャラ */
-.character {
-  display: flex;
+.countLink:active {
+  box-shadow: none;
+  transform: translateY(2px);
+}
+
+/* ---------- マイページの記録グラフ（睡眠。デザイン p.3）: 左に円グラフ、右に就寝・起床・目標 ---------- */
+.sleepTop {
+  display: grid;
+  grid-template-columns: 124px minmax(0, 1fr);
   align-items: center;
-  gap: 12px;
+  gap: 14px;
 }
 
-.characterImage {
-  flex-shrink: 0;
-  width: 120px;
-  height: 120px;
-  object-fit: contain;
+.donutValue {
+  font-size: 0.98rem;
 }
 
-.characterBody {
+.donutLabel {
+  color: var(--ink-soft);
+  font-size: 0.6rem;
+  font-weight: 700;
+}
+
+.sleepTimes {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  margin: 0;
 }
 
-.characterName {
-  font-size: 1.1rem;
-  font-weight: 700;
-}
-
-/* フォロー一覧（p.4） */
-.tabs {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  border-bottom: 2px solid var(--color-border-light);
-}
-
-.tab {
+.sleepTimes div {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  min-height: 48px;
-  margin-bottom: -2px;
-  border: none;
-  border-bottom: 3px solid transparent;
-  background: none;
-  font-size: 1.05rem;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 8px 2px;
 }
 
-.tabActive {
-  border-bottom-color: var(--color-primary);
-  color: var(--color-primary-dark);
+.sleepTimes div + div {
+  border-top: var(--dash);
+}
+
+.sleepTimes dt {
+  color: var(--ink-soft);
+  font-size: 0.82rem;
   font-weight: 700;
+}
+
+.sleepTimes dd {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.sleepNote {
+  margin: 8px 0 12px;
+  color: var(--ink-soft);
+  font-size: 0.78rem;
+  text-align: center;
+}
+
+.subheading {
+  margin: 0 0 2px;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+/* ---------- フォロー一覧（p.4） ---------- */
+.tab {
+  min-height: 40px;
 }
 
 .tabCount {
-  min-width: 24px;
-  padding: 0 6px;
-  border-radius: 12px;
-  background: var(--color-surface);
-  font-size: 0.8rem;
+  min-width: 26px;
+  padding: 0 7px;
+  border-radius: 999px;
+  background: var(--paper-deep);
+  color: var(--ink);
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
 }
 
 .search {
@@ -154,15 +183,30 @@ a.count span {
   gap: 8px;
 }
 
-.search input {
+.searchField {
+  position: relative;
+  display: flex;
   flex: 1;
   min-width: 0;
 }
 
+.searchIcon {
+  position: absolute;
+  top: 50%;
+  left: 12px;
+  color: var(--ink-soft);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.searchInput {
+  padding-left: 38px;
+}
+
 .searchButton {
   flex-shrink: 0;
-  min-width: 80px;
-  white-space: nowrap;
+  min-width: 76px;
+  padding: 0 16px;
 }
 
 .resultHead {
@@ -170,15 +214,15 @@ a.count span {
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  margin: 0;
-  color: var(--color-text-sub);
-  font-size: 0.9rem;
+  margin: 0 0 8px;
+  color: var(--ink-soft);
+  font-size: 0.88rem;
+  font-weight: 700;
 }
 
 .userList {
   display: flex;
   flex-direction: column;
-  gap: 10px;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -189,116 +233,177 @@ a.count span {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+  padding: 10px 0;
+}
+
+.userRow:first-child {
+  padding-top: 0;
+}
+
+.userRow:last-child {
+  padding-bottom: 0;
+}
+
+.userRow + .userRow {
+  border-top: var(--dash);
 }
 
 .userLink {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   min-width: 0;
-  color: var(--color-text);
+  color: var(--ink);
   text-decoration: none;
 }
 
 .userName {
   overflow: hidden;
-  font-size: 1.05rem;
+  font-size: 1.02rem;
+  font-weight: 700;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+/* フォローする（ココアで塗る）／フォロー中（クリーム） */
 .followButton {
   flex-shrink: 0;
-  min-width: 108px;
-  min-height: 40px;
-  padding: 6px 12px;
-  border: 1px solid var(--color-primary-dark);
-  border-radius: 20px;
-  background: var(--color-primary);
-  color: var(--color-on-primary);
-  font-size: 0.9rem;
-  font-weight: 600;
+  min-width: 104px;
+  min-height: 38px;
+  padding: 4px 12px;
+  border: var(--line);
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 0.85rem;
+  font-weight: 700;
+  box-shadow: 0 2px 0 var(--ink-strong);
+}
+
+.followButton:active:not(:disabled) {
+  box-shadow: none;
+  transform: translateY(2px);
 }
 
 .following {
-  background: var(--color-surface);
-  color: var(--color-primary-dark);
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: 0 2px 0 var(--ink);
 }
 
-/* 相互フォローの人の詳細へ */
-.detailsLink {
-  display: block;
-  padding: 12px;
-  border: 1px solid var(--color-primary-dark);
-  border-radius: 12px;
-  background: var(--color-surface);
-  color: var(--color-primary-dark);
-  font-weight: 600;
-  text-align: center;
-  text-decoration: none;
+/* ---------- 他人のキャラ（小さな部屋に立たせる） ---------- */
+.characterCard {
+  padding: 0 0 14px;
+  overflow: hidden;
 }
 
-/* マイページの記録グラフ（睡眠。デザイン p.3）: 左に円グラフ、右に就寝・起床・目標 */
-.sleepTop {
-  display: grid;
-  grid-template-columns: 140px minmax(0, 1fr);
-  align-items: center;
-  gap: 12px;
-}
-
-.sleepDonut {
+.miniRoom {
   position: relative;
-  width: 140px;
-  height: 140px;
-}
-
-.sleepDonutCenter {
-  position: absolute;
-  inset: 0;
   display: flex;
-  flex-direction: column;
-  align-items: center;
+  align-items: flex-end;
   justify-content: center;
-  pointer-events: none;
+  height: 168px;
+  border-bottom: var(--line);
+  background:
+    linear-gradient(transparent 0 calc(100% - 48px), var(--ink) calc(100% - 48px) calc(100% - 46px), var(--paper) calc(100% - 46px) calc(100% - 38px), var(--ink) calc(100% - 38px) calc(100% - 36px), #ddb98f calc(100% - 36px)),
+    repeating-linear-gradient(90deg, var(--wall) 0 18px, var(--wall-stripe) 18px 36px);
 }
 
-.sleepDonutCenter strong {
-  font-size: 1.1rem;
-  line-height: 1.2;
+.miniRug {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  width: 170px;
+  height: 36px;
+  border: 2.5px solid var(--ink);
+  border-radius: 50%;
+  background: var(--paper);
+  transform: translateX(-50%);
 }
 
-.sleepDonutCenter span {
-  color: var(--color-text-sub);
-  font-size: 0.72rem;
+.characterImage {
+  position: relative;
+  width: 132px;
+  height: 132px;
+  margin-bottom: 4px;
+  object-fit: contain;
 }
 
-.sleepTimes {
+.characterBody {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 10px;
+  padding: 12px 14px 0;
+}
+
+.characterName {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.characterStats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
   margin: 0;
 }
 
-.sleepTimes div {
+.characterStats div {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   justify-content: space-between;
-  padding: 8px 12px;
-  background: var(--color-input);
+  gap: 6px;
+  padding: 6px 12px;
+  border: 2px solid var(--line-soft);
+  border-radius: 12px;
 }
 
-.sleepTimes dt {
-  font-size: 0.85rem;
+.characterStats dt {
+  color: var(--ink-soft);
+  font-size: 0.8rem;
   font-weight: 700;
 }
 
-.sleepTimes dd {
+.characterStats dd {
   margin: 0;
   font-weight: 700;
+}
+
+.points {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: baseline;
+  gap: 4px 8px;
+}
+
+.pointsLabel {
+  color: var(--ink-soft);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.points strong {
+  font-size: 1.15rem;
   font-variant-numeric: tabular-nums;
 }
 
-.card .note {
-  margin: 6px 0 10px;
-  text-align: center;
+.points small {
+  color: var(--ink-soft);
+  font-size: 0.75rem;
+}
+
+.pointsBar {
+  grid-column: 1 / -1;
+  height: 12px;
+  overflow: hidden;
+  border: var(--line);
+  border-radius: 6px;
+  background: var(--paper-deep);
+}
+
+.pointsBar span {
+  display: block;
+  height: 100%;
+  border-right: 2px solid var(--ink);
+  background: var(--leaf);
 }

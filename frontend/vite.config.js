@@ -13,6 +13,7 @@ export default defineConfig({
     proxy: {
       '/api': rails,
       '/characters': rails,
+      '/icons': rails,
       '/rails/active_storage': rails,
     },
   },

@@ -1,14 +1,9 @@
 .icon {
-  display: inline-flex;
+  display: block;
   flex-shrink: 0;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  border-radius: 50%;
-  line-height: 1;
 }
 
-/* 5つを1行に並べる（幅 375px のスマホでも収まるようにアイコンは 48px） */
+/* 5つを1行に（幅 375px のスマホでも収まるようにアイコンは 48px） */
 .picker {
   display: flex;
   justify-content: space-between;
@@ -16,6 +11,7 @@
 }
 
 .choice {
+  position: relative;
   flex-shrink: 0;
   padding: 2px;
   border: 3px solid transparent;
@@ -24,5 +20,21 @@
 }
 
 .selected {
-  border-color: #1a73e8;
+  border-color: var(--ink);
+}
+
+/* 選んだアイコンの右下の印 */
+.check {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: var(--line);
+  border-radius: 50%;
+  background: var(--leaf);
+  color: var(--paper);
 }
