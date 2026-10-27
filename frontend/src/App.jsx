@@ -63,7 +63,7 @@ export default function App() {
   useEffect(() => {
     // 最初に1つだけ準備する
     if (!bgmRef.current) {
-      const bgm = new Audio('/music/Breakfast_High_Score.mp3')
+      const bgm = new Audio('/music/hidamari-no-yorimichi-pop-100bpm.mp3')
       bgm.loop = true
       bgm.volume = 0.1
       bgmRef.current = bgm
