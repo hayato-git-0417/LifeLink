@@ -32,6 +32,7 @@ export default function SettingsPage() {
           <span className={styles.label}>プロフィール変更</span>
           <ChevronRightIcon size={18} className={styles.chevron} />
         </Link>
+        
         <Link to="/settings/goal" className={styles.item}>
           <IconBadge tone="leaf">
             <FlagIcon size={20} />
@@ -39,6 +40,15 @@ export default function SettingsPage() {
           <span className={styles.label}>目標の設定</span>
           <ChevronRightIcon size={18} className={styles.chevron} />
         </Link>
+
+        <Link to="/settings/sound" className={styles.item}>
+          <IconBadge tone="leaf">
+            <FlagIcon size={20} />
+          </IconBadge>
+          <span className={styles.label}>サウンド</span>
+          <ChevronRightIcon size={18} className={styles.chevron} />
+        </Link>
+        
         <button type="button" className={styles.item} onClick={handleLogout}>
           <IconBadge>
             <DoorIcon size={20} />

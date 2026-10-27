@@ -1,0 +1,8 @@
+.mainButtons {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 12px;
+  background: #568b75;
+  color: white;
+  cursor: pointer;
+}
