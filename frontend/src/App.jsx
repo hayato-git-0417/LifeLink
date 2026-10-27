@@ -1,5 +1,5 @@
 // 画面の一覧（spec.md 5章）
-import { lazy, Suspense, useEffect, useRef } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { GuestOnly, GOAL_SETUP_PATH, RequireUser } from './components/RouteGuards.jsx'
 import { useAuth } from './auth/useAuth.js'
@@ -16,6 +16,7 @@ import SettingsPage from './pages/settings/SettingsPage.jsx'
 import FollowsPage from './pages/social/FollowsPage.jsx'
 import UserPage from './pages/social/UserPage.jsx'
 import SignupPage from './signup/SignupPage.jsx'
+import SoundSettingsPage from './pages/settings/SoundSettingsPage.jsx'
 
 // グラフ（Recharts）を使う画面は開いたときに読み込む（最初に読む JS を小さくするため）。
 // 食事トップの円グラフは CSS で描くので（components/Donut.jsx）ふつうに読み込む
@@ -23,10 +24,40 @@ const ExercisePage = lazy(() => import('./pages/exercise/ExercisePage.jsx'))
 const DetailsPage = lazy(() => import('./pages/details/DetailsPage.jsx'))
 const MyPage = lazy(() => import('./pages/social/MyPage.jsx'))
 
+// BGMの一覧
+const BGM_TRACKS = [
+  {
+    id: 'hidamari',
+    name: 'ひだまりのよりみち',
+    src: '/music/hidamari-no-yorimichi-pop-100bpm.mp3',
+  },
+  {
+    id: 'breakfast',
+    name: 'Breakfast High Score',
+    src: '/music/Breakfast_High_Score.mp3',
+  },
+  {
+    id: 'tomato',
+    name: 'tomato',
+    src: '/music/tomato.wav',
+  },
+  {
+    id: 'Morning Grove',
+    name: 'Morning_in_the_Apricot_Grove',
+    src: '/music/Morning_in_the_Apricot_Grove.mp3',
+  },
+  {
+    id: 'スイカと夏休み',
+    name: 'スイカと夏休み',
+    src: '/music/スイカと夏休み.wav',
+  }
+]
+
 export default function App() {
   const location = useLocation()
   const { status } = useAuth()
   const bgmRef = useRef(null)
+  const [currentBgm, setCurrentBgm] = useState(BGM_TRACKS[0].id)
 
   /* クリック音 */
   useEffect(() => {
@@ -59,11 +90,25 @@ export default function App() {
     }
   }, []);
 
+  function handleBgmChange(selectedBgm) {
+    const track = BGM_TRACKS.find((track) => track.id === selectedBgm)
+    const bgm = bgmRef.current
+
+    if (!track || !bgm) return
+
+    bgm.src = track.src
+    setCurrentBgm(track.id)
+
+    bgm.play().catch((error) => {
+      console.warn('BGMを再生できませんでした', error)
+    })
+  }
+
   /* BGM */
   useEffect(() => {
     // 最初に1つだけ準備する
     if (!bgmRef.current) {
-      const bgm = new Audio('/music/hidamari-no-yorimichi-pop-100bpm.mp3')
+      const bgm = new Audio(BGM_TRACKS[0].src)
       bgm.loop = true
       bgm.volume = 0.1
       bgmRef.current = bgm
@@ -133,6 +178,13 @@ export default function App() {
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/settings/profile" element={<ProfileEditPage />} />
           <Route path="/settings/goal" element={<GoalEditPage />} />
+          <Route path="/settings/sound" element={
+              <SoundSettingsPage
+                currentBgm={currentBgm}
+                onSaveBgm={handleBgmChange}
+              />
+            }
+          />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
