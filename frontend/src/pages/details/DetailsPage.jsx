@@ -11,6 +11,7 @@ import { CATEGORY_COLORS } from '../../components/chartTheme.js'
 import ErrorList from '../../components/ErrorList.jsx'
 import { ChevronLeftIcon, ChevronRightIcon, ExerciseIcon, MealIcon, SleepIcon, WorkIcon } from '../../components/icons.jsx'
 import ScoreTrendChart from '../../components/ScoreTrendChart.jsx'
+import ExerciseDurationChart from './ExerciseDurationChart.jsx'
 import { datesBetween, formatDate, formatDay, formatMinutes, formatNumber, shiftDate, toDateString } from '../../lib/format.js'
 import form from '../../styles/form.module.css'
 import { NUTRIENTS, sumNutrients } from '../meals/mealTypes.js'
@@ -177,11 +178,15 @@ export default function DetailsPage() {
 
             {view.key === 'chart' ? (
               <section className={`${styles.card} ${styles.panel} ${styles.chartPanel}`}>
-                <h2 className={styles.heading}>{tab.label}のスコアとポイントの推移</h2>
+                <h2 className={styles.heading}>{tab.key === 'exercise' ? '1日の運動時間（項目別）' : `${tab.label}のスコアとポイントの推移`}</h2>
                 <div className={styles.chart}>
-                  <ScoreTrendChart rows={chartRows(tab.key, dates, achievements, today)} color={CATEGORY_COLORS[tab.key]} height="100%" />
+                  {tab.key === 'exercise' ? (
+                    <ExerciseDurationChart dates={dates} dailyTotals={records.daily_duration_totals} height="100%" />
+                  ) : (
+                    <ScoreTrendChart rows={chartRows(tab.key, dates, achievements, today)} color={CATEGORY_COLORS[tab.key]} height="100%" />
+                  )}
                 </div>
-                <p className={styles.note}>ポイントは日ごとに確定した値です（今日は現在の値）。</p>
+                {tab.key !== 'exercise' && <p className={styles.note}>ポイントは日ごとに確定した値です（今日は現在の値）。</p>}
               </section>
             ) : (
               <section className={`${styles.card} ${styles.panel}`}>
@@ -239,7 +244,7 @@ function Summary({ tab, records, achievements }) {
     tiles.push({ label: '合計カロリー', value: `${formatNumber(totals.calories)} kcal` })
     tiles.push({ label: '1日平均', value: days ? `${formatNumber(totals.calories / days)} kcal` : '-' })
   } else {
-    const km = records.daily_totals.reduce((sum, day) => sum + day.distance_km, 0)
+    const km = (records.daily_totals || []).reduce((sum, day) => sum + (Number(day.distance_km) || 0), 0)
     tiles.push({ label: '合計移動距離', value: `${formatNumber(km)} km` })
     const completed = achievements.filter((row) => row.exercise_score >= 100).length
     tiles.push({ label: 'タスク全達成', value: `${completed} 日` })
@@ -300,7 +305,7 @@ function ExerciseDays({ dates, distance, achievements }) {
         <li key={date} className={styles.record}>
           <div className={styles.recordMain}>
             <span className={styles.recordTitle}>{formatDate(date)}</span>
-            <span className={styles.recordSub}>
+          <span className={styles.recordSub}>
               タスク達成 <b>{byDate[date] ? `${Math.round(byDate[date].exercise_score)}%` : '-'}</b>　移動距離{' '}
               <b>{formatNumber(kmByDate[date] ?? 0)} km</b>
             </span>

@@ -43,7 +43,7 @@ module Api
       end
 
       def exercise_json(user, range)
-        totals = user.exercise_records.between(range.first, range.last).group(:recorded_on).sum(:distance_km)
+        records = user.exercise_records.between(range.first, range.last).to_a
         { daily_totals: range.map { |date| { date: date, distance_km: totals.fetch(date, 0).to_f } } }
       end
     end
