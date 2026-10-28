@@ -610,6 +610,16 @@
   white-space: nowrap;
 }
 
+.exerciseActivity {
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--ink-soft);
+  font-size: 0.62rem;
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .since {
   font-size: 0.68rem;
   font-variant-numeric: tabular-nums;

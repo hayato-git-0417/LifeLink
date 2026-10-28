@@ -13,6 +13,7 @@ import ErrorList from '../../components/ErrorList.jsx'
 import { ChevronRightIcon, ExerciseIcon, FlameIcon, MealIcon, SleepIcon, SunIcon, WorkIcon } from '../../components/icons.jsx'
 import UserIcon from '../../components/UserIcon.jsx'
 import { formatElapsed, formatMinutes, formatTime } from '../../lib/format.js'
+import ExercisePage from '../exercise/ExercisePage.jsx'
 import styles from './HomePage.module.css'
 import Room from './Room.jsx'
 
@@ -42,6 +43,8 @@ export default function HomePage() {
   const [errors, setErrors] = useState([])
   const [notice, setNotice] = useState('')
   const [busy, setBusy] = useState(false)
+  const [exerciseOpen, setExerciseOpen] = useState(false)
+  const [exerciseTimer, setExerciseTimer] = useState({ taskId: null, taskTitle: '', runningTaskId: null, startedAt: null, elapsedByTask: {}, active: false })
 
   const load = useCallback(async () => {
     const data = await api('/home')
@@ -62,7 +65,9 @@ export default function HomePage() {
 
   const sleepTimer = home?.timers.sleep
   const workTimer = home?.timers.work
-  const now = useNow(Boolean(workTimer))
+  const exerciseRunning = exerciseTimer.runningTaskId !== null
+  const now = useNow(Boolean(workTimer) || exerciseRunning)
+  const exerciseElapsed = exerciseTimer.taskId === null ? 0 : (exerciseTimer.elapsedByTask[exerciseTimer.taskId] || 0) + (exerciseTimer.runningTaskId === exerciseTimer.taskId ? Math.max(0, Math.floor((now - exerciseTimer.startedAt) / 1000)) : 0)
 
   // kind: sleep_records / work_records、action: start / finish / cancel
   async function act(kind, action, confirmMessage) {
@@ -90,6 +95,71 @@ export default function HomePage() {
     }
   }
 
+  function toggleExerciseTimer(taskId, taskTitle) {
+    setNotice('')
+    setExerciseTimer((current) => {
+      const elapsedByTask = { ...current.elapsedByTask }
+      const taskTitlesById = { ...(current.taskTitlesById || {}), [taskId]: taskTitle }
+      if (current.runningTaskId !== null) {
+        const elapsed = Math.floor((Date.now() - current.startedAt) / 1000)
+        elapsedByTask[current.runningTaskId] = (elapsedByTask[current.runningTaskId] || 0) + elapsed
+      }
+      if (current.runningTaskId === taskId) {
+        return { ...current, runningTaskId: null, startedAt: null, elapsedByTask, active: true }
+      }
+      return { taskId, taskTitle, runningTaskId: taskId, startedAt: Date.now(), elapsedByTask, active: true }
+    })
+  }
+  function closeExercisePopup() {
+    setExerciseOpen(false)
+  }
+  async function finishExerciseTimer() {
+    const taskId = exerciseTimer.taskId
+    const elapsedByTask = { ...exerciseTimer.elapsedByTask }
+    if (exerciseTimer.runningTaskId !== null) {
+      elapsedByTask[exerciseTimer.runningTaskId] = (elapsedByTask[exerciseTimer.runningTaskId] || 0) + Math.max(0, Math.floor((Date.now() - exerciseTimer.startedAt) / 1000))
+    }
+    const savedSecondsByTask = { ...(exerciseTimer.savedSecondsByTask || {}) }
+    const taskTitlesById = exerciseTimer.taskTitlesById || {}
+    const pendingRecords = Object.entries(elapsedByTask).flatMap(([id, seconds]) => {
+      const totalMinutes = seconds > 0 ? Math.ceil(seconds / 60) : 0
+      const alreadySavedMinutes = Math.ceil((savedSecondsByTask[id] || 0) / 60)
+      const minutes = Math.max(0, totalMinutes - alreadySavedMinutes)
+      return minutes > 0 ? [{ taskId: id, seconds, duration_minutes: minutes, memo: taskTitlesById[id] || (id === String(taskId) ? exerciseTimer.taskTitle : '') || '運動' }] : []
+    })
+    setBusy(true)
+    setErrors([])
+    try {
+      if (pendingRecords.length > 0) {
+        await api('/exercise_records', {
+          method: 'POST',
+          body: { exercise_records: pendingRecords.map(({ duration_minutes, memo }) => ({ duration_minutes, memo })) },
+        })
+      }
+      const nextSavedSeconds = { ...savedSecondsByTask }
+      pendingRecords.forEach((record) => { nextSavedSeconds[record.taskId] = record.seconds })
+      setExerciseTimer((current) => ({
+        ...current,
+        runningTaskId: null,
+        startedAt: null,
+        active: false,
+        elapsedByTask,
+        savedSecondsByTask: nextSavedSeconds,
+      }))
+    setExerciseOpen(false)
+    const currentSeconds = taskId === null ? 0 : (elapsedByTask[taskId] || 0)
+    setNotice(`おつかれさま！ ${exerciseTimer.taskTitle || '運動'} ${formatMinutes(currentSeconds > 0 ? Math.floor(currentSeconds / 60) : 0)}`)
+    } catch (error) {
+      setErrors(error.messages)
+    } finally {
+      setBusy(false)
+    }
+  }
+  function cancelExerciseTimer() {
+    if (!window.confirm('運動の計測を取り消しますか？（この項目の記録時間も破棄されます）')) return
+    setExerciseTimer({ taskId: null, runningTaskId: null, startedAt: null, elapsedByTask: {}, active: false })
+    setExerciseOpen(false)
+  }
   const sleeping = home?.character.state === 'sleeping'
 
   return (
@@ -191,17 +261,35 @@ export default function HomePage() {
                 </span>
               </button>
             </TimerSlot>
-            <Link to="/exercise" className={`${styles.button} ${styles.exercise}`}>
-              <ExerciseIcon className={styles.buttonIcon} />
-              <span>運動</span>
-            </Link>
+            <TimerSlot
+              active={exerciseTimer.active}
+              busy={false}
+              cancelLabel="運動の計測を取り消す"
+              onCancel={cancelExerciseTimer}
+            >
+              <button
+                type="button"
+                className={`${styles.button} ${styles.exercise} ${exerciseTimer.active ? styles.running : ''}`}
+                disabled={busy}
+                onClick={() => exerciseTimer.runningTaskId !== null ? finishExerciseTimer() : setExerciseOpen(true)}
+                aria-label={exerciseTimer.runningTaskId !== null ? '運動終了' : '運動を記録'}
+              >
+                 <ExerciseIcon className={styles.buttonIcon} />
+                {exerciseTimer.active && exerciseTimer.taskTitle && (
+                  <span className={styles.exerciseActivity} title={exerciseTimer.taskTitle}>
+                    {exerciseTimer.runningTaskId !== null ? `${exerciseTimer.taskTitle}中…` : `${exerciseTimer.taskTitle}（一時停止）`}
+                  </span>
+                )}
+                <span className={styles.timerText}>{exerciseTimer.active ? formatElapsed(exerciseElapsed * 1000) : '運動'}</span>
+              </button>
+            </TimerSlot>
             <TimerSlot
               active={Boolean(sleepTimer)}
               busy={busy}
               cancelLabel="睡眠の計測を取り消す"
               onCancel={() => act('sleep_records', 'cancel', '睡眠の計測を取り消しますか？（記録は残りません）')}
             >
-              <button
+             <button
                 type="button"
                 className={`${styles.button} ${styles.sleep} ${sleepTimer ? styles.running : ''}`}
                 disabled={busy}
@@ -216,6 +304,7 @@ export default function HomePage() {
           </nav>
         )}
       </div>
+      {exerciseOpen && <ExercisePage onClose={closeExercisePopup} timer={exerciseTimer} now={now} onToggleTimer={toggleExerciseTimer} completionNotice={notice.startsWith('おつかれさま！') ? notice : ''} />}
     </AppShell>
   )
 }

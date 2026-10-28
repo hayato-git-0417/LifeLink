@@ -1,195 +1,101 @@
-// 運動（デザイン p.18）。タスクのチェックリスト（未完了の警告）、移動距離の手入力、移動距離の7日グラフ。
-// 運動タイマーは作らない（spec.md 2章）。チェックを付けると、キャラは30分間「汗汗」になる
-import { useCallback, useEffect, useState } from 'react'
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { api } from '../../api/client.js'
-import AppShell from '../../components/AppShell.jsx'
-import { axisTick, CATEGORY_COLORS, CHART, tooltipProps } from '../../components/chartTheme.js'
-import ErrorList from '../../components/ErrorList.jsx'
-import IconBadge from '../../components/IconBadge.jsx'
-import { CheckIcon, CloseIcon, ExerciseIcon, RouteIcon } from '../../components/icons.jsx'
-import { formatDay, formatNumber, formatTime, toDateString } from '../../lib/format.js'
-import form from '../../styles/form.module.css'
 import styles from './ExercisePage.module.css'
 
-export default function ExercisePage() {
+// ホームの上に重ねる運動タスクのポップアップ
+export default function ExercisePage({ onClose, timer: externalTimer, now: externalNow, onToggleTimer }) {
+  const navigate = useNavigate()
   const [tasks, setTasks] = useState(null)
-  const [distance, setDistance] = useState(null)
-  const [errors, setErrors] = useState([])
-  const [busyTask, setBusyTask] = useState(null)
-  const [km, setKm] = useState('')
-  const [memo, setMemo] = useState('')
-  const [saving, setSaving] = useState(false)
-
-  const loadTasks = useCallback(() => api('/exercise_tasks/today').then(setTasks), [])
-  const loadDistance = useCallback(() => api('/exercise_records').then(setDistance), [])
+  const [error, setError] = useState('')
+  const [localTimer, setLocalTimer] = useState({ taskId: null, runningTaskId: null, startedAt: null, elapsedByTask: {} })
+  const [localNow, setLocalNow] = useState(() => Date.now())
+  const controlled = Boolean(externalTimer && onToggleTimer)
+  const timer = controlled ? externalTimer : localTimer
+  const now = controlled ? (externalNow ?? Date.now()) : localNow
+  const close = onClose || (() => navigate('/'))
 
   useEffect(() => {
-    Promise.all([loadTasks(), loadDistance()]).catch((error) => setErrors(error.messages))
-  }, [loadTasks, loadDistance])
+    let active = true
+    api('/exercise_tasks/today')
+      .then((data) => active && setTasks(data.exercise_tasks))
+      .catch((reason) => active && setError(reason.messages?.[0] || '運動タスクを読み込めませんでした'))
+    return () => { active = false }
+  }, [])
 
-  async function toggle(task) {
-    setBusyTask(task.id)
-    setErrors([])
-    try {
-      await api(`/exercise_tasks/${task.id}/completion`, { method: task.completed ? 'DELETE' : 'POST' })
-      await loadTasks()
-    } catch (error) {
-      setErrors(error.messages)
-    } finally {
-      setBusyTask(null)
+  useEffect(() => {
+    if (controlled || localTimer.runningTaskId === null) return undefined
+    const interval = window.setInterval(() => setLocalNow(Date.now()), 1000)
+    return () => window.clearInterval(interval)
+  }, [controlled, localTimer.runningTaskId])
+  useEffect(() => {
+    function closeOnEscape(event) {
+      if (event.key === 'Escape') close()
     }
+    window.addEventListener('keydown', closeOnEscape)
+    return () => window.removeEventListener('keydown', closeOnEscape)
+  }, [close])
+
+  function toggleTimer(taskId) {
+    const starting = timer.runningTaskId !== taskId
+    if (controlled) {
+      onToggleTimer(taskId, tasks?.find((task) => task.id === taskId)?.title || '運動')
+      if (starting) close()
+      return
+    }
+    setLocalTimer((current) => {
+      const elapsedByTask = { ...current.elapsedByTask }
+      if (current.runningTaskId !== null) {
+        elapsedByTask[current.runningTaskId] = (elapsedByTask[current.runningTaskId] || 0) + Math.floor((Date.now() - current.startedAt) / 1000)
+      }
+      if (current.runningTaskId === taskId) {
+        return { ...current, runningTaskId: null, startedAt: null, elapsedByTask }
+      }
+      return { taskId, runningTaskId: taskId, startedAt: Date.now(), elapsedByTask }
+    })
+  }
+  function openTaskSettings() {
+    close()
+    navigate('/settings/goal')
   }
 
-  async function addDistance(event) {
-    event.preventDefault()
-    if (!(Number(km) > 0)) return setErrors(['移動距離は0より大きい数で入力してください'])
-    setSaving(true)
-    setErrors([])
-    try {
-      await api('/exercise_records', { method: 'POST', body: { exercise_record: { distance_km: km, memo: memo.trim() } } })
-      setKm('')
-      setMemo('')
-      await loadDistance()
-    } catch (error) {
-      setErrors(error.messages)
-    } finally {
-      setSaving(false)
-    }
+  function formatElapsed(seconds = 0) {
+    const minutes = Math.floor(seconds / 60).toString().padStart(2, '0')
+    const remainder = (seconds % 60).toString().padStart(2, '0')
+    return `${minutes}:${remainder}`
   }
-
-  async function removeDistance(record) {
-    if (!window.confirm(`${formatNumber(record.distance_km)} km の記録を削除しますか？`)) return
-    try {
-      await api(`/exercise_records/${record.id}`, { method: 'DELETE' })
-      await loadDistance()
-    } catch (error) {
-      setErrors(error.messages)
-    }
-  }
-
-  const remaining = tasks ? tasks.total_count - tasks.completed_count : 0
-  const today = toDateString()
-  const todayRecords = distance?.exercise_records.filter((record) => record.recorded_on === today) ?? []
-  const chart = distance?.daily_totals.map((day) => ({ day: formatDay(day.date), km: day.distance_km })) ?? []
 
   return (
-    <AppShell title="運動" backTo="/">
-      <ErrorList errors={errors} />
-      {!tasks || !distance ? (
-        !errors.length && <p className={form.loading}>読み込み中…</p>
-      ) : (
-        <div className={styles.page}>
-          <section className={form.card}>
-            <div className={form.panelHead}>
-              <IconBadge tone="exercise">
-                <ExerciseIcon size={20} />
-              </IconBadge>
-              <h2>今日のタスク</h2>
-              <span className={`${styles.progress} ${remaining === 0 && tasks.total_count > 0 ? styles.progressDone : ''}`}>
-                {tasks.completed_count} / {tasks.total_count}
-              </span>
-            </div>
-            {remaining > 0 && <p className={styles.warning}>未完のタスクがあります</p>}
-            {tasks.exercise_tasks.length === 0 ? (
-              <p className={styles.empty}>運動タスクがありません。設定 → 目標の設定 から登録してください。</p>
-            ) : (
-              <ul className={styles.tasks}>
-                {tasks.exercise_tasks.map((task) => (
-                  <li key={task.id}>
-                    <button
-                      type="button"
-                      role="checkbox"
-                      aria-checked={task.completed}
-                      className={`${styles.task} ${task.completed ? styles.done : ''}`}
-                      onClick={() => toggle(task)}
-                      disabled={busyTask === task.id}
-                    >
-                      <span className={styles.check} aria-hidden="true">
-                        {task.completed && <CheckIcon size={18} strokeWidth={3.2} />}
-                      </span>
-                      <span className={styles.taskTitle}>{task.title}</span>
-                      {task.completed && <span className={styles.doneLabel}>できた</span>}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-
-          <section className={form.card}>
-            <div className={form.panelHead}>
-              <IconBadge tone="exercise">
-                <RouteIcon size={20} />
-              </IconBadge>
-              <h2>移動距離</h2>
-            </div>
-            <form className={styles.distanceForm} onSubmit={addDistance} noValidate>
-              <span className={styles.kmField}>
-                <input
-                  className={`${form.input} ${styles.km}`}
-                  type="number"
-                  inputMode="decimal"
-                  min="0"
-                  step="0.01"
-                  placeholder="2.5"
-                  value={km}
-                  onChange={(event) => setKm(event.target.value)}
-                  aria-label="移動距離（km）"
-                />
-                <span className={styles.kmUnit}>km</span>
-              </span>
-              <input
-                className={`${form.input} ${styles.memo}`}
-                type="text"
-                maxLength={255}
-                placeholder="メモ（任意）"
-                value={memo}
-                onChange={(event) => setMemo(event.target.value)}
-                aria-label="メモ"
-              />
-              <button type="submit" className={`${form.button} ${form.primary} ${styles.add}`} disabled={saving}>
-                記録
-              </button>
-            </form>
-            {todayRecords.length > 0 && (
-              <ul className={styles.records}>
-                {todayRecords.map((record) => (
-                  <li key={record.id}>
-                    <span className={styles.recordTime}>{formatTime(record.started_at)}</span>
-                    <span className={styles.recordKm}>{formatNumber(record.distance_km)} km</span>
-                    <span className={styles.recordMemo}>{record.memo}</span>
-                    <button type="button" className={styles.remove} onClick={() => removeDistance(record)} aria-label="削除">
-                      <CloseIcon size={14} />
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-
-            <div className={styles.chart}>
-              <span className={styles.unit}>7日間（km）</span>
-              <ResponsiveContainer width="100%" height={136}>
-                <BarChart data={chart} margin={{ top: 8, right: 4, bottom: 0, left: -26 }}>
-                  <CartesianGrid vertical={false} stroke={CHART.grid} />
-                  <XAxis dataKey="day" tickLine={false} axisLine={{ stroke: CHART.ink, strokeWidth: 2 }} tick={axisTick} />
-                  <YAxis allowDecimals={false} tickLine={false} axisLine={false} tick={axisTick} />
-                  <Tooltip formatter={(value) => [`${value} km`, '移動距離']} {...tooltipProps} />
-                  <Bar
-                    dataKey="km"
-                    fill={CATEGORY_COLORS.exercise}
-                    stroke={CHART.ink}
-                    strokeWidth={2}
-                    radius={[6, 6, 0, 0]}
-                    maxBarSize={28}
-                    isAnimationActive={false}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </section>
-        </div>
-      )}
-    </AppShell>
+    <div className={styles.overlay} onMouseDown={(event) => event.target === event.currentTarget && close()}>
+      <section className={styles.popup} role="dialog" aria-modal="true" aria-label="運動">
+        <button type="button" className={styles.close} onClick={close} aria-label="閉じる">×</button>
+        {error && <p className={styles.error} role="alert">{error}</p>}
+        {!error && tasks === null && <p className={styles.empty}>読み込み中…</p>}
+        {tasks?.length === 0 && <p className={styles.empty}>タスクがありません。＋追加から登録できます。</p>}
+        <ul className={styles.taskList}>
+          {(tasks || []).map((task) => {
+            const running = timer.runningTaskId === task.id
+            const elapsed = (timer.elapsedByTask[task.id] || 0) + (running ? Math.max(0, Math.floor((now - timer.startedAt) / 1000)) : 0)
+            return (
+              <li key={task.id}>
+                <button
+                  type="button"
+                  className={`${styles.task} ${running ? styles.running : ''}`}
+                  onClick={() => toggleTimer(task.id)}
+                  aria-label={`${task.title} ${running ? '一時停止' : 'タイマー開始'}`}
+                  aria-pressed={running}
+                >
+                  <span className={styles.play} aria-hidden="true">{running ? '⏸' : '▶'}</span>
+                  <span className={styles.taskTitle}>{task.title}</span>
+                  {(elapsed > 0 || running) && <time className={styles.timer}>{formatElapsed(elapsed)}</time>}
+                </button>
+              </li>
+            )
+          })}
+        </ul>
+        <button type="button" className={styles.add} onClick={openTaskSettings}>＋ 追加</button>
+        <span className={styles.pointer} aria-hidden="true" />
+      </section>
+    </div>
   )
 }
