@@ -271,35 +271,6 @@ export default function DetailsPage() {
     )}
   </section>
 )}
-                <h2 className={styles.heading}>{tab.key === 'exercise' ? '1日の運動時間（項目別）' : `${tab.label}のスコアとポイントの推移`}</h2>
-                <div className={styles.chart}>
-                  {tab.key === 'exercise' ? (
-                    <ExerciseDurationChart dates={dates} dailyTotals={records.daily_duration_totals} taskTitles={records.exercise_task_titles} height="100%" />
-                  ) : (
-                    <ScoreTrendChart rows={chartRows(tab.key, dates, achievements, today)} color={CATEGORY_COLORS[tab.key]} height="100%" />
-                  )}
-                </div>
-                {tab.key !== 'exercise' && <p className={styles.note}>ポイントは日ごとに確定した値です（今日は現在の値）。</p>}
-              </section>
-            ) : (
-              <section className={`${styles.card} ${styles.panel}`}>
-                {TIMED_KINDS[tab.key] ? (
-                  <TimedRecordList
-                    kind={tab.key}
-                    records={records[`${tab.key}_records`]}
-                    readOnly={readOnly}
-                    onChanged={reload}
-                    onError={setErrors}
-                  />
-                 ) : tab.key === 'meal' ? (
-                  <MealDays dates={dates} meals={records.meals} />
-                ) : readOnly ? (
-                  <ExerciseDays dates={dates} distance={records} achievements={achievements.daily_achievements} />
-                ) : (
-                  <ExerciseRecordList records={records.exercise_records} taskTitles={records.exercise_task_titles} onChanged={reload} onError={setErrors} />
-                )}
-              </section>
-            )}
           </>
         )}
       </div>
