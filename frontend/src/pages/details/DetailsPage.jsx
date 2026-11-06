@@ -13,6 +13,7 @@ import ErrorList from '../../components/ErrorList.jsx'
 import { ChevronLeftIcon, ChevronRightIcon, ExerciseIcon, MealIcon, SleepIcon, WorkIcon } from '../../components/icons.jsx'
 import ScoreTrendChart from '../../components/ScoreTrendChart.jsx'
 import ExerciseDurationChart from './ExerciseDurationChart.jsx'
+import ExerciseRecordList from './ExerciseRecordList.jsx'
 import { datesBetween, formatDate, formatDay, formatMinutes, formatNumber, shiftDate, toDateString } from '../../lib/format.js'
 import form from '../../styles/form.module.css'
 import { NUTRIENTS, sumNutrients } from '../meals/mealTypes.js'
@@ -65,7 +66,16 @@ export default function DetailsPage() {
       const data = await api(`/users/${userId}/records`, { params: { ...params, tab: tab.key } })
       return { scores: { daily_achievements: data.daily_achievements, current_points: data.current_points }, list: data }
     }
-    const [scores, list] = await Promise.all([api('/daily_achievements', { params }), api(tab.path, { params })])
+    const [scores, list, taskData] = await Promise.all([
+      api('/daily_achievements', { params }),
+      api(tab.path, { params }),
+      tab.key === 'exercise' ? api('/exercise_tasks/today') : Promise.resolve(null),
+    ])
+    if (tab.key === 'exercise') {
+      const apiTitles = Array.isArray(list.exercise_task_titles) ? list.exercise_task_titles : []
+      const activeTaskTitles = (taskData?.exercise_tasks || []).map((task) => task.title)
+      list.exercise_task_titles = [...new Set([...apiTitles, ...activeTaskTitles])]
+    }
     return { scores, list }
   }, [from, to, tab.key, tab.path, userId])
 
@@ -189,25 +199,82 @@ export default function DetailsPage() {
               ))}
             </div>
 
-            {view.key === 'hours' ? (
-              <section className={`${styles.card} ${styles.panel} ${styles.chartPanel}`}>
-                <h2 className={styles.heading}>日ごとの{TIMED_KINDS[tab.key].durationLabel}</h2>
-                <div className={styles.chart}>
-                  <DurationChart
-                    rows={durationRows(dates, records[`${tab.key}_records`])}
-                    color={CATEGORY_COLORS[tab.key]}
-                    label={TIMED_KINDS[tab.key].durationLabel}
-                    height="100%"
-                  />
-                </div>
-                <p className={styles.note}>{HOURS_NOTES[tab.key]}</p>
-              </section>
-            ) : view.key === 'chart' ? (
-              <section className={`${styles.card} ${styles.panel} ${styles.chartPanel}`}>
+{view.key === 'hours' ? (
+  <section className={`${styles.card} ${styles.panel} ${styles.chartPanel}`}>
+    <h2 className={styles.heading}>
+      日ごとの{TIMED_KINDS[tab.key].durationLabel}
+    </h2>
+    <div className={styles.chart}>
+      <DurationChart
+        rows={durationRows(dates, records[`${tab.key}_records`])}
+        color={CATEGORY_COLORS[tab.key]}
+        label={TIMED_KINDS[tab.key].durationLabel}
+        height="100%"
+      />
+    </div>
+    <p className={styles.note}>{HOURS_NOTES[tab.key]}</p>
+  </section>
+) : view.key === 'chart' ? (
+  <section className={`${styles.card} ${styles.panel} ${styles.chartPanel}`}>
+    <h2 className={styles.heading}>
+      {tab.key === 'exercise'
+        ? '1日の運動時間（項目別）'
+        : `${tab.label}のスコアとポイントの推移`}
+    </h2>
+    <div className={styles.chart}>
+      {tab.key === 'exercise' ? (
+        <ExerciseDurationChart
+          dates={dates}
+          dailyTotals={records.daily_duration_totals}
+          taskTitles={records.exercise_task_titles}
+          height="100%"
+        />
+      ) : (
+        <ScoreTrendChart
+          rows={chartRows(tab.key, dates, achievements, today)}
+          color={CATEGORY_COLORS[tab.key]}
+          height="100%"
+        />
+      )}
+    </div>
+    {tab.key !== 'exercise' && (
+      <p className={styles.note}>
+        ポイントは日ごとに確定した値です（今日は現在の値）。
+      </p>
+    )}
+  </section>
+) : (
+  <section className={`${styles.card} ${styles.panel}`}>
+    {TIMED_KINDS[tab.key] ? (
+      <TimedRecordList
+        kind={tab.key}
+        records={records[`${tab.key}_records`]}
+        readOnly={readOnly}
+        onChanged={reload}
+        onError={setErrors}
+      />
+    ) : tab.key === 'meal' ? (
+      <MealDays dates={dates} meals={records.meals} />
+    ) : readOnly ? (
+      <ExerciseDays
+        dates={dates}
+        distance={records}
+        achievements={achievements.daily_achievements}
+      />
+    ) : (
+      <ExerciseRecordList
+        records={records.exercise_records}
+        taskTitles={records.exercise_task_titles}
+        onChanged={reload}
+        onError={setErrors}
+      />
+    )}
+  </section>
+)}
                 <h2 className={styles.heading}>{tab.key === 'exercise' ? '1日の運動時間（項目別）' : `${tab.label}のスコアとポイントの推移`}</h2>
                 <div className={styles.chart}>
                   {tab.key === 'exercise' ? (
-                    <ExerciseDurationChart dates={dates} dailyTotals={records.daily_duration_totals} height="100%" />
+                    <ExerciseDurationChart dates={dates} dailyTotals={records.daily_duration_totals} taskTitles={records.exercise_task_titles} height="100%" />
                   ) : (
                     <ScoreTrendChart rows={chartRows(tab.key, dates, achievements, today)} color={CATEGORY_COLORS[tab.key]} height="100%" />
                   )}
@@ -224,10 +291,12 @@ export default function DetailsPage() {
                     onChanged={reload}
                     onError={setErrors}
                   />
-                ) : tab.key === 'meal' ? (
+                 ) : tab.key === 'meal' ? (
                   <MealDays dates={dates} meals={records.meals} />
-                ) : (
+                ) : readOnly ? (
                   <ExerciseDays dates={dates} distance={records} achievements={achievements.daily_achievements} />
+                ) : (
+                  <ExerciseRecordList records={records.exercise_records} taskTitles={records.exercise_task_titles} onChanged={reload} onError={setErrors} />
                 )}
               </section>
             )}
@@ -280,11 +349,12 @@ function Summary({ tab, records, achievements }) {
     const days = new Set(records.meals.map((meal) => meal.recorded_on)).size
     tiles.push({ label: '合計カロリー', value: `${formatNumber(totals.calories)} kcal` })
     tiles.push({ label: '1日平均', value: days ? `${formatNumber(totals.calories / days)} kcal` : '-' })
-  } else {
-    const km = (records.daily_totals || []).reduce((sum, day) => sum + (Number(day.distance_km) || 0), 0)
-    tiles.push({ label: '合計移動距離', value: `${formatNumber(km)} km` })
-    const completed = achievements.filter((row) => row.exercise_score >= 100).length
-    tiles.push({ label: 'タスク全達成', value: `${completed} 日` })
+  } else if (tab === 'exercise') {
+    const durationDays = (Array.isArray(records.daily_duration_totals) ? records.daily_duration_totals : [])
+      .filter((day) => Number(day.duration_minutes) > 0)
+    const total = durationDays.reduce((sum, day) => sum + (Number(day.duration_minutes) || 0), 0)
+    tiles.push({ label: '合計運動時間', value: formatMinutes(total) })
+    tiles.push({ label: '1日平均', value: durationDays.length ? formatMinutes(total / durationDays.length) : '-' })
   }
   const average = averageScore(tab, achievements)
   tiles.push({ label: '平均スコア', value: average == null ? '-' : `${Math.round(average)}%` })
