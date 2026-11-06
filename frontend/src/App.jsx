@@ -1,4 +1,9 @@
-// 画面の一覧（spec.md 5章）
+/*＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝ 
+・URLに応じて画面を切り替える
+・BGMとクリック音を管理する
+＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝*/
+
+/*【各画面を読み込む　（運動・詳細・マイページの3つは、画面を開くときに読み込む）】*/
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { GuestOnly, GOAL_SETUP_PATH, RequireUser } from './components/RouteGuards.jsx'
@@ -17,14 +22,12 @@ import FollowsPage from './pages/social/FollowsPage.jsx'
 import UserPage from './pages/social/UserPage.jsx'
 import SignupPage from './signup/SignupPage.jsx'
 import SoundSettingsPage from './pages/settings/SoundSettingsPage.jsx'
-
-// グラフ（Recharts）を使う画面は開いたときに読み込む（最初に読む JS を小さくするため）。
-// 食事トップの円グラフは CSS で描くので（components/Donut.jsx）ふつうに読み込む
 const ExercisePage = lazy(() => import('./pages/exercise/ExercisePage.jsx'))
 const DetailsPage = lazy(() => import('./pages/details/DetailsPage.jsx'))
 const MyPage = lazy(() => import('./pages/social/MyPage.jsx'))
 
-// BGMの一覧
+
+/*【BGMの一覧】*/
 const BGM_TRACKS = [
   {
     id: 'hidamari',
@@ -50,16 +53,23 @@ const BGM_TRACKS = [
     id: 'スイカと夏休み',
     name: 'スイカと夏休み',
     src: '/music/スイカと夏休み.wav',
+  },
+  {
+    id: 'spring-breeze',
+    name: 'spring-breeze-path',
+    src: '/music/spring-breeze-path.mp3',
   }
 ]
 
+/*【】*/
 export default function App() {
-  const location = useLocation()
-  const { status } = useAuth()
-  const bgmRef = useRef(null)
+  const location = useLocation()  // 現在のURL
+  const { status } = useAuth()    // ログイン状態
+  const bgmRef = useRef(null)     // 
   const [currentBgm, setCurrentBgm] = useState(BGM_TRACKS[0].id)
+  const [bgmVolume, setBgmVolume] = useState(0.1) // BGMボリューム（初期は10%）
 
-  /* クリック音 */
+  /*【クリック音】*/
   useEffect(() => {
     // 効果音を準備する
     const sound = new Audio('/sounds/click1.mp3')
@@ -90,27 +100,12 @@ export default function App() {
     }
   }, []);
 
-  function handleBgmChange(selectedBgm) {
-    const track = BGM_TRACKS.find((track) => track.id === selectedBgm)
-    const bgm = bgmRef.current
-
-    if (!track || !bgm) return
-
-    bgm.src = track.src
-    setCurrentBgm(track.id)
-
-    bgm.play().catch((error) => {
-      console.warn('BGMを再生できませんでした', error)
-    })
-  }
-
-  /* BGM */
+  /*【BGM】*/
   useEffect(() => {
     // 最初に1つだけ準備する
     if (!bgmRef.current) {
       const bgm = new Audio(BGM_TRACKS[0].src)
       bgm.loop = true
-      bgm.volume = 0.1
       bgmRef.current = bgm
     }
 
@@ -145,15 +140,40 @@ export default function App() {
     return () => {
       document.removeEventListener('click', playBgm, true)
     }
-  }, [status, location.pathname])
+  }, [status, location.pathname]) // 最初と、ログイン状態またはURLのパスが変わったときに実行
 
-// Appが終了するときに停止する
+  /*【Appが終了するときに停止する】*/
   useEffect(() => {
     return () => {
       bgmRef.current?.pause()
     }
   }, [])
 
+  /*【音量変更】*/
+  useEffect(() => {
+    if (bgmRef.current) {
+      bgmRef.current.volume = bgmVolume
+    }
+  }, [bgmVolume]) // 最初と、BGM音量が変わったときに実行
+
+  /*【サウンド設定保存時、選ばれた曲IDから音声ファイルを探して曲を切り替える】*/
+  function handleBgmChange(selectedBgm) {
+    const track = BGM_TRACKS.find((track) => track.id === selectedBgm)
+    const bgm = bgmRef.current
+
+    if (!track || !bgm) return
+
+    bgm.src = track.src
+    setCurrentBgm(track.id)
+
+    bgm.play().catch((error) => {
+      console.warn('BGMを再生できませんでした', error)
+    })
+  }
+
+
+  /*【URLごとに表示する画面を指定】*/
+  /*【サウンド設定画面には、現在の曲・音量と、それらを変更するための関数を渡す】*/
   return (
     <Suspense fallback={<p>読み込み中...</p>}>
       <Routes>
@@ -182,6 +202,8 @@ export default function App() {
               <SoundSettingsPage
                 currentBgm={currentBgm}
                 onSaveBgm={handleBgmChange}
+                bgmVolume={bgmVolume}
+                onBgmVolumeChange={setBgmVolume}
               />
             }
           />

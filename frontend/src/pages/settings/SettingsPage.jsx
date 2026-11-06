@@ -4,7 +4,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../../auth/useAuth.js'
 import AppShell from '../../components/AppShell.jsx'
 import IconBadge from '../../components/IconBadge.jsx'
-import { ChevronRightIcon, DoorIcon, FlagIcon, PersonIcon } from '../../components/icons.jsx'
+import { ChevronRightIcon, DoorIcon, FlagIcon, PersonIcon, MusicNoteIcon} from '../../components/icons.jsx'
 import form from '../../styles/form.module.css'
 import styles from './Settings.module.css'
 
@@ -42,8 +42,8 @@ export default function SettingsPage() {
         </Link>
 
         <Link to="/settings/sound" className={styles.item}>
-          <IconBadge tone="leaf">
-            <FlagIcon size={20} />
+          <IconBadge tone="berry">
+            <MusicNoteIcon size={20} />
           </IconBadge>
           <span className={styles.label}>サウンド</span>
           <ChevronRightIcon size={18} className={styles.chevron} />

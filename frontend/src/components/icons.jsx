@@ -264,3 +264,23 @@ export function FlameIcon(props) {
     </Icon>
   )
 }
+
+// 音符アイコン（サウンド設定のアイコン）
+export function MusicNoteIcon({ size = 20 }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M12 18V4c0 3.5 6 3.5 6 8" />
+      <ellipse cx="8.5" cy="18" rx="3.5" ry="2.5" />
+    </svg>
+  )
+}
