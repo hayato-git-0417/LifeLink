@@ -79,3 +79,47 @@
   font-weight: 700;
   text-align: center;
 }
+
+
+/* 入力欄とボタンを囲む部分 */
+.passwordWrap {
+  position: relative;
+}
+
+/* 目のボタンと入力文字が重ならないようにする */
+.passwordWrap input {
+  width: 100%;
+  box-sizing: border-box;
+  padding-right: 52px;
+}
+
+/* 目のボタン */
+.passwordToggle {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #555;
+  font-size: 20px;
+  cursor: pointer;
+
+  display: grid;
+  place-items: center;
+}
+
+.passwordToggle img {
+  display: block;
+}
+
+/* キーボードで選択したときの目印 */
+.passwordToggle:focus-visible {
+  outline: 2px solid #4287f5;
+  outline-offset: 2px;
+}

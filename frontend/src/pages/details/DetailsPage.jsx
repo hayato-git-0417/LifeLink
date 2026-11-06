@@ -8,6 +8,7 @@ import { useParams, useSearchParams } from 'react-router-dom'
 import { api } from '../../api/client.js'
 import AppShell from '../../components/AppShell.jsx'
 import { CATEGORY_COLORS } from '../../components/chartTheme.js'
+import DurationChart from '../../components/DurationChart.jsx'
 import ErrorList from '../../components/ErrorList.jsx'
 import { ChevronLeftIcon, ChevronRightIcon, ExerciseIcon, MealIcon, SleepIcon, WorkIcon } from '../../components/icons.jsx'
 import ScoreTrendChart from '../../components/ScoreTrendChart.jsx'
@@ -28,10 +29,20 @@ const TABS = [
 ]
 
 const RANGE_DAYS = 7
+// 表示の切り替え。睡眠・ワークは「時間」（日ごとの時間の棒グラフ）と「記録」の2つ（スコア・目標は今後なくすので出さない）
 const VIEWS = [
   { key: 'chart', label: 'グラフ' },
   { key: 'list', label: '記録' },
 ]
+const TIMED_VIEWS = [
+  { key: 'hours', label: '時間' },
+  { key: 'list', label: '記録' },
+]
+// 時間のグラフの説明（集計日の決まり。spec.md 2.1）
+const HOURS_NOTES = {
+  sleep: '起きた日にまとめています。計測中の睡眠は入りません。',
+  work: '始めた日にまとめています。計測中のワークは入りません。',
+}
 
 export default function DetailsPage() {
   const { id: userId } = useParams()
@@ -39,7 +50,8 @@ export default function DetailsPage() {
   const today = toDateString()
   const [searchParams, setSearchParams] = useSearchParams()
   const tab = TABS.find((entry) => entry.key === searchParams.get('tab')) || TABS[0]
-  const view = VIEWS.find((entry) => entry.key === searchParams.get('view')) || VIEWS[0]
+  const views = TIMED_KINDS[tab.key] ? TIMED_VIEWS : VIEWS
+  const view = views.find((entry) => entry.key === searchParams.get('view')) || views[0]
   const [to, setTo] = useState(today)
   const from = shiftDate(to, -(RANGE_DAYS - 1))
 
@@ -112,7 +124,8 @@ export default function DetailsPage() {
   const changeTab = (key) => {
     if (key === tab.key) return
     reset()
-    setSearchParams({ tab: key, view: view.key }, { replace: true })
+    // 「記録」を見ていたら記録のまま。グラフ系はそのタブの最初の表示（睡眠・ワークは時間）にする
+    setSearchParams(view.key === 'list' ? { tab: key, view: 'list' } : { tab: key }, { replace: true })
   }
   const changeView = (key) => setSearchParams({ tab: tab.key, view: key }, { replace: true })
   const changeWeek = (days) => {
@@ -172,7 +185,7 @@ export default function DetailsPage() {
             <Summary tab={tab.key} records={records} achievements={achievements.daily_achievements} />
 
             <div className={`${form.segmented} ${styles.views}`} role="tablist" aria-label="表示">
-              {VIEWS.map((entry) => (
+              {views.map((entry) => (
                 <button
                   key={entry.key}
                   type="button"
@@ -186,8 +199,78 @@ export default function DetailsPage() {
               ))}
             </div>
 
-            {view.key === 'chart' ? (
-               <section className={`${styles.card} ${styles.panel} ${styles.chartPanel}`}>
+{view.key === 'hours' ? (
+  <section className={`${styles.card} ${styles.panel} ${styles.chartPanel}`}>
+    <h2 className={styles.heading}>
+      日ごとの{TIMED_KINDS[tab.key].durationLabel}
+    </h2>
+    <div className={styles.chart}>
+      <DurationChart
+        rows={durationRows(dates, records[`${tab.key}_records`])}
+        color={CATEGORY_COLORS[tab.key]}
+        label={TIMED_KINDS[tab.key].durationLabel}
+        height="100%"
+      />
+    </div>
+    <p className={styles.note}>{HOURS_NOTES[tab.key]}</p>
+  </section>
+) : view.key === 'chart' ? (
+  <section className={`${styles.card} ${styles.panel} ${styles.chartPanel}`}>
+    <h2 className={styles.heading}>
+      {tab.key === 'exercise'
+        ? '1日の運動時間（項目別）'
+        : `${tab.label}のスコアとポイントの推移`}
+    </h2>
+    <div className={styles.chart}>
+      {tab.key === 'exercise' ? (
+        <ExerciseDurationChart
+          dates={dates}
+          dailyTotals={records.daily_duration_totals}
+          taskTitles={records.exercise_task_titles}
+          height="100%"
+        />
+      ) : (
+        <ScoreTrendChart
+          rows={chartRows(tab.key, dates, achievements, today)}
+          color={CATEGORY_COLORS[tab.key]}
+          height="100%"
+        />
+      )}
+    </div>
+    {tab.key !== 'exercise' && (
+      <p className={styles.note}>
+        ポイントは日ごとに確定した値です（今日は現在の値）。
+      </p>
+    )}
+  </section>
+) : (
+  <section className={`${styles.card} ${styles.panel}`}>
+    {TIMED_KINDS[tab.key] ? (
+      <TimedRecordList
+        kind={tab.key}
+        records={records[`${tab.key}_records`]}
+        readOnly={readOnly}
+        onChanged={reload}
+        onError={setErrors}
+      />
+    ) : tab.key === 'meal' ? (
+      <MealDays dates={dates} meals={records.meals} />
+    ) : readOnly ? (
+      <ExerciseDays
+        dates={dates}
+        distance={records}
+        achievements={achievements.daily_achievements}
+      />
+    ) : (
+      <ExerciseRecordList
+        records={records.exercise_records}
+        taskTitles={records.exercise_task_titles}
+        onChanged={reload}
+        onError={setErrors}
+      />
+    )}
+  </section>
+)}
                 <h2 className={styles.heading}>{tab.key === 'exercise' ? '1日の運動時間（項目別）' : `${tab.label}のスコアとポイントの推移`}</h2>
                 <div className={styles.chart}>
                   {tab.key === 'exercise' ? (
@@ -222,6 +305,17 @@ export default function DetailsPage() {
       </div>
     </AppShell>
   )
+}
+
+// 時間のグラフの行。終わった記録を集計日（recorded_on）ごとに合計する。記録のない日は null
+function durationRows(dates, records) {
+  const minutesByDate = {}
+  records
+    .filter((record) => !record.in_progress)
+    .forEach((record) => {
+      minutesByDate[record.recorded_on] = (minutesByDate[record.recorded_on] ?? 0) + record.duration_minutes
+    })
+  return dates.map((date) => ({ date, minutes: minutesByDate[date] ?? null }))
 }
 
 // グラフの行。行のない日・確定前のポイントは null。今日のポイントは現在の値

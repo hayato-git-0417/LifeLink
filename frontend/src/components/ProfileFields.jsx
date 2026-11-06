@@ -43,6 +43,31 @@ export default function ProfileFields({ value, onChange }) {
             onChange={(event) => onChange({ birthdate: event.target.value })}
           />
         </label>
+
+        <div className={styles.bodyMeasurements}>
+          <label className={form.field}>
+            <span className={form.label}>身長（cm）</span>
+            <input
+              className={form.input}
+              type="number"
+              step="0.1"
+              value={value.height_cm ?? ''}
+              onChange={(event) => onChange({ height_cm: event.target.value })}
+            />
+          </label>
+
+          <label className={form.field}>
+            <span className={form.label}>体重（kg）</span>
+            <input
+              className={form.input}
+              type="number"
+              step="0.1"
+              value={value.weight_kg ?? ''}
+              onChange={(event) => onChange({ weight_kg: event.target.value })}
+            />
+          </label>
+        </div>
+
         <fieldset className={`${form.field} ${styles.genderSet}`}>
           <legend className={`${form.label} ${styles.legend}`}>性別</legend>
           <div className={`${form.segmented} ${styles.genders}`}>

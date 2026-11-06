@@ -28,3 +28,7 @@
 .leaf {
   background: var(--leaf-soft);
 }
+
+.berry {
+  background-color: #efd9e8;
+}

@@ -1,0 +1,76 @@
+/* スライダー */
+.sliderControl {
+  --slider-button-size: 40px;
+
+  display: grid;
+  grid-template-columns: var(--slider-button-size) minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.sliderBlocks {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(var(--block-count, 10), minmax(0, 1fr));
+  gap: 4px;
+  min-height: 22px;
+  align-items: center;
+  justify-items: center;
+}
+
+.sliderControl > button {
+  display: grid;
+  place-items: center;
+  width: var(--slider-button-size);
+  height: var(--slider-button-size);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.sliderControl > button > img {
+  display: block;
+  width: var(--slider-button-size);
+  height: var(--slider-button-size);
+  object-fit: contain;
+}
+
+/* 未点灯：小さい四角 */
+.sliderBlock {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  background: #dfe3e8;
+}
+
+/* 現在値までのブロックに色を付ける */
+.sliderBlockActive {
+  background: #70c4b6;
+}
+
+/* 現在位置の1個だけ大きくする */
+.sliderBlockCurrent {
+  width: 100%;
+  height: 22px;
+  border-radius: 3px;
+}
+
+.sliderRange {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  z-index: 1;
+  cursor: pointer;
+}
+
+.sliderBlocks:focus-within {
+  outline: 2px solid #4a3a2e;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
