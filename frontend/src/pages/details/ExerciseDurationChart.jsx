@@ -1,149 +1,99 @@
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { axisTick, CHART, tooltipProps } from '../../components/chartTheme.js'
 import styles from './Details.module.css'
 
 const PALETTE = ['#4e79a7', '#f28e2b', '#e15759', '#76b7b2', '#59a14f', '#edc948', '#b07aa1', '#ff9da7', '#9c755f', '#79706e']
 const SCALE = [60, 45, 30, 15, 0]
 
-export default function ExerciseDurationChart({ dates, dailyTotals }) {
+export default function ExerciseDurationChart({ dates, dailyTotals, taskTitles = [] }) {
   const safeTotals = Array.isArray(dailyTotals) ? dailyTotals : []
   const byDate = Object.fromEntries(safeTotals.map((row) => [row.date, row]))
-  const titles = [...new Set(safeTotals.flatMap((row) => (Array.isArray(row.activities) ? row.activities : []).map((activity) => activity.title)))]
+  const recordedTitles = safeTotals.flatMap((row) => (Array.isArray(row.activities) ? row.activities : []).map((activity) => activity.title))
+  const titles = [...new Set([...(Array.isArray(taskTitles) ? taskTitles : []), ...recordedTitles])]
   const activities = titles.map((title, index) => ({ title, key: `activity_${index}`, color: PALETTE[index % PALETTE.length] }))
+  const activityKeys = activities.map((activity) => activity.key)
   const rows = dates.map((date) => {
     const row = byDate[date]
     const byTitle = Object.fromEntries((Array.isArray(row?.activities) ? row.activities : []).map((activity) => [activity.title, Number(activity.duration_minutes) || 0]))
     let usedMinutes = 0
-    const segments = activities.map((activity) => {
+    const values = {}
+    activities.forEach((activity) => {
       const minutes = Math.max(0, byTitle[activity.title] || 0)
       const visibleMinutes = Math.min(minutes, 60 - usedMinutes)
       usedMinutes += visibleMinutes
-      return { ...activity, minutes, visibleMinutes }
+      values[activity.key] = visibleMinutes
     })
-    return { date, day: `${Number(date.slice(8, 10))}日`, segments, total: usedMinutes }
+    return { day: `${Number(date.slice(8, 10))}日`, ...values }
   })
-
-  if (activities.length === 0) return <p className={styles.empty}>この期間の運動時間記録はありません。</p>
 
   return (
     <div className={styles.durationChartWrap}>
-      <div className={styles.durationVerticalPlot}>
-        <div className={styles.durationYAxis} aria-hidden="true">
-          {SCALE.map((minute) => <span key={minute}>{minute}</span>)}
-        </div>
-        <div className={styles.durationPlotColumn}>
-          <div className={styles.durationPlotArea}>
-            {SCALE.map((minute) => (
-              <span
-                key={minute}
-                className={styles.durationGridLine}
-                style={{ top: `${(60 - minute) / 60 * 100}%` }}
+      <div className={styles.durationRecharts}>
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={rows} margin={{ top: 8, right: -6, bottom: 0, left: -18 }}>
+            <CartesianGrid vertical={false} stroke={CHART.grid} />
+            <XAxis dataKey="day" tickLine={false} axisLine={{ stroke: CHART.ink, strokeWidth: 2 }} tick={axisTick} />
+            <YAxis domain={[0, 60]} ticks={SCALE} tickLine={false} axisLine={false} tick={axisTick} />
+            <Tooltip
+              content={<ExerciseTooltip />}
+              cursor={false}
+              wrapperStyle={{ pointerEvents: 'none' }}
+            />
+            {activities.map((activity) => (
+              <Bar
+                key={activity.key}
+                dataKey={activity.key}
+                name={activity.title}
+                stackId="duration"
+                fill={activity.color}
+                maxBarSize={26}
+                isAnimationActive={false}
+                shape={(barProps) => <ExerciseBarShape {...barProps} dataKey={activity.key} activityKeys={activityKeys} />}
               />
             ))}
-            <div className={styles.durationColumns}>
-              {rows.map((row) => (
-                <div key={row.date} className={styles.durationColumn}>
-                  {row.total > 0 && (
-                    <div
-                      className={styles.durationStack}
-                      style={{ height: `${row.total / 60 * 100}%` }}
-                      aria-label={`${row.day} 合計${row.total}分`}
-                    >
-                    {row.segments.map((segment) => segment.visibleMinutes > 0 && (
-                      <span
-                        key={segment.key}
-                        className={styles.durationSegment}
-                        title={`${segment.title}: ${segment.minutes}分`}
-                        aria-label={`${segment.title} ${segment.minutes}分`}
-                        style={{ flexGrow: segment.visibleMinutes, backgroundColor: segment.color }}
-                      />
-                    ))}
-                  </div>
-                  )} 
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className={styles.durationXAxis}>
-            {rows.map((row) => <span key={row.date}>{row.day}</span>)}
-          </div>
-        </div>
+          </BarChart>
+        </ResponsiveContainer>
       </div>
-      <ul className={styles.activityLegend} aria-label="運動項目">
-        {activities.map((activity) => (
-          <li key={activity.key} className={styles.activityLegendItem}>
-            <span className={styles.activitySwatch} style={{ backgroundColor: activity.color }} />
-            {activity.title}
-          </li>
-        ))}
-      </ul>
+      {activities.length > 0 && (
+        <ul className={styles.activityLegend} aria-label="運動項目">
+          {activities.map((activity) => (
+            <li key={activity.key} className={styles.activityLegendItem}>
+              <span className={styles.activitySwatch} style={{ backgroundColor: activity.color }} />
+              {activity.title}
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   )
 }
 
+function ExerciseTooltip({ active, payload, label }) {
+  const recordedActivities = (payload || []).filter((entry) => Number(entry.value) > 0)
+  if (!active || recordedActivities.length === 0) return null
 
+  return (
+    <div style={{ ...tooltipProps.contentStyle, padding: '6px 8px', borderRadius: 14, fontSize: '0.95rem', lineHeight: 1.2 }}>
+      <p style={{ ...tooltipProps.labelStyle, margin: '0 0 4px', lineHeight: 1.4 }}>{label}</p>
+      {recordedActivities.map((entry) => (
+        <p key={entry.dataKey} style={{ ...tooltipProps.itemStyle, margin: '0 0 4px', padding: 0, lineHeight: 1.4 }}>
+          {entry.name}: {entry.value}分
+        </p>
+      ))}
+    </div>
+  )
+}
 
-// import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
-// import { axisTick, CHART, tooltipProps } from '../../components/chartTheme.js'
-// import styles from './Details.module.css'
+function ExerciseBarShape({ x, y, width, height, fill, payload, dataKey, activityKeys }) {
+  if (!(height > 0) || !(width > 0)) return null
+  const keyIndex = activityKeys.indexOf(dataKey)
+  const isTopSegment = activityKeys.slice(keyIndex + 1).every((key) => Number(payload?.[key]) <= 0)
+  if (!isTopSegment) {
+    return <rect x={x} y={y} width={width} height={height} fill={fill} stroke={CHART.ink} strokeWidth={2} />
+  }
 
-// const PALETTE = ['#e47f76', '#75a9dc', '#86c069', '#ebbb4a', '#a487c7', '#e99b55', '#63b6a1', '#d477a2']
+  const radius = Math.min(6, width / 2, height)
+  const path = `M ${x} ${y + height} L ${x} ${y + radius} Q ${x} ${y} ${x + radius} ${y} L ${x + width - radius} ${y} Q ${x + width} ${y} ${x + width} ${y + radius} L ${x + width} ${y + height} Z`
+  return <path d={path} fill={fill} stroke={CHART.ink} strokeWidth={2} />
+}
 
-// export default function ExerciseDurationChart({ dates, dailyTotals, height = '100%' }) {
-//   const byDate = Object.fromEntries((dailyTotals || []).map((row) => [row.date, row]))
-//   const titles = [...new Set((dailyTotals || []).flatMap((row) => (row.activities || []).map((activity) => activity.title)))]
-//   const activities = titles.map((title, index) => ({ title, key: `activity_${index}`, color: PALETTE[index % PALETTE.length] }))
-//   const titleByKey = Object.fromEntries(activities.map((activity) => [activity.key, activity.title]))
-//   const rows = dates.map((date) => {
-//     const row = byDate[date]
-//     const values = Object.fromEntries(activities.map((activity) => [activity.key, 0]))
-//     for (const activity of row?.activities || []) {
-//       const entry = activities.find((candidate) => candidate.title === activity.title)
-//       if (entry) values[entry.key] = activity.duration_minutes
-//     }
-//     return { day: date.slice(8, 10).replace(/^0/, '') + '日', ...values }
-//   })
-
-//   if (activities.length === 0) return <p className={styles.empty}>この期間の運動時間記録はありません。</p>
-
-//   return (
-//     <div className={styles.durationChartWrap}>
-//       <div className={styles.durationPlot}>
-//         <ResponsiveContainer width="100%" height={height}>
-//           <BarChart data={rows} layout="vertical" margin={{ top: 4, right: 10, bottom: 0, left: 0 }}>
-//             <CartesianGrid horizontal={false} stroke={CHART.grid} />
-//             <XAxis
-//               type="number"
-//               domain={[0, 60]}
-//               ticks={[0, 15, 30, 45, 60]}
-//               tickLine={false}
-//               axisLine={{ stroke: CHART.ink, strokeWidth: 2 }}
-//               tick={axisTick}
-//               unit="分"
-//             />
-//             <YAxis type="category" dataKey="day" width={38} tickLine={false} axisLine={false} tick={axisTick} />
-//             <Tooltip formatter={(value, key) => [`${value}分`, titleByKey[key] || key]} {...tooltipProps} />
-//             {activities.map((activity) => (
-//               <Bar
-//                 key={activity.key}
-//                 dataKey={activity.key}
-//                 name={activity.title}
-//                 stackId="duration"
-//                 fill={activity.color}
-//                 stroke={CHART.ink}
-//                 strokeWidth={1.5}
-//                 isAnimationActive={false}
-//               />
-//             ))}
-//             </BarChart>
-//         </ResponsiveContainer>
-//       </div>
-//       <ul className={styles.activityLegend} aria-label="運動項目">
-//         {activities.map((activity) => (
-//           <li key={activity.key} className={styles.activityLegendItem}>
-//             <span className={styles.activitySwatch} style={{ backgroundColor: activity.color }} />
-//             {activity.title}
-//           </li>
-//         ))}
-//       </ul>
-//     </div>
-//   )
-// }
