@@ -4,7 +4,7 @@
 // 上部ヘッダー・下部ナビは出さない（マイページはユーザー、設定などはメニューから）。
 // 睡眠・ワークは画面遷移せず、その場で start / finish を呼ぶ。計測中は「取消」も出す。
 // 押したあとはホームを読み直すので、キャラの状態がすぐ変わる。睡眠中は夜の部屋になる
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../../api/client.js'
 import { useAuth } from '../../auth/useAuth.js'
@@ -16,6 +16,7 @@ import { formatElapsed, formatMinutes, formatTime } from '../../lib/format.js'
 import ExercisePage from '../exercise/ExercisePage.jsx'
 import styles from './HomePage.module.css'
 import Room from './Room.jsx'
+import { CHARACTER_MESSAGES } from './characterMessages.js'
 
 // 生活リズムカードの並び（デザインの順）
 const ITEMS = [
@@ -45,6 +46,12 @@ export default function HomePage() {
   const [busy, setBusy] = useState(false)
   const [exerciseOpen, setExerciseOpen] = useState(false)
   const [exerciseTimer, setExerciseTimer] = useState({ taskId: null, taskTitle: '', runningTaskId: null, startedAt: null, elapsedByTask: {}, active: false })
+  const [speechVisible, setSpeechVisible] = useState(false)
+  const speechTimerRef = useRef(null)
+  const characterSoundRef = useRef(null)
+  const jumpAnimationRef = useRef(null)
+  const [characterTapLocked, setCharacterTapLocked] = useState(false)
+  const [speechText, setSpeechText] = useState('')
 
   const load = useCallback(async () => {
     const data = await api('/home')
@@ -110,9 +117,11 @@ export default function HomePage() {
       return { taskId, taskTitle, runningTaskId: taskId, startedAt: Date.now(), elapsedByTask, active: true }
     })
   }
+
   function closeExercisePopup() {
     setExerciseOpen(false)
   }
+
   async function finishExerciseTimer() {
     const taskId = exerciseTimer.taskId
     const elapsedByTask = { ...exerciseTimer.elapsedByTask }
@@ -155,12 +164,92 @@ export default function HomePage() {
       setBusy(false)
     }
   }
+  
+  /* 吹き出し */
   function cancelExerciseTimer() {
     if (!window.confirm('運動の計測を取り消しますか？（この項目の記録時間も破棄されます）')) return
     setExerciseTimer({ taskId: null, runningTaskId: null, startedAt: null, elapsedByTask: {}, active: false })
     setExerciseOpen(false)
   }
   const sleeping = home?.character.state === 'sleeping'
+
+  // ホーム画面を離れたら、残っている予約を取り消す
+  useEffect(() => {
+    return () => clearTimeout(speechTimerRef.current)
+  }, [])
+
+
+  /*【ホーム画面のキャラタップ時の効果音】*/
+  function handleCharacterTap(event) {
+    if (characterTapLocked) return
+    setCharacterTapLocked(true)
+    
+    // 連続タップしたら、前のジャンプを止めてやり直す
+    jumpAnimationRef.current?.cancel()
+
+    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      jumpAnimationRef.current = event.currentTarget.animate(
+        [
+          { transform: 'translateY(0)', easing: 'ease-out' },
+          {
+            transform: 'translateY(-15px)',
+            offset: 0.45,
+            easing: 'ease-in',
+          },
+          { transform: 'translateY(0)' },
+        ],
+        { duration: 300 }
+      )
+    }
+    const state = home.character.state
+    const messages = CHARACTER_MESSAGES[state] ?? [home.message].filter(Boolean)
+
+    if (messages.length === 0) return
+
+    const index = Math.floor(Math.random() * messages.length)
+    setSpeechText(messages[index])
+
+    const sound = characterSoundRef.current
+    if (sound) {
+      sound.currentTime = 0
+      sound.play().catch((error) => {
+        console.warn('キャラの効果音を再生できませんでした', error)
+      })
+    }
+
+    clearTimeout(speechTimerRef.current)
+    setSpeechVisible(true)
+
+    speechTimerRef.current = setTimeout(() => {
+      setSpeechVisible(false)
+      speechTimerRef.current = null
+    }, 3000)
+  }
+
+  // 1秒後に押せる処理
+  useEffect(() => {
+    if (!characterTapLocked) return
+
+    const timer = setTimeout(() => {
+      setCharacterTapLocked(false)
+    }, 1000)
+
+    return () => clearTimeout(timer)
+  }, [characterTapLocked])
+
+  useEffect(() => {
+    const sound = new Audio('/sounds/character-tap.mp3')
+    sound.volume = 0.3
+    characterSoundRef.current = sound
+
+    return () => {
+      clearTimeout(speechTimerRef.current)
+      jumpAnimationRef.current?.cancel()
+      sound.pause()
+      characterSoundRef.current = null
+    }
+  }, [])
+
 
   return (
     <AppShell bare>
@@ -217,14 +306,30 @@ export default function HomePage() {
             !errors.length && <p className={styles.loading}>読み込み中…</p>
           ) : (
             <>
-              {home.message && <p className={styles.bubble}>{home.message}</p>}
+              {/* 吹き出し */}
+              {speechVisible && speechText && (
+                <p className={styles.bubble}>{speechText}</p>
+              )}
+
               <div className={styles.spot}>
                 <span className={styles.rug} aria-hidden="true" />
-                <img
-                  className={`${styles.character} ${styles[`anim_${home.character.state}`] || styles.anim_normal}`}
-                  src={home.character.image_path}
-                  alt={`${home.character.name}（${home.character.state_label}）`}
-                />
+
+                {/* キャラ画像 */}
+                <button
+                  type="button"
+                  data-click-sound="custom"
+                  disabled={characterTapLocked}
+                  className={styles.characterButton}
+                  aria-label={`${home.character.name}に話しかける`}
+                  onClick={handleCharacterTap}
+                >
+                  <img
+                    className={`${styles.character} ${styles[`anim_${home.character.state}`] || styles.anim_normal}`}
+                    src={home.character.image_path}
+                    alt={`${home.character.name}（${home.character.state_label}）`}
+                  />
+                </button>
+
               </div>
             </>
           )}

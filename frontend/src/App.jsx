@@ -79,8 +79,10 @@ export default function App() {
       if (!(event.target instanceof Element)) return
 
       // 押した場所がボタンの中か確認する
-      const button = event.target.closest('button')
+      const button = event.target.closest('button') // ボタンクリック時の効果音
       if (!button || button.disabled) return
+
+      if (button.dataset.clickSound === 'custom') return  // // 専用音のあるボタンでは、通常クリック音をスキップする
 
       // 音を先頭から再生する
       sound.currentTime = 0

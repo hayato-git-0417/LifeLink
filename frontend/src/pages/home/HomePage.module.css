@@ -664,3 +664,17 @@
   font-size: 0.7rem;
   font-weight: 700;
 }
+
+/* キャラ画像のボタンを透明化 */
+.characterButton {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.characterButton:disabled {
+  opacity: 1;
+  cursor: default;
+}
