@@ -32,6 +32,8 @@ module Api
           state: character.state,
           state_label: character.state_label,
           image_path: character.image_path,
+          # false なら画像は段階の姿だけなので、ホームで状態のマークを重ねる
+          image_shows_state: character.image_shows_state?,
           mood: character.mood,
           points: ScoreCalculator::ITEMS.index_with { |item| character[:"#{item}_points"] }
                                         .merge(total: character.total_points)

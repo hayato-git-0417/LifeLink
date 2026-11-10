@@ -17,6 +17,7 @@ import { formatElapsed, formatMinutes, formatTime } from '../../lib/format.js'
 import ExercisePage from '../exercise/ExercisePage.jsx'
 import EvolutionCard from './EvolutionCard.jsx'
 import styles from './HomePage.module.css'
+import StateBadge from './StateBadge.jsx'
 //import Room from './Room.jsx'
 import { CHARACTER_MESSAGES } from './characterMessages.js'
 
@@ -310,21 +311,26 @@ export default function HomePage() {
               >
                 {/* <span className={styles.rug} aria-hidden="true" /> */}
 
-                {/* キャラ画像 */}
-                <button
-                  type="button"
-                  data-click-sound="custom"
-                  disabled={characterTapLocked}
-                  className={styles.characterButton}
-                  aria-label={`${home.character.name}に話しかける`}
-                  onClick={handleCharacterTap}
-                >
-                  <img
-                    className={`${styles.character} ${styles[`anim_${home.character.state}`] || styles.anim_normal}`}
-                    src={home.character.image_path}
-                    alt={`${home.character.name}（${home.character.state_label}）`}
-                  />
-                </button>
+                {/* キャラ画像。段階の絵が状態を表していないときは、右上に状態のマークを重ねる */}
+                <div className={styles.figure}>
+                  <button
+                    type="button"
+                    data-click-sound="custom"
+                    disabled={characterTapLocked}
+                    className={styles.characterButton}
+                    aria-label={`${home.character.name}に話しかける`}
+                    onClick={handleCharacterTap}
+                  >
+                    <img
+                      className={`${styles.character} ${styles[`anim_${home.character.state}`] || styles.anim_normal}`}
+                      src={home.character.image_path}
+                      alt={`${home.character.name}（${home.character.state_label}）`}
+                    />
+                  </button>
+                  {!home.character.image_shows_state && (
+                    <StateBadge key={home.character.state} state={home.character.state} label={home.character.state_label} />
+                  )}
+                </div>
 
               </div>
             </>

@@ -57,6 +57,26 @@ class CharacterTest < ActiveSupport::TestCase
     end
   end
 
+  test "画像が状態を表しているか: 段階の姿だけの画像なら false（ホームで状態のマークを重ねる）" do
+    character = create_user.character
+    character.update!(evolution_stage: 2, state: :hungry)
+
+    Dir.mktmpdir do |dir|
+      public_dir = Pathname(dir)
+      stages = public_dir.join("characters/stages")
+      Rails.stub(:public_path, public_dir) do
+        assert character.image_shows_state? # 段階の画像がない → 状態の画像（hungry.png）
+
+        FileUtils.mkdir_p(stages)
+        FileUtils.touch(stages.join("2.png"))
+        assert_not character.image_shows_state?
+
+        FileUtils.touch(stages.join("2_hungry.png"))
+        assert character.image_shows_state?
+      end
+    end
+  end
+
   test "リポジトリの段階の画像: 0〜4 はそれぞれの画像、5 は画像ができるまで 4" do
     assert_equal (0..4).map { |stage| "/characters/stages/#{stage}.png" }, (0..4).map { |stage| Character.stage_image_path_for(stage) }
     assert_equal "/characters/stages/4.png", Character.stage_image_path_for(5)

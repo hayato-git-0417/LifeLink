@@ -58,6 +58,13 @@ class Character < ApplicationRecord
     self.class.stage_image_path_for(evolution_stage, state)
   end
 
+  # 画像が今の状態を表しているか（状態ごとの段階の画像 <段階>_<状態>.png、または段階の画像がなく状態の画像を使うとき）。
+  # false のとき（段階の姿だけの画像）は、ホームで状態のマークと名前を重ねる（docs/decisions.md）
+  def image_shows_state?
+    path = stage_image_path
+    path.nil? || path.end_with?("_#{state}.png")
+  end
+
   # 気分バッジ（spec.md 3.4【仮】）。総合ポイントの下限が高い順に見て最初に当てはまったもの
   def mood
     entry = GameConfig.mood.find { |m| total_points >= m[:min_points] } || GameConfig.mood.last

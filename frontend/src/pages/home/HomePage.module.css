@@ -640,6 +640,12 @@
 }
 
 /* キャラ画像のボタンを透明化 */
+/* キャラと状態のマーク（StateBadge）を重ねる枠 */
+.figure {
+  position: relative;
+  display: inline-flex;
+}
+
 .characterButton {
   margin: 0;
   padding: 0;
