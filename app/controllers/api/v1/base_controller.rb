@@ -7,6 +7,8 @@ module Api
       MAX_RANGE_DAYS = 366
 
       before_action :authenticate_user!
+      # 記録しなかった日の進化ポイントの減少（spec.md 4.3）。その日の最初のアクセスで昨日までの分をまとめて行う
+      before_action :process_evolution_decay
 
       # 入力が正しくないときは、メッセージを付けて 422 を返すために使う
       class InvalidParam < StandardError; end
@@ -32,6 +34,16 @@ module Api
 
       def resolve_character_state
         CharacterStateResolver.call(user: current_user)
+      end
+
+      # ログインなしで呼べる API（栄養の初期値）では何もしない
+      def process_evolution_decay
+        EvolutionDecayProcessor.call(user: current_user) if current_user
+      end
+
+      # 記録を新しく保存したら進化ポイントを加算する（その日・その項目の1回目だけ。修正・削除では呼ばない）
+      def award_evolution_points(item)
+        EvolutionPointAwarder.call(user: current_user, item: item)
       end
 
       # 記録が変わった日の達成度を計算し直す（中身はフェーズ4）

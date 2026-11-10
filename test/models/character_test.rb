@@ -1,4 +1,5 @@
 require "test_helper"
+require "minitest/mock"
 
 class CharacterTest < ActiveSupport::TestCase
   test "ユーザーを作るとキャラも作られる。既定値は 名前めばえ・状態normal・各ポイント500・last_reset_on＝登録日" do
@@ -23,6 +24,33 @@ class CharacterTest < ActiveSupport::TestCase
     assert_not character.valid?
     character.sleep_points = GameConfig.points[:max]
     assert character.valid?
+  end
+
+  test "進化の既定値は 0pt・段階0・継続0日。登録日は減少を済ませた日にする" do
+    travel_to Time.zone.local(2026, 11, 1, 23, 30) do
+      character = create_user.character
+      assert_equal [ 0, 0, 0, nil ], [ character.evolution_points, character.evolution_stage, character.streak_days, character.last_recorded_on ]
+      assert_equal Date.new(2026, 11, 1), character.decay_processed_through
+    end
+  end
+
+  test "段階の画像: stage<段階>/<状態>.png → stage<段階>/normal.png → 状態の画像 の順に探す" do
+    character = create_user.character
+    character.update!(evolution_stage: 2, state: :sleeping)
+
+    Dir.mktmpdir do |dir|
+      public_dir = Pathname(dir)
+      Rails.stub(:public_path, public_dir) do
+        assert_equal "/characters/sleeping.png", character.image_path # 段階の画像がまだない
+
+        FileUtils.mkdir_p(public_dir.join("characters/stage2"))
+        FileUtils.touch(public_dir.join("characters/stage2/normal.png"))
+        assert_equal "/characters/stage2/normal.png", character.image_path
+
+        FileUtils.touch(public_dir.join("characters/stage2/sleeping.png"))
+        assert_equal "/characters/stage2/sleeping.png", character.image_path
+      end
+    end
   end
 
   test "1ユーザーにつき1匹" do

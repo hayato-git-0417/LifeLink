@@ -60,6 +60,7 @@ module Api
         return render_errors(meal.errors.full_messages) unless meal.save
 
         refresh_daily_achievements(meal.recorded_on)
+        award_evolution_points(:meal)
 
         render json: { meal: meal_json(meal) }, status: :created
       end

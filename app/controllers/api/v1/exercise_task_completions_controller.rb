@@ -12,6 +12,7 @@ module Api
           new_completion.completed_at = Time.current
         end
         refresh_daily_achievements(today)
+        award_evolution_points(:exercise)
         render json: { exercise_task: exercise_task_json(@task, completion) }
       rescue ActiveRecord::RecordNotUnique
         # 同時に2回押されたとき（もう一方が保存済み）

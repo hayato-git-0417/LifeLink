@@ -11,9 +11,11 @@ module Api
         achievement = DailyAchievementUpdater.call(user: current_user, dates: [ today ]).first
         resolved = CharacterStateResolver.call(user: current_user)
         HomeNotifier.call(user: current_user, resolved: resolved)
+        character = current_user.character.reload
 
         render json: {
-          character: character_json(current_user.character.reload),
+          character: character_json(character),
+          evolution: evolution_json(character),
           today: today_json(today, achievement),
           timers: timers_json,
           message: resolved.message,
@@ -33,6 +35,23 @@ module Api
           mood: character.mood,
           points: ScoreCalculator::ITEMS.index_with { |item| character[:"#{item}_points"] }
                                         .merge(total: character.total_points)
+        }
+      end
+
+      # 進化（spec.md 4.3）。段階・累計ポイント・次の段階までのゲージ・継続日数・今日記録したときの倍率
+      def evolution_json(character)
+        today = current_user.local_date
+        last_recorded_on = character.last_recorded_on
+        streak_days = character.streak_days
+        {
+          stage: character.evolution_stage,
+          max_stage: EvolutionRules.max_stage,
+          points: character.evolution_points,
+          **EvolutionRules.progress(points: character.evolution_points, stage: character.evolution_stage),
+          streak_days: EvolutionRules.current_streak(last_recorded_on: last_recorded_on, streak_days: streak_days, today: today),
+          # 倍率は 10 分の 1 単位の整数（14 = 1.4倍）。表示はフロントで整える
+          multiplier_tenths: EvolutionRules.today_multiplier_tenths(last_recorded_on: last_recorded_on, streak_days: streak_days, today: today),
+          recorded_items_today: character.evolution_point_logs.recorded.where(target_date: today).pluck(:item)
         }
       end
 

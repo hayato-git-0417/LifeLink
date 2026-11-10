@@ -44,7 +44,10 @@ module Api
           return render_errors(records.flat_map { |record| record.valid? ? [] : record.errors.full_messages }.uniq) unless records.all?(&:valid?)
 
           ExerciseRecord.transaction { records.each(&:save!) }
-          refresh_daily_achievements(records.first.recorded_on) if records.any?
+          if records.any?
+            refresh_daily_achievements(records.first.recorded_on)
+            award_evolution_points(:exercise)
+          end
           return render json: { exercise_records: records.map { |record| record_json(record) } }, status: :created
         end
 
@@ -68,6 +71,7 @@ module Api
         return render_errors(record.errors.full_messages) unless record.save
 
         refresh_daily_achievements(record.recorded_on)
+        award_evolution_points(:exercise)
         render json: { exercise_record: record_json(record) }, status: :created
       end
 
