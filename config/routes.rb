@@ -53,6 +53,17 @@ Rails.application.routes.draw do
         patch :read, on: :member
         post :read_all, on: :collection
       end
+
+      # 進化のテストパネル（開発用。development・test だけ。本番にはルートを作らない）
+      if Rails.env.local?
+        namespace :dev do
+          resource :evolution, only: %i[show update destroy] do
+            post :record
+            post :advance
+            post :simulate
+          end
+        end
+      end
     end
   end
 

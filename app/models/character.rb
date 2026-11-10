@@ -38,14 +38,24 @@ class Character < ApplicationRecord
     stage_image_path || animation&.gif_path || "/characters/#{state}.png"
   end
 
-  # 段階ごとの画像: public/characters/stage<段階>/<state>.png → なければ stage<段階>/normal.png。どちらもなければ nil。
-  # 画像ができたらフォルダに置くだけで切り替わる（段階の姿が状態の画像より優先。状態の違いは CSS の動きで出す）
-  def stage_image_path
-    [ state, "normal" ].uniq.each do |name|
-      relative = "characters/stage#{evolution_stage}/#{name}.png"
-      return "/#{relative}" if Rails.public_path.join(relative).file?
+  # 段階ごとの画像（public/characters/stages/）。ファイル名は段階の数字: 0.png（卵）〜 4.png（つぼみ）。
+  # <段階>_<状態>.png（例 2_sleeping.png）→ <段階>.png の順に探し、その段階の画像がなければ下の段階の画像を使う
+  # （段階5の画像ができるまでは 4.png）。どれもなければ nil（状態の画像を使う）。
+  # 段階の姿が状態の画像より優先（状態の違いは CSS の動きと夜の部屋で出す）。画像は置くだけで切り替わる
+  STAGE_IMAGE_DIR = "characters/stages".freeze
+
+  def self.stage_image_path_for(stage, state = "normal")
+    stage.downto(0) do |candidate|
+      [ "#{candidate}_#{state}", candidate.to_s ].each do |name|
+        relative = "#{STAGE_IMAGE_DIR}/#{name}.png"
+        return "/#{relative}" if Rails.public_path.join(relative).file?
+      end
     end
     nil
+  end
+
+  def stage_image_path
+    self.class.stage_image_path_for(evolution_stage, state)
   end
 
   # 気分バッジ（spec.md 3.4【仮】）。総合ポイントの下限が高い順に見て最初に当てはまったもの
