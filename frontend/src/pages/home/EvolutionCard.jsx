@@ -3,6 +3,7 @@
 // 下: 次の進化までのポイント、今日記録したときの倍率、今日記録した項目（1項目1日1回ポイントが入るので、残りが分かるように）
 import { ExerciseIcon, MealIcon, SleepIcon, SparkleIcon, WorkIcon } from '../../components/icons.jsx'
 import styles from './EvolutionCard.module.css'
+import { formatMultiplier, formatPoints } from './evolutionFormat.js'
 
 // 記録ボタンと同じ並び
 const ITEMS = [
@@ -11,15 +12,6 @@ const ITEMS = [
   { key: 'exercise', label: '運動', Icon: ExerciseIcon },
   { key: 'sleep', label: '睡眠', Icon: SleepIcon },
 ]
-
-// 倍率は 10 分の 1 単位の整数で届く（14 → "1.4"、100 → "10"）
-function formatMultiplier(tenths) {
-  return tenths % 10 === 0 ? String(tenths / 10) : `${Math.floor(tenths / 10)}.${tenths % 10}`
-}
-
-function formatPoints(points) {
-  return points.toLocaleString('ja-JP')
-}
 
 export default function EvolutionCard({ evolution }) {
   const { stage, points, next_stage_points: nextStagePoints, points_to_next: pointsToNext, progress_percent: percent } = evolution
