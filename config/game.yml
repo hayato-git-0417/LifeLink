@@ -52,6 +52,23 @@ shared: &shared
     # この時刻以降に未完了タスクがあれば声をかける
     task_reminder_hour: 20
 
+  evolution:
+    # キャラの進化（spec.md 4.3）。計算は EvolutionRules（app/services/evolution_rules.rb）
+    # 1項目を記録した日の初回に 記録ポイント × 倍率 を加算する（切り捨て）
+    points_per_record: 100
+    # 倍率は 10 分の 1 単位の整数で持つ（浮動小数点の誤差を出さないため）。
+    # 倍率 = (base_tenths + step_tenths × 継続日数) ÷ 10、max_tenths で頭打ち（1日目 1.1倍 … 90日目以降 10倍）
+    multiplier:
+      base_tenths: 10
+      step_tenths: 1
+      max_tenths: 100
+    # 記録しなかった日1日あたりの減少
+    missed_day_penalty: 200
+    # 段階ごとに必要な累計ポイント（添字 = 段階。0 が初期、最後が最終段階）
+    stage_thresholds: [0, 300, 3000, 25000, 150000, 1000000]
+    # 一度この段階に達したら、これより下には退化しない（ポイントもこの段階のラインで止まる）
+    min_stage_once_reached: 1
+
 development:
   <<: *shared
 

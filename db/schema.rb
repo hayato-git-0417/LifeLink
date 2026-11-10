@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_10_06_144845) do
+ActiveRecord::Schema[7.2].define(version: 2026_11_10_120100) do
   create_table "active_storage_attachments", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -74,6 +74,11 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_06_144845) do
     t.date "last_reset_on"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "evolution_points", default: 0, null: false
+    t.integer "evolution_stage", default: 0, null: false
+    t.integer "streak_days", default: 0, null: false
+    t.date "last_recorded_on"
+    t.date "decay_processed_through"
     t.index ["user_id"], name: "index_characters_on_user_id", unique: true
   end
 
@@ -98,6 +103,22 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_06_144845) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["user_id", "target_date"], name: "index_daily_achievements_on_user_id_and_target_date", unique: true
+  end
+
+  create_table "evolution_point_logs", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "character_id", null: false
+    t.integer "reason", null: false
+    t.integer "item"
+    t.date "target_date", null: false
+    t.integer "amount", null: false
+    t.integer "points_after", null: false
+    t.integer "stage_after", null: false
+    t.integer "multiplier_tenths"
+    t.integer "missed_days"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["character_id", "created_at"], name: "index_evolution_point_logs_on_character_id_and_created_at"
+    t.index ["character_id", "target_date", "item"], name: "idx_on_character_id_target_date_item_b1eb0f3c41", unique: true
   end
 
   create_table "exercise_records", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -266,6 +287,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_06_144845) do
   add_foreign_key "character_state_logs", "characters"
   add_foreign_key "characters", "users"
   add_foreign_key "daily_achievements", "users"
+  add_foreign_key "evolution_point_logs", "characters"
   add_foreign_key "exercise_records", "users"
   add_foreign_key "exercise_task_completions", "exercise_tasks"
   add_foreign_key "exercise_tasks", "users"
