@@ -678,3 +678,22 @@
   opacity: 1;
   cursor: default;
 }
+
+/* 既存の .room にこの2つを追加 */
+.room {
+  position: relative;
+  isolation: isolate;
+}
+
+.room:not(.night) {
+  background: url('/room/wall/blue-stripe.png') center / cover no-repeat;
+}
+
+.floor {
+  position: absolute;
+  inset: auto 0 0;
+  height: 33%;
+  background: url('/room/floor/wood-floor.png') center / cover no-repeat;
+  z-index: -1;
+  pointer-events: none;
+}

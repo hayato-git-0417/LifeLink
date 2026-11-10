@@ -15,7 +15,7 @@ import UserIcon from '../../components/UserIcon.jsx'
 import { formatElapsed, formatMinutes, formatTime } from '../../lib/format.js'
 import ExercisePage from '../exercise/ExercisePage.jsx'
 import styles from './HomePage.module.css'
-import Room from './Room.jsx'
+//import Room from './Room.jsx'
 import { CHARACTER_MESSAGES } from './characterMessages.js'
 
 // 生活リズムカードの並び（デザインの順）
@@ -254,7 +254,9 @@ export default function HomePage() {
   return (
     <AppShell bare>
       <div className={`${styles.room} ${sleeping ? styles.night : ''}`}>
-        <Room />
+        <div className={styles.floor} aria-hidden="true" />
+        
+        {/* <Room /> */}
 
         <header className={styles.top}>
           <Link to="/mypage" className={styles.userCard}>
@@ -312,7 +314,7 @@ export default function HomePage() {
               )}
 
               <div className={styles.spot}>
-                <span className={styles.rug} aria-hidden="true" />
+                {/* <span className={styles.rug} aria-hidden="true" /> */}
 
                 {/* キャラ画像 */}
                 <button
