@@ -32,6 +32,7 @@
 | 13 | 記録 | meals | Meal | 1回の食事。写真は Active Storage（has_one_attached :photo）で保存し、このテーブルには列を持たない。 | ホーム(p.1-2) / 食事トップ(p.13) / 食事を記録(p.14) / 詳細(p.5) |
 | 14 | マスタ | nutrition_standards | NutritionStandard | 年齢・性別ごとの食事のデフォルト値。新規登録時に goals の初期値を決めるのに使う。値は db/seeds.rb で投入。 | 新規登録（内部処理） / 食事トップ(p.13) |
 | 15 | マスタ | character_animations | CharacterAnimation | キャラの状態（8種類）ごとに表示するGIFのパス。GIF本体は Rails の public/characters/ に置く（Reactを使う場合も使わない場合も同じパスで表示できる）。値は db/seeds.rb で投入。 | ホーム(p.1-2) |
+| 16 | キャラ | evolution_point_logs | EvolutionPointLog | 進化の累計ポイントの増減履歴（記録による加算・休んだ日の減少）。記録による加算は「キャラ・日・項目」で1行だけ（2026-11-10 追加。spec.md 4.3） | ホーム（進化カード） / 通知 |
 | － | フレームワーク | active_storage_blobs<br>active_storage_attachments<br>active_storage_variant_records | （Rails標準） | 食事写真の保存用。rails active_storage:install で自動生成されるので自分で設計しない。 | 食事を記録(p.14) |
 
 ## リレーション（モデルに書く関連）
@@ -52,6 +53,7 @@
 | users | daily_achievements | 1 : 多 | daily_achievements.user_id | 親と一緒に削除 | has_many :daily_achievements, dependent: :destroy | belongs_to :user |
 | characters | character_animations | 多 : 1（値で対応） | 外部キーなし（state の値で探す） | － | def animation<br>  CharacterAnimation.find_by(state: state)<br>end | － |
 | characters | character_state_logs | 1 : 多 | character_state_logs.character_id | 親と一緒に削除 | has_many :character_state_logs, dependent: :destroy | belongs_to :character |
+| characters | evolution_point_logs | 1 : 多 | evolution_point_logs.character_id | 親と一緒に削除 | has_many :evolution_point_logs, dependent: :destroy | belongs_to :character |
 | exercise_tasks | exercise_task_completions | 1 : 多 | exercise_task_completions.exercise_task_id | 親と一緒に削除 | has_many :exercise_task_completions, dependent: :destroy | belongs_to :exercise_task |
 | meals | 写真（Active Storage） | 1 : 0..1 | active_storage_attachments.record_id | 親と一緒に削除 | has_one_attached :photo | － |
 | （任意のデータ） | notifications | 多 : 1 | notifications.notifiable_type / notifiable_id | － | has_many :notifications, as: :notifiable | belongs_to :notifiable, polymorphic: true, optional: true |
@@ -134,8 +136,33 @@
 | `total_points` | 総合ポイント | INT | integer | ○ | 500 |  |  | 546 | 0〜1000。睡眠×0.30＋食事×0.30＋運動×0.20＋ワーク×0.20（四捨五入） |
 | `state_changed_at` | 状態変更日時 | DATETIME(6) | datetime |  |  |  |  | 2026-10-05 23:45 |  |
 | `last_reset_on` | 最終リセット日 | DATE | date |  |  |  |  | 2026-10-05 | 状態のリセットとポイント反映を済ませた最後の日付 |
+| `evolution_points` | 累計ポイント（進化） | INT | integer | ○ | 0 |  |  | 3200 | 2026-11-10 追加（spec.md 4.3）。記録で加算・休んだ日で減少。段階1以上は 300、段階0は 0 で止まる。上の total_points（総合ポイント）とは別 |
+| `evolution_stage` | 進化の段階 | INT | integer | ○ | 0 |  |  | 2 | 0〜5。累計ポイントから決まる（段階1より下には退化しない） |
+| `streak_days` | 継続日数 | INT | integer | ○ | 0 |  |  | 4 | 記録した日（4項目のどれか1つ以上）が続いた日数。休んだ日があれば 0 |
+| `last_recorded_on` | 最後に記録した日 | DATE | date |  |  |  |  | 2026-11-09 | ユーザーの日付（日本時間 0:00 区切り） |
+| `decay_processed_through` | 減少処理済みの日 | DATE | date |  |  |  |  | 2026-11-09 | 休んだ日の減少を済ませた最後の日（＝減少処理をした日の前日）。二重に減らさないため。新規登録時は登録日 |
 
 インデックス: ユニーク: `user_id`（1ユーザーにつき1行に制限）
+
+### evolution_point_logs
+
+- 役割: 進化の累計ポイントの増減履歴（2026-11-10 追加。spec.md 4.3）
+- 画面: ホーム（進化カードの「今日記録した項目」） / 通知（進化・退化の通知の notifiable）
+- モデル: EvolutionPointLog（app/models/evolution_point_log.rb）
+
+| 物理名 | 論理名 | MySQL型 | Rails型 | NOT NULL | 初期値 | キー | 参照先 | 例 | 備考 |
+|---|---|---|---|---|---|---|---|---|---|
+| `character_id` | キャラクター | BIGINT | references | ○ |  | FK | characters.id | 1 |  |
+| `reason` | 理由 | INT | integer | ○ |  |  |  | 0（記録） | enum |
+| `item` | 項目 | INT | integer |  |  |  |  | 1（食事） | enum。reason が記録のときだけ。休んだ日は NULL |
+| `target_date` | 対象日 | DATE | date | ○ |  |  |  | 2026-11-09 | 記録＝記録した日、休んだ日＝減少処理をした日 |
+| `amount` | 増減量 | INT | integer | ○ |  |  |  | -400 | 実際に動いた分（下限で止まったときは止まった分） |
+| `points_after` | 増減後の累計ポイント | INT | integer | ○ |  |  |  | 2800 |  |
+| `stage_after` | 増減後の段階 | INT | integer | ○ |  |  |  | 1 |  |
+| `multiplier_tenths` | 倍率（10分の1単位） | INT | integer |  |  |  |  | 14（1.4倍） | 記録のときだけ |
+| `missed_days` | 休んだ日数 | INT | integer |  |  |  |  | 2 | 休んだ日のときだけ |
+
+インデックス: ユニーク: `character_id, target_date, item`（同じ日・同じ項目の加算は1回だけ。休んだ日の行は item が NULL なので重ならない） / 通常: `character_id, created_at`（履歴の一覧）
 
 ### character_state_logs
 
@@ -363,7 +390,9 @@
 - `meals.input_method`: `enum :input_method, { scan: 0, manual: 1 }`
 - `nutrition_standards.gender`: `enum :gender, { male: 1, female: 2, other: 3 }`
 - `nutrition_standards.activity_level`: `enum :activity_level, { low: 1, moderate: 2, high: 3 }`
-- `notifications.notification_type`: `enum :notification_type, { follow: 0, character: 1, reminder: 2, task: 3 }`
+- `notifications.notification_type`: `enum :notification_type, { follow: 0, character: 1, reminder: 2, task: 3, evolution: 4 }`（evolution は 2026-11-10 追加）
+- `evolution_point_logs.reason`: `enum :reason, { recorded: 0, missed: 1 }`
+- `evolution_point_logs.item`: `enum :item, { sleep: 0, meal: 1, exercise: 2, work: 3 }, prefix: true`（sleep が Kernel#sleep とぶつかるので item_ を付ける）
 
 表示名: characters.state = normal:デフォルト / sleeping:睡眠中 / sleep_deprived:睡眠不足 / full:満腹 / hungry:空腹 / exercising:汗汗（運動中） / studying:勉強中 / fat:太り（運動不足）
 

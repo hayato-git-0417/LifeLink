@@ -11,9 +11,11 @@ module Api
         achievement = DailyAchievementUpdater.call(user: current_user, dates: [ today ]).first
         resolved = CharacterStateResolver.call(user: current_user)
         HomeNotifier.call(user: current_user, resolved: resolved)
+        character = current_user.character.reload
 
         render json: {
-          character: character_json(current_user.character.reload),
+          character: character_json(character),
+          evolution: evolution_json(character),
           today: today_json(today, achievement),
           timers: timers_json,
           message: resolved.message,
@@ -30,6 +32,8 @@ module Api
           state: character.state,
           state_label: character.state_label,
           image_path: character.image_path,
+          # false なら画像は段階の姿だけなので、ホームで状態のマークを重ねる
+          image_shows_state: character.image_shows_state?,
           mood: character.mood,
           points: ScoreCalculator::ITEMS.index_with { |item| character[:"#{item}_points"] }
                                         .merge(total: character.total_points)

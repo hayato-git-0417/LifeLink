@@ -53,6 +53,12 @@ class User < ActiveRecord::Base
     birthdate && self.class.age_on(birthdate, on: on)
   end
 
+  # このユーザーにとっての日付（進化のポイント・継続日数・休んだ日の判定に使う）。
+  # いまはアプリ全体の Time.zone（日本時間 0:00 区切り）。ユーザーごとのタイムゾーンを持つときはここだけ変える（docs/decisions.md）
+  def local_date(time = Time.current)
+    time.in_time_zone.to_date
+  end
+
   def following?(other)
     active_follows.exists?(followed_id: other.id)
   end
@@ -64,8 +70,9 @@ class User < ActiveRecord::Base
 
   private
 
+  # 登録した日は「休んだ日」の減少の対象外（decay_processed_through = 登録日）
   def create_initial_character
-    create_character!(last_reset_on: Time.zone.today)
+    create_character!(last_reset_on: Time.zone.today, decay_processed_through: local_date)
   end
 
   def birthdate_not_in_future

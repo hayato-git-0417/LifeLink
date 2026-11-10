@@ -17,6 +17,7 @@ module GameConfig
   def character = config[:character]
   def meal_times = config[:meal_times]
   def pacemaker = config[:pacemaker]
+  def evolution = config[:evolution]
 
   # テストで値を差し替えたあとに読み直す用
   def reload!

@@ -1,31 +1,31 @@
 // ホーム（spec.md 3.4・4章）。GET /api/v1/home を表示する。
-// レイアウト: 部屋のイラスト（Room.jsx）を画面いっぱいに出し、左上にユーザー（押すとマイページ）、右上に通知ベルとメニュー、
-// その下に「生活リズム」カード（今日の達成度。押すと記録の詳細）、中央にキャラと吹き出し、下に記録ボタン4つ（食事・ワーク・運動・睡眠）。
+// レイアウト: 部屋のイラスト（Room.jsx）を画面いっぱいに出し、左上にユーザー（継続日数つき。押すとマイページ）、右上に通知ベルとメニュー、
+// その下に進化カード（累計ポイント・段階・ゲージ・今日の倍率。EvolutionCard.jsx）、中央にキャラと吹き出し、下に記録ボタン4つ（食事・ワーク・運動・睡眠）。
+// 今日の達成度（生活リズム）は記録の詳細（メニュー）で見る。
 // 上部ヘッダー・下部ナビは出さない（マイページはユーザー、設定などはメニューから）。
 // 睡眠・ワークは画面遷移せず、その場で start / finish を呼ぶ。計測中は「取消」も出す。
 // 押したあとはホームを読み直すので、キャラの状態がすぐ変わる。睡眠中は夜の部屋になる
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../../api/client.js'
 import { useAuth } from '../../auth/useAuth.js'
 import AppShell, { HeaderActions } from '../../components/AppShell.jsx'
 import ErrorList from '../../components/ErrorList.jsx'
-import { ChevronRightIcon, ExerciseIcon, FlameIcon, MealIcon, SleepIcon, SunIcon, WorkIcon } from '../../components/icons.jsx'
+import { ExerciseIcon, FlameIcon, MealIcon, SleepIcon, SunIcon, WorkIcon } from '../../components/icons.jsx'
 import UserIcon from '../../components/UserIcon.jsx'
 import { formatElapsed, formatMinutes, formatTime } from '../../lib/format.js'
 import ExercisePage from '../exercise/ExercisePage.jsx'
+import EvolutionCard from './EvolutionCard.jsx'
 import styles from './HomePage.module.css'
+import StateBadge from './StateBadge.jsx'
 //import Room from './Room.jsx'
 import { CHARACTER_MESSAGES } from './characterMessages.js'
 
-// 生活リズムカードの並び（デザインの順）
-const ITEMS = [
-  { key: 'meal', label: '食事' },
-  { key: 'work', label: 'ワーク' },
-  { key: 'exercise', label: '運動' },
-  { key: 'sleep', label: '睡眠' },
-]
 const NOTICE_SECONDS = 5
+const STAGE_CHANGE_SECONDS = 4
+
+// 進化のテストパネルは開発中（npm run dev）だけ読み込む。本番のビルドでは null になり、ファイルごと入らない
+const EvolutionDevPanel = import.meta.env.DEV ? lazy(() => import('./EvolutionDevPanel.jsx')) : null
 
 // 計測中は1秒ごとに今の時刻を更新する（ワークの経過時間）
 function useNow(active) {
@@ -53,11 +53,27 @@ export default function HomePage() {
   const [characterTapLocked, setCharacterTapLocked] = useState(false)
   const [speechText, setSpeechText] = useState('')
 
+  // 進化の段階が前に読んだときから変わったら、進化・退化の演出を出す（開いた直後の1回目は出さない）
+  const stageRef = useRef(null)
+  const [stageChange, setStageChange] = useState(null)
+
   const load = useCallback(async () => {
     const data = await api('/home')
+    const previousStage = stageRef.current
+    const stage = data.evolution.stage
+    stageRef.current = stage
+    if (previousStage !== null && previousStage !== stage) {
+      setStageChange({ up: stage > previousStage, stage, name: data.character.name, key: Date.now() })
+    }
     setHome(data)
     setUnreadCount(data.unread_notifications_count)
   }, [setUnreadCount])
+
+  useEffect(() => {
+    if (!stageChange) return undefined
+    const timer = setTimeout(() => setStageChange(null), STAGE_CHANGE_SECONDS * 1000)
+    return () => clearTimeout(timer)
+  }, [stageChange])
 
   useEffect(() => {
     load().catch((error) => setErrors(error.messages))
@@ -264,9 +280,9 @@ export default function HomePage() {
             <span className={styles.userName}>{user?.name}</span>
             <span className={styles.streak}>
               <span className={styles.streakLabel}>継続日数</span>
-              {/* 継続日数を返す API はまだないので仮表示（decisions.md） */}
+              {/* 記録した日が続いている日数（spec.md 4.3）。読み込み中は「‐」 */}
               <span className={styles.streakValue}>
-                〇日
+                {home ? home.evolution.streak_days : '‐'}日
                 <FlameIcon size={16} />
               </span>
             </span>
@@ -277,31 +293,7 @@ export default function HomePage() {
           </div>
         </header>
 
-        {home && (
-          <Link to="/details" className={styles.rhythm}>
-            <span className={styles.rhythmHead}>
-              <span className={styles.rhythmTitle}>生活リズム</span>
-              <strong className={styles.rhythmTotal}>{Math.round(home.today.total_percent)}%</strong>
-              <ChevronRightIcon size={16} className={styles.rhythmMore} />
-            </span>
-            {ITEMS.map(({ key, label }) => {
-              const score = Math.round(home.today.scores[key])
-              return (
-                <span key={key} className={styles.row}>
-                  <span className={styles.rowLabel}>{label}</span>
-                  <span className={styles.bar}>
-                    {/* ワークは 100% を超えることがあるので、ゲージは 100 で頭打ち */}
-                    {score > 0 && (
-                      <span className={`${styles.fill} ${styles[`fill_${key}`]}`} style={{ width: `${Math.min(score, 100)}%` }} />
-                    )}
-                  </span>
-                  <span className={styles.percent}>{score}%</span>
-                </span>
-              )
-            })}
-            <span className={styles.srOnly}>（記録の詳細を見る）</span>
-          </Link>
-        )}
+        {home && <EvolutionCard evolution={home.evolution} />}
 
         <section className={styles.stage}>
           {!home ? (
@@ -313,24 +305,32 @@ export default function HomePage() {
                 <p className={styles.bubble}>{speechText}</p>
               )}
 
-              <div className={styles.spot}>
+              <div
+                key={stageChange?.key}
+                className={`${styles.spot} ${stageChange ? (stageChange.up ? styles.spotEvolved : styles.spotDevolved) : ''}`}
+              >
                 {/* <span className={styles.rug} aria-hidden="true" /> */}
 
-                {/* キャラ画像 */}
-                <button
-                  type="button"
-                  data-click-sound="custom"
-                  disabled={characterTapLocked}
-                  className={styles.characterButton}
-                  aria-label={`${home.character.name}に話しかける`}
-                  onClick={handleCharacterTap}
-                >
-                  <img
-                    className={`${styles.character} ${styles[`anim_${home.character.state}`] || styles.anim_normal}`}
-                    src={home.character.image_path}
-                    alt={`${home.character.name}（${home.character.state_label}）`}
-                  />
-                </button>
+                {/* キャラ画像。段階の絵が状態を表していないときは、右上に状態のマークを重ねる */}
+                <div className={styles.figure}>
+                  <button
+                    type="button"
+                    data-click-sound="custom"
+                    disabled={characterTapLocked}
+                    className={styles.characterButton}
+                    aria-label={`${home.character.name}に話しかける`}
+                    onClick={handleCharacterTap}
+                  >
+                    <img
+                      className={`${styles.character} ${styles[`anim_${home.character.state}`] || styles.anim_normal}`}
+                      src={home.character.image_path}
+                      alt={`${home.character.name}（${home.character.state_label}）`}
+                    />
+                  </button>
+                  {!home.character.image_shows_state && (
+                    <StateBadge key={home.character.state} state={home.character.state} label={home.character.state_label} />
+                  )}
+                </div>
 
               </div>
             </>
@@ -338,6 +338,13 @@ export default function HomePage() {
         </section>
 
         <div className={styles.toasts} aria-live="polite">
+          {stageChange && (
+            <p className={`${styles.notice} ${stageChange.up ? styles.evolved : styles.devolved}`}>
+              {stageChange.up
+                ? `${stageChange.name}が進化した！（進化${stageChange.stage}）`
+                : `${stageChange.name}が退化してしまった…（進化${stageChange.stage}）`}
+            </p>
+          )}
           {notice && <p className={styles.notice}>{notice}</p>}
           <ErrorList errors={errors} />
         </div>
@@ -409,6 +416,12 @@ export default function HomePage() {
               </button>
             </TimerSlot>
           </nav>
+        )}
+
+        {EvolutionDevPanel && home && (
+          <Suspense fallback={null}>
+            <EvolutionDevPanel onChanged={load} />
+          </Suspense>
         )}
       </div>
       {exerciseOpen && <ExercisePage onClose={closeExercisePopup} timer={exerciseTimer} now={now} onToggleTimer={toggleExerciseTimer} completionNotice={notice.startsWith('おつかれさま！') ? notice : ''} />}

@@ -205,7 +205,6 @@
 
 /* ---------- 上段: ユーザーと、通知ベル・メニュー ---------- */
 .top,
-.rhythm,
 .stage,
 .toasts,
 .buttons {
@@ -279,101 +278,7 @@
   margin-left: auto;
 }
 
-/* ---------- 生活リズムカード（押すと記録の詳細） ---------- */
-.rhythm {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  width: min(63%, 250px);
-  margin-top: 12px;
-  padding: 9px 12px 12px;
-  border: var(--line);
-  border-radius: var(--radius);
-  background: var(--paper);
-  color: var(--ink);
-  text-decoration: none;
-  box-shadow: 0 3px 0 var(--ink);
-}
-
-.rhythm:active {
-  box-shadow: 0 0 0 var(--ink);
-  transform: translateY(3px);
-}
-
-.rhythmHead {
-  display: flex;
-  align-items: baseline;
-  gap: 6px;
-  margin-bottom: 1px;
-}
-
-.rhythmTitle {
-  font-size: 0.92rem;
-  font-weight: 700;
-}
-
-.rhythmTotal {
-  font-size: 1.45rem;
-  line-height: 1.1;
-  font-variant-numeric: tabular-nums;
-}
-
-.rhythmMore {
-  align-self: center;
-  margin-left: auto;
-  color: var(--ink-soft);
-}
-
-.row {
-  display: grid;
-  grid-template-columns: 3.1em minmax(0, 1fr) 2.6em;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.8rem;
-}
-
-.rowLabel {
-  font-weight: 700;
-}
-
-.bar {
-  height: 12px;
-  overflow: hidden;
-  border: var(--line);
-  border-radius: 6px;
-  background: var(--paper-deep);
-}
-
-.fill {
-  display: block;
-  height: 100%;
-  border-right: 2px solid var(--ink);
-  transition: width 0.5s ease;
-}
-
-.fill_meal {
-  background: var(--meal-deep);
-}
-
-.fill_work {
-  background: var(--work-deep);
-}
-
-.fill_exercise {
-  background: var(--exercise-deep);
-}
-
-.fill_sleep {
-  background: var(--sleep-deep);
-}
-
-.percent {
-  color: var(--ink-soft);
-  font-size: 0.76rem;
-  font-weight: 700;
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-}
+/* 進化カード（ユーザーの下）は EvolutionCard.module.css */
 
 /* ---------- キャラ（ラグの上に立つ）と吹き出し ---------- */
 .stage {
@@ -519,8 +424,7 @@
 
   .room,
   .floor,
-  .rug,
-  .fill {
+  .rug {
     transition: none;
   }
 }
@@ -552,6 +456,76 @@
   font-weight: 700;
   text-align: center;
   box-shadow: 0 6px 16px rgb(74 58 46 / 0.18);
+}
+
+/* 進化・退化したときのお知らせ（進化カードと同じ金 / 退化は落ち着いた色） */
+.evolved {
+  border-color: #d9a227;
+  background: #fff4cc;
+  color: var(--ink);
+}
+
+.devolved {
+  border-color: var(--line-soft);
+  background: var(--paper-deep);
+  color: var(--ink-soft);
+}
+
+/* 進化・退化したときのキャラの動き（段階が変わってホームを読み直したとき） */
+.spotEvolved {
+  animation: evolve 1.1s ease-out;
+}
+
+.spotDevolved {
+  animation: devolve 0.9s ease-in-out;
+}
+
+@keyframes evolve {
+  0% {
+    transform: scale(1);
+    filter: none;
+  }
+  30% {
+    transform: scale(0.85);
+    filter: brightness(1.8) drop-shadow(0 0 14px #fde7a6);
+  }
+  60% {
+    transform: scale(1.12);
+    filter: brightness(1.25) drop-shadow(0 0 22px #f4c04f);
+  }
+  100% {
+    transform: scale(1);
+    filter: none;
+  }
+}
+
+@keyframes devolve {
+  0%,
+  100% {
+    transform: translateX(0);
+    filter: none;
+  }
+  20% {
+    transform: translateX(-6px);
+    filter: grayscale(0.8);
+  }
+  40% {
+    transform: translateX(6px);
+  }
+  60% {
+    transform: translateX(-4px);
+    filter: grayscale(0.6);
+  }
+  80% {
+    transform: translateX(3px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spotEvolved,
+  .spotDevolved {
+    animation: none;
+  }
 }
 
 /* ---------- 記録ボタン4つ（食事・ワーク・運動・睡眠） ---------- */
@@ -666,6 +640,12 @@
 }
 
 /* キャラ画像のボタンを透明化 */
+/* キャラと状態のマーク（StateBadge）を重ねる枠 */
+.figure {
+  position: relative;
+  display: inline-flex;
+}
+
 .characterButton {
   margin: 0;
   padding: 0;

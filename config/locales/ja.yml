@@ -173,6 +173,13 @@ ja:
       follow:
         title: "%{name}さんにフォローされました"
         body: マイページのフォロー一覧から確認できます。
+      # 進化・退化（spec.md 4.3）【仮: 文言】
+      evolved:
+        title: "%{name}が進化しました！（進化%{stage}）"
+        body: "累計ポイントが%{points}ptになりました。この調子で毎日記録しよう！"
+      devolved:
+        title: "%{name}が退化してしまいました（進化%{stage}）"
+        body: "記録しなかった日が%{days}日あり、ポイントが%{amount}pt減りました（累計%{points}pt）。毎日記録してまた進化させよう。"
   api:
     errors:
       not_found: データが見つかりません
