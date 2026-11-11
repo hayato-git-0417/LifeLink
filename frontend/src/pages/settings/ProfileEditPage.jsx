@@ -1,6 +1,6 @@
 // プロフィール変更（デザイン p.16）。アイコン・名前・生年月日・性別（新規登録②と同じ部品）。
 // メール・パスワードはここでは変えない
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../../api/client.js'
 import { useAuth } from '../../auth/useAuth.js'
@@ -18,9 +18,27 @@ export default function ProfileEditPage() {
     name: user.name,
     birthdate: user.birthdate,
     gender: user.gender,
+    avatar: null,
+    avatarUrl: user.avatar_url || null,
+    removeAvatar: false,
   }))
   const [errors, setErrors] = useState([])
   const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    let active = true
+    refreshMe()
+      .then((freshUser) => {
+        if (!active) return
+        setProfile((current) => ({
+          ...current,
+          icon: freshUser.icon,
+          avatarUrl: current.avatar ? current.avatarUrl : freshUser.avatar_url || null,
+        }))
+      })
+      .catch(() => {})
+    return () => { active = false }
+  }, [refreshMe])
 
   async function handleSubmit(event) {
     event.preventDefault()
@@ -29,7 +47,14 @@ export default function ProfileEditPage() {
     setSaving(true)
     setErrors([])
     try {
-      await api('/me', { method: 'PATCH', body: { user: { ...profile, name: profile.name.trim() } } })
+      const formData = new FormData()
+      formData.append('user[name]', profile.name.trim())
+      formData.append('user[icon]', profile.icon)
+      formData.append('user[birthdate]', profile.birthdate)
+      formData.append('user[gender]', profile.gender)
+      if (profile.avatar) formData.append('user[avatar]', profile.avatar)
+      if (profile.removeAvatar) formData.append('user[remove_avatar]', 'true')
+      await api('/me', { method: 'PATCH', body: formData })
       await refreshMe()
       navigate('/settings', { replace: true, state: { message: 'プロフィールを保存しました' } })
     } catch (error) {
@@ -51,3 +76,4 @@ export default function ProfileEditPage() {
     </AppShell>
   )
 }
+
