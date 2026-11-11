@@ -3,7 +3,7 @@
 // ①ではメールの重複だけ API で確認する。目標の保存だけ失敗したときは目標設定画面へ移る。
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { api } from '../api/client.js'
+import { api, clearAuth } from '../api/client.js'
 import { useAuth } from '../auth/useAuth.js'
 import AppShell from '../components/AppShell.jsx'
 import ErrorList from '../components/ErrorList.jsx'
@@ -16,23 +16,16 @@ import styles from '../styles/form.module.css'
 import StepIndicator from './StepIndicator.jsx'
 import signup from './Signup.module.css'
 
-const PASSWORD_MIN = 8 // パスワードの最低文字数
+const PASSWORD_MIN = 6
 export default function SignupPage() {
   const navigate = useNavigate()
   const { refreshMe } = useAuth()
   const [step, setStep] = useState(1)
   const [errors, setErrors] = useState([])
-  const [busy, setBusy] = useState(false) //「通信などの処理中です」という状態に切り替える命令、true になるとボタンが押せなくなり、連打による二重送信を防げる
+  const [busy, setBusy] = useState(false)
+  const [resumingSignup, setResumingSignup] = useState(false)
   const [account, setAccount] = useState({ email: '', password: '', password_confirmation: '' })
-  const [showPassword, setShowPassword] = useState(false) // パスワードを隠すやつ　false は非表示、true は表示
-  const [profile, setProfile] = useState({
-    icon: 'person_blue',
-    name: '',
-    birthdate: '',
-    gender: 'unspecified' ,
-    height_cm: '',
-    weight_kg: '',
-  })
+  const [profile, setProfile] = useState({ icon: 'person_blue', name: '', birthdate: '', gender: 'unspecified', avatar: null, avatarUrl: null, useAvatar: false, removeAvatar: false })
   const [goal, setGoal] = useState(newGoalDraft)
   // 栄養目標の初期値を出した「生年月日・性別」。②を変えたら④で出し直す
   const [defaultsKey, setDefaultsKey] = useState(null)
@@ -40,11 +33,10 @@ export default function SignupPage() {
 
   const updateGoal = (changes) => setGoal((current) => ({ ...current, ...changes }))
 
-  /* ページを切り替える関数 */
   function go(nextStep) {
-    setErrors([]) // 前のエラーメッセージを消す
-    setStep(nextStep) // 表示するステップを次に変更
-    window.scrollTo(0, 0) // 画面を一番上までスクロール
+    setErrors([])
+    setStep(nextStep)
+    window.scrollTo(0, 0)
   }
 
   // ④を開いたら、年齢・性別から栄養目標の初期値を出す（ログイン前なので生年月日・性別を渡す）
@@ -72,42 +64,54 @@ export default function SignupPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step])
 
-
-  /*「次へ」を押してフォームを送信したときの処理 */
   async function submitAccount(event) {
-    event.preventDefault()  //  ブラウザ標準のフォーム送信によるページ移動・再読み込みを防ぐ処理
-    const found = []  //  入力チェックで見つかったエラーメッセージを格納する配列
-
-    //.test(account.password)：パスワードの中に、そのパターンに当てはまる部分があるか確認する
-    const hasLetter = /[a-zA-Z]/.test(account.password)
-    const hasNumber = /[0-9]/.test(account.password)
-    if (!hasLetter || !hasNumber) {
-      found.push('パスワードは英字と数字をそれぞれ1文字以上含めてください')
-    }
-
-    //  エラーメッセージをfoundにpush（格納する）
+    event.preventDefault()
+    const found = []
     if (!account.email.trim()) found.push('メールアドレスを入力してください')
     if (account.password.length < PASSWORD_MIN) found.push(`パスワードは${PASSWORD_MIN}文字以上にしてください`)
     if (account.password !== account.password_confirmation) found.push('パスワード（確認用）が一致しません')
     if (found.length) return setErrors(found)
 
-    setBusy(true) //  送信ボタンを押せなくする
-    // 入力されたメールアドレスが登録に使えるかをRailsに問い合わせ、返ってきた結果を data に入れる処理
+    setBusy(true)
     try {
       const data = await api('/registrations/email_available', { params: { email: account.email.trim() } })
       if (!data.available) {
-        setErrors(['このメールアドレスはすでに登録されています'])
+        try {
+          await api('/auth/sign_in', {
+            method: 'POST',
+            body: { email: account.email.trim(), password: account.password },
+          })
+          const current = await api('/me')
+          if (current.user?.goal_registered) {
+            clearAuth()
+            setErrors(['このメールアドレスはすでに登録されています'])
+            return
+          }
+          setProfile((previous) => ({
+            ...previous,
+            icon: current.user.icon,
+            name: current.user.name,
+            birthdate: current.user.birthdate,
+            gender: current.user.gender,
+            avatarUrl: current.user.avatar_url || null,
+            useAvatar: Boolean(current.user.avatar_url),
+          }))
+          setResumingSignup(true)
+          go(2)
+        } catch {
+          clearAuth()
+          setErrors(['このメールアドレスはすでに登録されています'])
+        }
         return
       }
-      go(2) // 新規登録の2つ目の画面へ切り替える
+      go(2)
     } catch (error) {
       setErrors(error.messages)
-    } finally { //  通信に失敗した場合
+    } finally {
       setBusy(false)
     }
   }
 
-  /* 名前や生年月日などを、フロント側でチェックする */
   function submitProfile(event) {
     event.preventDefault()
     const found = validateProfile(profile)
@@ -115,7 +119,6 @@ export default function SignupPage() {
     go(3)
   }
 
-  /* 睡眠・ワーク・運動の目標を、フロント側でチェックする */
   function submitBasics(event) {
     event.preventDefault()
     const found = validateBasics(goal)
@@ -123,33 +126,67 @@ export default function SignupPage() {
     go(4)
   }
 
-  /* 最後の画面で登録ボタンを押したときに、Railsと通信して登録を完了する処理 */
   async function submitAll(event) {
-    event.preventDefault() // .preventDefault ブラウザが標準で行う動作を止める
-    const found = validateMeals(goal) // 食事の目標をチェックする
+    event.preventDefault()
+    const found = validateMeals(goal)
     if (found.length) return setErrors(found)
 
     setBusy(true)
     setErrors([])
     try {
       // ユーザーを作る（キャラもサーバーで作られる）。トークンは api() が保存する
-      await api('/auth', {
-        method: 'POST',
-        body: { ...account, email: account.email.trim(), ...profile, name: profile.name.trim() },
-      })
+      const formData = new FormData()
+      formData.append('email', account.email.trim())
+      formData.append('password', account.password)
+      formData.append('password_confirmation', account.password_confirmation)
+      formData.append('name', profile.name.trim())
+      formData.append('icon', profile.icon)
+      formData.append('birthdate', profile.birthdate)
+      formData.append('gender', profile.gender)
+      if (profile.avatar && profile.useAvatar) formData.append('avatar', profile.avatar)
+      if (!resumingSignup) {
+        try {
+          await api('/auth', { method: 'POST', body: formData })
+        } catch (createError) {
+          const duplicateEmail = createError.status === 422
+            && createError.messages?.some((message) => /(メールアドレス|email).*(存在|登録|使用|already|taken)/i.test(message))
+          if (!duplicateEmail) throw createError
+
+          // 前回の登録が途中で止まり、ユーザーだけ作成済みなら同じ認証情報で続きを行う
+          try {
+            await api('/auth/sign_in', {
+              method: 'POST',
+              body: { email: account.email.trim(), password: account.password },
+            })
+            const current = await api('/me')
+            if (current.user?.goal_registered) {
+              clearAuth()
+              throw createError
+            }
+          } catch {
+            clearAuth()
+            throw createError
+          }
+        }
+      }
+      // 新規登録画面で確定したアイコンをユーザープロフィールにも保存し、設定画面で同じ表示にする
+      const profileData = new FormData()
+      profileData.append('user[icon]', profile.icon)
+      if (profile.avatar && profile.useAvatar) profileData.append('user[avatar]', profile.avatar)
+      if (profile.removeAvatar || (!profile.useAvatar && profile.avatarUrl)) profileData.append('user[remove_avatar]', 'true')
+      await api('/me', { method: 'PATCH', body: profileData })
     } catch (error) {
-      setErrors(error.messages)
+      setErrors(error.messages || [error.message || '登録に失敗しました'])
       setBusy(false)
       return
     }
 
     try {
-      // 目標を保存する
       await api('/goal', { method: 'PUT', body: toGoalPayload(goal) })
       await refreshMe()
       navigate('/', { replace: true })
     } catch (error) {
-      // ログイン中のユーザー情報を取得し、ホームへ移動する
+      // アカウントはできたので、目標設定画面で入力の続きから直してもらう
       await refreshMe().catch(() => {})
       navigate('/goal-setup', { replace: true, state: { draft: goal, errors: error.messages } })
     }
@@ -169,43 +206,21 @@ export default function SignupPage() {
                 className={styles.input}
                 type="email"
                 autoComplete="email"
-                placeholder="例：name@example.com"  // emailのプレースホルダ
                 value={account.email}
                 onChange={(event) => setAccount({ ...account, email: event.target.value })}
               />
             </label>
-            <div className={styles.field}>
-              <label className={styles.label} htmlFor="password">
-                パスワード
-              </label>
-
-              <div className={signup.passwordWrap}>
-                <input
-                  id="password"
-                  className={styles.input}
-                  type={showPassword ? 'text' : 'password'}
-                  autoComplete="new-password"
-                  value={account.password}
-                  onChange={(event) =>
-                    setAccount({ ...account, password: event.target.value })
-                  }
-                />
-                <button
-                  className={signup.passwordToggle}
-                  type="button"
-                  onClick={() => setShowPassword((current) => !current)}
-                  aria-label={
-                    showPassword ? 'パスワードを隠す' : 'パスワードを表示する'
-                  }
-                >
-                  <img src={showPassword ? '../icons/eye-open.svg' : '../icons/eye-closed.svg'} alt="" width="24" height="24"/>
-                </button>
-              </div>
-
-              <span className={styles.hint}>
-                {PASSWORD_MIN}文字以上・半角英字と数字を両方含む（記号使用可）
-              </span>
-            </div>
+            <label className={styles.field}>
+              <span className={styles.label}>パスワード</span>
+              <input
+                className={styles.input}
+                type="password"
+                autoComplete="new-password"
+                value={account.password}
+                onChange={(event) => setAccount({ ...account, password: event.target.value })}
+              />
+              <span className={styles.hint}>{PASSWORD_MIN}文字以上</span>
+            </label>
             <label className={styles.field}>
               <span className={styles.label}>パスワード（確認用）</span>
               <input
@@ -230,7 +245,7 @@ export default function SignupPage() {
 
       {step === 2 && (
         <form className={styles.form} onSubmit={submitProfile} noValidate>
-          <ProfileFields value={profile} onChange={(changes) => setProfile({ ...profile, ...changes })} />
+          <ProfileFields value={profile} onChange={(changes) => setProfile((current) => ({ ...current, ...changes }))} />
           <div className={`${styles.actions} ${styles.actionsBetween}`}>
             <button className={styles.button} type="button" onClick={() => go(1)}>
               戻る

@@ -25,16 +25,13 @@ Rails.application.routes.draw do
           end
         end
       end
-      resources :exercise_records, only: %i[index create destroy]
+      resources :exercise_records, only: %i[index create update destroy]
       resources :exercise_tasks, only: [] do
         get :today, on: :collection
         resource :completion, only: %i[create destroy], controller: "exercise_task_completions"
       end
-      resources :meals do
-        collection do
-          post :scan
-        end
-      end
+      resources :meals
+
       # ホームと詳細画面のグラフ（フェーズ4）
       resource :home, only: :show
       resources :daily_achievements, only: :index
@@ -60,4 +57,3 @@ Rails.application.routes.draw do
   # Can be used by load balancers and uptime monitors to verify that the app is live.
   get "up" => "rails/health#show", as: :rails_health_check
 end
-

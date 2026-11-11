@@ -2,9 +2,13 @@
 // （docs/decisions.md【仮】。画像ができたらここと UserIcon.jsx を差し替える）
 //   kind: 描き方 / background: 丸の地の色 / color: 人物の服の色
 export const USER_ICONS = [
+  { key: 'sprout', label: '芽', kind: 'sprout', background: '#fffbf0' },
   { key: 'person_blue', label: '人物（青）', kind: 'person', background: '#dcebf9', color: '#8fb8e6' },
   { key: 'person_pink', label: '人物（ピンク）', kind: 'person', background: '#fbe3e8', color: '#eea6b7' },
   { key: 'person_green', label: '人物（緑）', kind: 'person', background: '#e2f2d7', color: '#9fcd85' },
+  { key: 'person_yellow', label: '人物（黄色）', kind: 'person', background: '#fff1c9', color: '#edc34f' },
+  // 保存済みデータに残っている古いアイコンを表示するため定義は維持する（新規選択肢には出さない）
   { key: 'cat', label: 'ねこ', kind: 'cat', background: '#fdedcc' },
   { key: 'penguin', label: 'ペンギン', kind: 'penguin', background: '#dcebf9' },
 ]
+

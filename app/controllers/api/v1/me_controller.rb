@@ -8,7 +8,10 @@ module Api
 
       # PATCH /api/v1/me（プロフィール変更。メール・パスワードは対象外）
       def update
-        if current_user.update(profile_params)
+        attributes = profile_params
+        remove_avatar = ActiveModel::Type::Boolean.new.cast(attributes.delete(:remove_avatar))
+        if current_user.update(attributes)
+          current_user.avatar.purge if remove_avatar && !attributes.key?(:avatar)
           render json: { user: user_json(current_user) }
         else
           render_errors(current_user.errors.full_messages)
@@ -18,7 +21,7 @@ module Api
       private
 
       def profile_params
-        params.require(:user).permit(:name, :icon, :birthdate, :gender)
+        params.require(:user).permit(:name, :icon, :birthdate, :gender, :avatar, :remove_avatar)
       end
 
       # goal_registered: false のときフロントは目標設定画面へ誘導する（spec.md 5章）
@@ -28,6 +31,7 @@ module Api
           email: user.email,
           name: user.name,
           icon: user.icon,
+          avatar_url: user.avatar.attached? ? rails_blob_path(user.avatar, only_path: true) : nil,
           birthdate: user.birthdate,
           gender: user.gender,
           age: user.age,

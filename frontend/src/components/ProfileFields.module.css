@@ -34,14 +34,287 @@
   outline-offset: 1px;
 }
 
-.bodyMeasurements {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+.iconCard {
+  padding: 18px 20px;
+  border-radius: 28px;
+  background: #fffbf0;
 }
 
-.bodyMeasurements input {
+.photoPicker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
   width: 100%;
+}
+
+.iconChoices {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(6px, 2vw, 14px);
+  width: 100%;
+}
+
+.iconChoice,
+.photoChoice {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: 0 0 clamp(48px, 10vw, 72px);
+  width: clamp(48px, 10vw, 72px);
+  height: clamp(48px, 10vw, 72px);
   min-width: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
   box-sizing: border-box;
+  --avatar-border-width: 3px;
+}
+
+.iconChoice {
+  cursor: pointer;
+}
+
+.iconChoice > * {
+  display: block;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+}
+
+.iconChoiceSelected {
+  outline: 3px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.photoChoice {
+  flex: 0 0 clamp(48px, 10vw, 72px);
+}
+
+.photoInput {
+  display: none;
+}
+
+.photoChoiceImage {
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+}
+
+.photoChoiceImage > * {
+  width: 100%;
+  height: 100%;
+}
+
+.iconChoice:focus-visible,
+.photoChoiceImage:focus-visible,
+.emptyPhotoCircle:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 4px;
+}
+
+.emptyPhotoCircle {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 3px solid var(--ink);
+  border-radius: 50%;
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 1.8rem;
+  font-weight: 700;
+  line-height: 1;
+  box-sizing: border-box;
+  cursor: pointer;
+}
+
+.addPhotoButton {
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 3px solid var(--ink);
+  border-radius: 50%;
+  box-sizing: border-box;
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.addPhotoButton:hover,
+.addPhotoButton:focus-visible {
+  background: var(--paper-deep);
+}
+
+.addPhotoButton:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.photoHint,
+.photoError {
+  max-width: 100%;
+  font-size: 0.75rem;
+  text-align: center;
+}
+
+.photoHint {
+  color: var(--ink-soft);
+}
+
+.photoError {
+  color: var(--danger);
+}
+
+.cropBackdrop {
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgb(47 36 27 / 0.58);
+}
+
+.cropDialog {
+  width: min(100%, 360px);
+  padding: 20px;
+  border: 2px solid var(--ink);
+  border-radius: 24px;
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: 0 8px 28px rgb(47 36 27 / 0.24);
+}
+
+.cropTitle {
+  margin: 0 0 16px;
+  font-size: 1.1rem;
+}
+
+.cropViewport {
+  position: relative;
+  width: min(100%, 240px);
+  aspect-ratio: 1;
+  margin: 0 auto;
+  overflow: hidden;
+  border-radius: 50%;
+  background: var(--paper-deep);
+  cursor: grab;
+  touch-action: none;
+}
+
+.cropViewport:active {
+  cursor: grabbing;
+}
+
+.cropImageClip {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  overflow: hidden;
+  clip-path: circle(calc(50% - 4px) at 50% 50%);
+  pointer-events: none;
+}
+
+.cropViewport::after {
+  position: absolute;
+  z-index: 1;
+  inset: 2px;
+  border: 4px solid var(--ink);
+  border-radius: 50%;
+  box-shadow: 0 0 0 100vmax rgb(47 36 27 / 0.24);
+  content: '';
+  pointer-events: none;
+}
+
+.cropViewport img {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  max-width: none;
+  user-select: none;
+  pointer-events: none;
+}
+
+.cropBorder {
+  position: absolute;
+  z-index: 2;
+  inset: 2px;
+  border: 2px solid var(--ink);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.zoomControl {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 18px;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.zoomControl input {
+  flex: 1;
+  accent-color: var(--ink-soft);
+}
+
+.cropHint {
+  margin: 8px 0 16px;
+  color: var(--ink-soft);
+  font-size: 0.78rem;
+}
+
+.cropActions {
+  display: flex;
+  gap: 10px;
+}
+
+.cropCancel,
+.cropConfirm {
+  flex: 1;
+  min-height: 42px;
+  padding: 8px 10px;
+  border: 2px solid var(--line-soft);
+  border-radius: 10px;
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.cropConfirm {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--paper);
+}
+
+@media (max-width: 360px) {
+  .iconCard {
+    padding: 16px;
+  }
+
+  .photoPicker {
+    gap: 8px;
+  }
 }
