@@ -242,6 +242,10 @@
   box-shadow: 0 3px 0 var(--ink);
 }
 
+.userCard > img {
+  border-width: 2px;
+}
+
 .userCard:active {
   box-shadow: 0 0 0 var(--ink);
   transform: translateY(3px);
