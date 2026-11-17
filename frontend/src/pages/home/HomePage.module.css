@@ -95,6 +95,13 @@
   content: '';
 }
 
+.floor[data-show-baseboard='false']::before {
+  top: 0;
+  height: 2px;
+  border: 0;
+  background: #30251e;
+}
+
 /* 窓は上（生活リズムカードの横）。時計と額は床を基準に置き、背の高い画面でもキャラのまわりにまとめる。
    ただし低い画面では、カードや窓と重ならない高さ（上から約 296px より下）にとどめる */
 .window {
@@ -369,8 +376,8 @@
 /* 背の高い画面ではキャラも大きくする */
 .character {
   position: relative;
-  width: min(54vw, clamp(150px, 26vh, 230px));
-  width: min(54vw, clamp(150px, 26dvh, 230px));
+  width: 300px;
+  height: 300px;
   height: auto;
   aspect-ratio: 1;
   object-fit: contain;
@@ -643,6 +650,7 @@
 /* キャラと状態のマーク（StateBadge）を重ねる枠 */
 .figure {
   position: relative;
+  top: 50px;
   display: inline-flex;
 }
 
@@ -660,20 +668,230 @@
 }
 
 /* 既存の .room にこの2つを追加 */
-.room {
-  position: relative;
-  isolation: isolate;
+.wall {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
 }
 
-.room:not(.night) {
-  background: url('/room/wall/blue-stripe.png') center / cover no-repeat;
+.room:not(.night) .wall {
+  background: var(--wall-image) center / cover no-repeat;
 }
 
 .floor {
   position: absolute;
   inset: auto 0 0;
-  height: 33%;
-  background: url('/room/floor/wood-floor.png') center / cover no-repeat;
+  height: var(--floor-h);
   z-index: -1;
   pointer-events: none;
+  background: var(--floor-image) center / 100% 100% no-repeat;
+}
+
+
+/* 設置画面 */
+
+/* 設置ボタン */
+.placeButton {
+  position: absolute;
+  left: 50%;
+  bottom: 16px;
+  translate: -50% 0;
+  z-index: 2;
+  width: min(60%, 220px);
+  min-height: 48px;
+  aspect-ratio: auto;
+  background: var(--work);
+  cursor: pointer;
+}
+
+.placeButton:disabled {
+  cursor: default;
+}
+
+/* 戻るボタン */
+.backButton {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 2;
+  min-height: 44px;
+  padding: 0 14px;
+  aspect-ratio: auto;
+  background: var(--paper);
+}
+
+.placementActions {
+  position: absolute;
+  inset-inline: 12px;
+  bottom: calc(16px + env(safe-area-inset-bottom));
+  z-index: 2;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.placementAction {
+  width: min(100%, 140px);
+  min-height: 48px;
+  aspect-ratio: auto;
+  background: var(--work);
+  cursor: pointer;
+}
+
+.removeAction {
+  background: #f6c6be;
+}
+
+.cancelAction {
+  background: var(--paper);
+}
+
+.roomEditActions {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  translate: -50% 0;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  width: min(calc(100% - 32px), 280px);
+}
+
+.roomEditAction {
+  min-height: 48px;
+  aspect-ratio: auto;
+  background: var(--work);
+  cursor: pointer;
+}
+
+.roomSaveButton {
+  background: #fff;
+}
+
+/* プリセット */
+.roomPresetButton {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 2;
+  min-height: 44px;
+  padding: 0 14px;
+  aspect-ratio: auto;
+  background: var(--paper);
+}
+
+.presetGrid {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.presetCard {
+  position: relative;
+  min-width: 0;
+}
+
+.room.presetRoom {
+  --floor-h: 33%;
+  width: 100%;
+  min-height: 0;
+  padding: 0;
+  aspect-ratio: 3 / 4;
+  border-radius: 4px;
+}
+
+.presetRoom .presetFurniture {
+  position: absolute;
+  height: auto;
+  aspect-ratio: auto;
+  transform: translate(-50%, -100%);
+}
+
+.presetApplyButton {
+  padding: 4px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.presetApplyButton::after > .presetApplyButton {
+  position: absolute;
+  inset: 0;
+  content: '';
+}
+
+.presetActions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.presetActions > button:only-child {
+  grid-column: 1 / -1;
+  justify-self: center;
+  width: min(100%, 148px);
+}
+
+.presetCard:has(.presetApplyButton[aria-pressed='true']) {
+  border-color: #70c4b6;
+}
+
+.presetNewCard {
+  width: 100%;
+  height: 100%;
+  min-height: 120px;
+  align-items: center;
+  justify-content: center;
+  border-style: dashed;
+}
+
+.presetNewCard > span:first-child {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.presetNameField {
+  display: grid;
+  gap: 6px;
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.presetNameField > input {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  min-height: 42px;
+  padding: 8px 12px;
+  border: var(--line);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+}
+
+.roomEditAction.removeAction {
+  background: #f6c6be;
+}
+
+.presetPreviewTarget {
+  position: relative;
+  width: 100%;
+}
+
+.presetPreviewTarget > .presetApplyButton {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
 }

@@ -31,10 +31,11 @@ export default function AppShell({ title, guest = false, backTo, bare = false, c
 }
 
 // 通知ベル（未読数）とメニュー。ホームの右上でも使う
-export function HeaderActions() {
+export function HeaderActions({ showCustomize = false }) {
   const { unreadCount, logout } = useAuth()
   const [open, setOpen] = useState(false)
   const menuRef = useRef(null)
+  
 
   // メニューの外を押したら閉じる
   useEffect(() => {
@@ -48,6 +49,16 @@ export function HeaderActions() {
 
   return (
     <>
+      {showCustomize && (
+        <Link
+          to="/home/customize/edit"
+          className={styles.roundButton}
+          aria-label="模様替え"
+          title="模様替え"
+        >
+          <HomeIcon size={22} />
+        </Link>
+      )}
       <Link to="/notifications" className={styles.roundButton} aria-label={`通知（未読 ${unreadCount} 件）`}>
         <BellIcon size={22} />
         {unreadCount > 0 && <span className={styles.badge}>{unreadCount > 99 ? '99+' : unreadCount}</span>}

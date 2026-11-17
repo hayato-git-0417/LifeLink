@@ -18,7 +18,7 @@ import ExercisePage from '../exercise/ExercisePage.jsx'
 import EvolutionCard from './EvolutionCard.jsx'
 import styles from './HomePage.module.css'
 import StateBadge from './StateBadge.jsx'
-//import Room from './Room.jsx'
+import Room from './Room.jsx'
 import { CHARACTER_MESSAGES } from './characterMessages.js'
 
 const NOTICE_SECONDS = 5
@@ -38,7 +38,7 @@ function useNow(active) {
   return now
 }
 
-export default function HomePage() {
+export default function HomePage({ wallImage, floorImage, placedFurniture }) {
   const { user, setUnreadCount } = useAuth()
   const [home, setHome] = useState(null)
   const [errors, setErrors] = useState([])
@@ -270,9 +270,24 @@ export default function HomePage() {
   return (
     <AppShell bare>
       <div className={`${styles.room} ${sleeping ? styles.night : ''}`}>
-        <div className={styles.floor} aria-hidden="true" />
         
-        {/* <Room /> */}
+        <Room wallImage={wallImage} floorImage={floorImage} />
+        {placedFurniture.map((item) => (
+          <img
+            key={item.placementId}
+            src={item.image}
+            alt={item.name}
+            style={{
+              position: 'absolute',
+              left: `${item.x}%`,
+              top: `${item.y}%`,
+              width: item.displayWidth ?? 'min(30%, 160px)',
+              height: 'auto',
+              transform: 'translate(-50%, -100%)',
+              pointerEvents: 'none',
+            }}
+          />
+        ))}
 
         <header className={styles.top}>
           <Link to="/mypage" className={styles.userCard}>
@@ -289,7 +304,7 @@ export default function HomePage() {
             <span className={styles.srOnly}>（マイページを開く）</span>
           </Link>
           <div className={styles.actions}>
-            <HeaderActions />
+            <HeaderActions showCustomize />
           </div>
         </header>
 
