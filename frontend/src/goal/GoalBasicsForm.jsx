@@ -127,7 +127,7 @@ export default function GoalBasicsForm({ value, onChange }) {
                 className={`${styles.input} ${goal.taskInput}`}
                 type="text"
                 maxLength={100}
-                placeholder="ウォーキング"
+                placeholder={index === 0 ? 'ランニング' : index === 1 ? '筋トレ' : '運動項目名'}
                 value={task.title}
                 onChange={(event) => updateTask(index, event.target.value)}
                 aria-label={`運動の項目${index + 1}`}

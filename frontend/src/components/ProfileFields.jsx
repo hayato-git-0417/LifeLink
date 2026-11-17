@@ -176,7 +176,8 @@ function ProfilePhotoPicker({ value, onChange }) {
     onChange({
       icon,
       useAvatar: false,
-      removeAvatar: Boolean(value.avatarUrl),
+      // 別のアイコンを選んでも、保存済みの写真は右端に保持する
+      removeAvatar: false,
     })
     setPhotoError('')
   }
@@ -264,4 +265,3 @@ function ProfilePhotoPicker({ value, onChange }) {
     </div>
   )
 }
-

@@ -20,6 +20,7 @@ export default function ProfileEditPage() {
     gender: user.gender,
     avatar: null,
     avatarUrl: user.avatar_url || null,
+    useAvatar: Boolean(user.avatar_selected),
     removeAvatar: false,
   }))
   const [errors, setErrors] = useState([])
@@ -33,7 +34,13 @@ export default function ProfileEditPage() {
         setProfile((current) => ({
           ...current,
           icon: freshUser.icon,
+          birthdate: freshUser.birthdate,
           avatarUrl: current.avatar ? current.avatarUrl : freshUser.avatar_url || null,
+          useAvatar: current.avatar
+            ? current.useAvatar
+            : current.removeAvatar
+              ? false
+              : Boolean(freshUser.avatar_selected),
         }))
       })
       .catch(() => {})
@@ -52,13 +59,20 @@ export default function ProfileEditPage() {
       formData.append('user[icon]', profile.icon)
       formData.append('user[birthdate]', profile.birthdate)
       formData.append('user[gender]', profile.gender)
+      formData.append('user[avatar_selected]', String(Boolean(profile.useAvatar)))
       if (profile.avatar) formData.append('user[avatar]', profile.avatar)
       if (profile.removeAvatar) formData.append('user[remove_avatar]', 'true')
-      await api('/me', { method: 'PATCH', body: formData })
-      await refreshMe()
+      const saved = await api('/me', { method: 'PATCH', body: formData })
+      if (Boolean(saved.user?.avatar_selected) !== Boolean(profile.useAvatar)) {
+        throw new Error('写真アイコンの選択状態を保存できませんでした。Railsの再起動と db:migrate の実行を確認してください。')
+      }
+      const freshUser = await refreshMe()
+      if (Boolean(freshUser.avatar_selected) !== Boolean(profile.useAvatar)) {
+        throw new Error('保存後のアイコン選択状態を読み戻せませんでした。Railsを再起動してからもう一度お試しください。')
+      }
       navigate('/settings', { replace: true, state: { message: 'プロフィールを保存しました' } })
     } catch (error) {
-      setErrors(error.messages)
+      setErrors(error.messages || [error.message || 'プロフィールを保存できませんでした'])
       setSaving(false)
     }
   }
