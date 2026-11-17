@@ -3,7 +3,9 @@ import { axisTick, CHART, tooltipProps } from '../../components/chartTheme.js'
 import styles from './Details.module.css'
 
 const PALETTE = ['#4e79a7', '#f28e2b', '#e15759', '#76b7b2', '#59a14f', '#edc948', '#b07aa1', '#ff9da7', '#9c755f', '#79706e']
-const SCALE = [60, 45, 30, 15, 0]
+// 縦軸は分単位で持ち、上限は24時間（1440分）。目盛りは6時間ごとに「24h」のように出す
+const MAX_MINUTES = 24 * 60
+const SCALE = [1440, 1080, 720, 360, 0]
 
 export default function ExerciseDurationChart({ dates, dailyTotals, taskTitles = [] }) {
   const safeTotals = Array.isArray(dailyTotals) ? dailyTotals : []
@@ -19,7 +21,7 @@ export default function ExerciseDurationChart({ dates, dailyTotals, taskTitles =
     const values = {}
     activities.forEach((activity) => {
       const minutes = Math.max(0, byTitle[activity.title] || 0)
-      const visibleMinutes = Math.min(minutes, 60 - usedMinutes)
+      const visibleMinutes = Math.min(minutes, MAX_MINUTES - usedMinutes)
       usedMinutes += visibleMinutes
       values[activity.key] = visibleMinutes
     })
@@ -33,7 +35,7 @@ export default function ExerciseDurationChart({ dates, dailyTotals, taskTitles =
           <BarChart data={rows} margin={{ top: 8, right: -6, bottom: 0, left: -18 }}>
             <CartesianGrid vertical={false} stroke={CHART.grid} />
             <XAxis dataKey="day" tickLine={false} axisLine={{ stroke: CHART.ink, strokeWidth: 2 }} tick={axisTick} />
-            <YAxis domain={[0, 60]} ticks={SCALE} tickLine={false} axisLine={false} tick={axisTick} />
+            <YAxis domain={[0, MAX_MINUTES]} ticks={SCALE} tickFormatter={(value) => `${value / 60}h`} tickLine={false} axisLine={false} tick={axisTick} />
             <Tooltip
               content={<ExerciseTooltip />}
               cursor={false}
