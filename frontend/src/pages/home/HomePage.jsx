@@ -39,7 +39,7 @@ function useNow(active) {
 }
 
 export default function HomePage({ wallImage, floorImage, placedFurniture }) {
-  const { user, setUnreadCount } = useAuth()
+  const { user, setUnreadCount, refreshMe } = useAuth()
   const [home, setHome] = useState(null)
   const [errors, setErrors] = useState([])
   const [notice, setNotice] = useState('')
@@ -77,7 +77,9 @@ export default function HomePage({ wallImage, floorImage, placedFurniture }) {
 
   useEffect(() => {
     load().catch((error) => setErrors(error.messages))
-  }, [load])
+    // 設定画面で保存された写真・選択状態を、ホームに戻るたび最新の値に更新する
+    refreshMe().catch(() => {})
+  }, [load, refreshMe])
 
   // お知らせ（おはよう・おつかれさま）は少したったら消す
   useEffect(() => {
@@ -147,8 +149,8 @@ export default function HomePage({ wallImage, floorImage, placedFurniture }) {
     const savedSecondsByTask = { ...(exerciseTimer.savedSecondsByTask || {}) }
     const taskTitlesById = exerciseTimer.taskTitlesById || {}
     const pendingRecords = Object.entries(elapsedByTask).flatMap(([id, seconds]) => {
-      const totalMinutes = seconds > 0 ? Math.ceil(seconds / 60) : 0
-      const alreadySavedMinutes = Math.ceil((savedSecondsByTask[id] || 0) / 60)
+      const totalMinutes = Math.floor(seconds / 60)
+      const alreadySavedMinutes = Math.floor((savedSecondsByTask[id] || 0) / 60)
       const minutes = Math.max(0, totalMinutes - alreadySavedMinutes)
       return minutes > 0 ? [{ taskId: id, seconds, duration_minutes: minutes, memo: taskTitlesById[id] || (id === String(taskId) ? exerciseTimer.taskTitle : '') || '運動' }] : []
     })
@@ -291,7 +293,7 @@ export default function HomePage({ wallImage, floorImage, placedFurniture }) {
 
         <header className={styles.top}>
           <Link to="/mypage" className={styles.userCard}>
-            <UserIcon icon={user?.icon} size={42} />
+            <UserIcon icon={user?.icon} avatarUrl={user?.avatar_selected ? user?.avatar_url : null} size={42} />
             <span className={styles.userName}>{user?.name}</span>
             <span className={styles.streak}>
               <span className={styles.streakLabel}>継続日数</span>
