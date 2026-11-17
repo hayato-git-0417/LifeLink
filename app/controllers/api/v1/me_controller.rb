@@ -21,7 +21,7 @@ module Api
       private
 
       def profile_params
-        params.require(:user).permit(:name, :icon, :birthdate, :gender, :avatar, :remove_avatar)
+        params.require(:user).permit(:name, :icon, :birthdate, :gender, :avatar, :avatar_selected, :remove_avatar)
       end
 
       # goal_registered: false のときフロントは目標設定画面へ誘導する（spec.md 5章）
@@ -32,6 +32,7 @@ module Api
           name: user.name,
           icon: user.icon,
           avatar_url: user.avatar.attached? ? rails_blob_path(user.avatar, only_path: true) : nil,
+          avatar_selected: user.avatar_selected,
           birthdate: user.birthdate,
           gender: user.gender,
           age: user.age,

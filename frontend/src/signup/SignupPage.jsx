@@ -94,7 +94,7 @@ export default function SignupPage() {
             birthdate: current.user.birthdate,
             gender: current.user.gender,
             avatarUrl: current.user.avatar_url || null,
-            useAvatar: Boolean(current.user.avatar_url),
+            useAvatar: Boolean(current.user.avatar_selected),
           }))
           setResumingSignup(true)
           go(2)
@@ -171,10 +171,15 @@ export default function SignupPage() {
       }
       // 新規登録画面で確定したアイコンをユーザープロフィールにも保存し、設定画面で同じ表示にする
       const profileData = new FormData()
-      profileData.append('user[icon]', profile.icon)
-      if (profile.avatar && profile.useAvatar) profileData.append('user[avatar]', profile.avatar)
-      if (profile.removeAvatar || (!profile.useAvatar && profile.avatarUrl)) profileData.append('user[remove_avatar]', 'true')
-      await api('/me', { method: 'PATCH', body: profileData })
+profileData.append('user[icon]', profile.icon)
+profileData.append('user[avatar_selected]', String(Boolean(profile.useAvatar)))
+if (profile.avatar && profile.useAvatar) {
+  profileData.append('user[avatar]', profile.avatar)
+}
+if (profile.removeAvatar) {
+  profileData.append('user[remove_avatar]', 'true')
+}
+await api('/me', { method: 'PATCH', body: profileData })
     } catch (error) {
       setErrors(error.messages || [error.message || '登録に失敗しました'])
       setBusy(false)
@@ -294,3 +299,4 @@ export default function SignupPage() {
     </AppShell>
   )
 }
+
