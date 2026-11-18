@@ -129,10 +129,11 @@ export default function HomePage({ wallImage, floorImage, placedFurniture }) {
         const elapsed = Math.floor((Date.now() - current.startedAt) / 1000)
         elapsedByTask[current.runningTaskId] = (elapsedByTask[current.runningTaskId] || 0) + elapsed
       }
+      // ...current で保存済みの秒数（savedSecondsByTask）を残す。消すと終了のたびに同じ時間を二重に記録してしまう
       if (current.runningTaskId === taskId) {
-        return { ...current, runningTaskId: null, startedAt: null, elapsedByTask, active: true }
+        return { ...current, runningTaskId: null, startedAt: null, elapsedByTask, taskTitlesById, active: true }
       }
-      return { taskId, taskTitle, runningTaskId: taskId, startedAt: Date.now(), elapsedByTask, active: true }
+      return { ...current, taskId, taskTitle, runningTaskId: taskId, startedAt: Date.now(), elapsedByTask, taskTitlesById, active: true }
     })
   }
 
@@ -162,6 +163,10 @@ export default function HomePage({ wallImage, floorImage, placedFurniture }) {
           method: 'POST',
           body: { exercise_records: pendingRecords.map(({ duration_minutes, memo }) => ({ duration_minutes, memo })) },
         })
+        // 運動のスコアはタスクの達成（チェック）で決まるので、1分以上記録したタスクは今日の達成にする。
+        // 記録は保存済みなので、削除済みのタスクなどでチェックに失敗しても記録は取り消さない
+        await Promise.allSettled(pendingRecords.map((record) => api(`/exercise_tasks/${record.taskId}/completion`, { method: 'POST' })))
+        await load().catch(() => {})
       }
       const nextSavedSeconds = { ...savedSecondsByTask }
       pendingRecords.forEach((record) => { nextSavedSeconds[record.taskId] = record.seconds })
@@ -175,7 +180,12 @@ export default function HomePage({ wallImage, floorImage, placedFurniture }) {
       }))
     setExerciseOpen(false)
     const currentSeconds = taskId === null ? 0 : (elapsedByTask[taskId] || 0)
-    setNotice(`おつかれさま！ ${exerciseTimer.taskTitle || '運動'} ${formatMinutes(currentSeconds > 0 ? Math.floor(currentSeconds / 60) : 0)}`)
+    if (pendingRecords.length === 0) {
+      // 記録は1分単位。1分未満の分は保存せず、次に同じ運動をしたときの時間に足す
+      setNotice('1分未満の運動は記録されません（記録は1分単位です）')
+    } else {
+      setNotice(`おつかれさま！ ${exerciseTimer.taskTitle || '運動'} ${formatMinutes(Math.floor(currentSeconds / 60))}`)
+    }
     } catch (error) {
       setErrors(error.messages)
     } finally {
