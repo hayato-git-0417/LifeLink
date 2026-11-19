@@ -1,9 +1,10 @@
 class Meal < ApplicationRecord
-  NUTRIENT_COLUMNS = %i[calories protein_g fat_g carbs_g fiber_g].freeze
+  NUTRIENT_COLUMNS = %i[calories protein_g fat_g carbs_g].freeze
   PHOTO_MAX_MB = 10
 
   belongs_to :user
   has_one_attached :photo
+  has_many :meal_food_items, dependent: :destroy
 
   enum :meal_type, { breakfast: 0, lunch: 1, dinner: 2, snack: 3 }, validate: true
   # 今回は手入力だけ（spec.md 6章）なので既定は manual
@@ -15,6 +16,7 @@ class Meal < ApplicationRecord
   validates :content, length: { maximum: 255 }
   validates(*NUTRIENT_COLUMNS, numericality: { greater_than_or_equal_to: 0 }, allow_nil: true)
   validate :photo_is_image
+  validate :main_meal_once_per_day
 
   scope :on, ->(date) { where(recorded_on: date) }
   scope :between, ->(from, to) { where(recorded_on: from..to) }
@@ -24,6 +26,17 @@ class Meal < ApplicationRecord
   # 集計日は食べた日（日本時間）。食べた時間を直したら集計日も合わせる
   def fill_recorded_on
     self.recorded_on = eaten_at.to_date if eaten_at.present?
+  end
+
+  def main_meal_once_per_day
+    return if snack? || meal_type.blank? || recorded_on.blank? || user_id.blank?
+
+    duplicates = self.class.where(user_id: user_id, recorded_on: recorded_on, meal_type: meal_type)
+    duplicates = duplicates.where.not(id: id) if persisted?
+    return unless duplicates.exists?
+
+    label = I18n.t("game.meal_types.#{meal_type}", default: meal_type)
+    errors.add(:base, "#{label}は1日1回まで登録できます。登録済みの食事を編集してください")
   end
 
   # 写真は画像だけ、PHOTO_MAX_MB まで（スマホのカメラ写真を想定）

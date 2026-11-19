@@ -12,16 +12,20 @@ class MealScanner
     def translate(text)
       return text if text.to_s.strip.empty?
 
+      translate_many([ text ]).first
+    end
+
+    def translate_many(texts)
+      return [] if texts.empty?
+
       uri = URI(API_URL)
       request = Net::HTTP::Post.new(uri)
       request["Authorization"] = "DeepL-Auth-Key #{@api_key}"
       request["Content-Type"] = "application/x-www-form-urlencoded"
 
-      request.body = URI.encode_www_form(
-        text: text,
-        source_lang: "EN",
-        target_lang: "JA"
-      )
+      parameters = texts.map { |text| [ "text", text ] }
+      parameters.concat([ [ "source_lang", "EN" ], [ "target_lang", "JA" ] ])
+      request.body = URI.encode_www_form(parameters)
 
       response = Net::HTTP.start(
         uri.hostname,
@@ -31,16 +35,20 @@ class MealScanner
         read_timeout: 30
       ) { |http| http.request(request) }
 
-      unless response.is_a?(Net::HTTPSuccess)
-        raise "DeepL API error: HTTP #{response.code} - #{response.body}"
+      raise ApiError.new(service: "DeepL", status: response.code.to_i) unless response.is_a?(Net::HTTPSuccess)
+
+      data = JSON.parse(response.body.to_s.dup.force_encoding(Encoding::UTF_8))
+      translated = Array(data["translations"]).map do |translation|
+        translation["text"].to_s.strip
       end
 
-      data = JSON.parse(response.body)
-      translated = data.dig("translations", 0, "text").to_s.strip
-
-      raise "DeepL returned an empty translation" if translated.empty?
+      if translated.length != texts.length || translated.any?(&:empty?)
+        raise "DeepL returned incomplete translations"
+      end
 
       translated
+    rescue JSON::ParserError, Encoding::InvalidByteSequenceError
+      raise ApiError.new(service: "DeepL")
     end
   end
 end

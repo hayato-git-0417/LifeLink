@@ -1,8 +1,51 @@
-
 # 食事の写真から料理名・栄養値を取得する
 class MealScanner
+  class ApiError < StandardError
+    attr_reader :service, :status
+
+    def initialize(service:, status: nil)
+      @service = service
+      @status = status
+      message = status ? "#{service} API error: HTTP #{status}" : "#{service} API returned invalid JSON"
+      super(message)
+    end
+  end
+
+  MIN_DISH_PROBABILITY = 0.4
+  MIN_DISH_PROBABILITY_MARGIN = 0.08
+  MAX_DISH_NAMES = 12
+  MAX_CONTENT_LENGTH = 255
+
+  FOOD_NAME_TRANSLATIONS = {
+    "grilled salmon" => "焼き鮭",
+    "grilled fish" => "焼き魚",
+    "salmon" => "鮭",
+    "taugé" => "もやし",
+    "fried rice" => "チャーハン",
+    "white rice" => "白米",
+    "rice" => "ご飯",
+    "chicken breast" => "鶏むね肉",
+    "chicken" => "鶏肉",
+    "beef" => "牛肉",
+    "pork" => "豚肉",
+    "boiled egg" => "ゆで卵",
+    "egg" => "卵",
+    "broccoli" => "ブロッコリー",
+    "tomato" => "トマト",
+    "potato" => "じゃがいも",
+    "carrot" => "にんじん",
+    "cucumber" => "きゅうり",
+    "asparagus" => "アスパラガス",
+    "lemon" => "レモン",
+    "kiwi" => "キウイ",
+    "spring rolls" => "春巻き",
+    "bread" => "パン",
+    "pasta" => "パスタ",
+    "salad" => "サラダ"
+  }.freeze
+
   def self.call(photo:)
-    new(photo: photo).call
+    OpenaiMealScanner.call(photo: photo)
   end
 
   def initialize(photo:)
@@ -11,82 +54,97 @@ class MealScanner
 
   def call
     client = MealScanner::LogmealClient.new
-
-    # 写真から料理・食材を認識
     recognition = client.recognize(@photo)
     image_id = recognition["imageId"]
 
     raise "LogMeal response has no imageId" unless image_id
 
-    # 食材と栄養情報を取得
     ingredients = client.ingredients(image_id)
     nutrition = client.nutritional_info(image_id)
-
-    totals =
-      nutrition.dig("nutritional_info", "totalNutrients") || {}
-
-    # 栄養情報が取得できなかった場合は nil にする
-    has_nutrition = nutrition["hasNutritionalInfo"]
+    dish_names = extract_dish_names(recognition)
+    translations = translate_food_names(dish_names)
+    content = build_content(dish_names.map { |name| translations.fetch(name) })
+    totals = nutrition.dig("nutritional_info", "totalNutrients") || {}
 
     {
-      content: extract_dish_name(recognition),
-      calories: has_nutrition ? nutrient_quantity(totals, "ENERC_KCAL", 0) : nil,
-      protein_g: has_nutrition ? nutrient_quantity(totals, "PROCNT", 1) : nil,
-      fat_g: has_nutrition ? nutrient_quantity(totals, "FAT", 1) : nil,
-      carbs_g: has_nutrition ? nutrient_quantity(totals, "CHOCDF", 1) : nil,
-      fiber_g: has_nutrition ? nutrient_quantity(totals, "FIBTG", 1) : nil,
+      content: content.presence || "料理名を特定できませんでした",
+      calories: nutrition["hasNutritionalInfo"] ? nutrient_quantity(totals, "ENERC_KCAL", 0) : nil,
+      protein_g: nutrition["hasNutritionalInfo"] ? nutrient_quantity(totals, "PROCNT", 1) : nil,
+      fat_g: nutrition["hasNutritionalInfo"] ? nutrient_quantity(totals, "FAT", 1) : nil,
+      carbs_g: nutrition["hasNutritionalInfo"] ? nutrient_quantity(totals, "CHOCDF", 1) : nil,
       ingredients: ingredients
     }
   end
 
-
   private
 
-  # よく認識される料理名・食材名の日本語辞書
+  def extract_dish_names(response)
+    predictions = {}
 
-FOOD_NAME_TRANSLATIONS = {
-  "grilled salmon" => "焼き鮭",
-  "salmon" => "鮭",
-  "fried rice" => "チャーハン",
-  "white rice" => "白米",
-  "rice" => "ご飯",
-  "chicken breast" => "鶏むね肉",
-  "chicken" => "鶏肉",
-  "beef" => "牛肉",
-  "pork" => "豚肉",
-  "boiled egg" => "ゆで卵",
-  "egg" => "卵",
-  "broccoli" => "ブロッコリー",
-  "tomato" => "トマト",
-  "potato" => "じゃがいも",
-  "carrot" => "にんじん",
-  "cucumber" => "きゅうり",
-  "asparagus" => "アスパラガス",
-  "lemon" => "レモン",
-  "kiwi" => "キウイ",
-  "spring rolls" => "春巻き",
-  "bread" => "パン",
-  "pasta" => "パスタ",
-  "salad" => "サラダ"
-}.freeze
+    Array(response["segmentation_results"]).each do |region|
+      candidates = Array(region["recognition_results"]).filter_map do |item|
+        name = item["name"].to_s.strip
+        score = item["prob"]
+        next if name.empty? || !score.is_a?(Numeric)
+        next unless score.between?(0, 1)
 
-  # 認識した料理名を日本語に変換してまとめる
+        { name: name.downcase, score: score }
+      end.sort_by { |item| -item[:score] }
 
-  def extract_dish_name(response)
-    names = (response["segmentation_results"] || []).filter_map do |item|
-      item.dig("recognition_results", 0, "name")
-    end.uniq
+      candidate, alternative = candidates
+      next unless candidate
+      next if candidate[:score] < MIN_DISH_PROBABILITY
+      if alternative && candidate[:score] - alternative[:score] < MIN_DISH_PROBABILITY_MARGIN
+        next
+      end
 
-    return "料理名を特定できませんでした" if names.empty?
+      prediction = predictions[candidate[:name]] ||= { score: 0, count: 0 }
+      prediction[:score] = [ prediction[:score], candidate[:score] ].max
+      prediction[:count] += 1
+    end
 
-    names.map { |name| translate_food_name(name) }.join("、")
+    predictions
+      .sort_by { |name, prediction| [ -prediction[:score], name ] }
+      .first(MAX_DISH_NAMES)
+      .map(&:first)
   end
 
-def translate_food_name(name)
-  return name if name.to_s.strip.empty?
+  def build_content(names)
+    content_names = []
 
-  MealScanner::DeeplTranslator.new.translate(name)
-end  # 栄養素の値を取得して丸める
+    names.each do |name|
+      candidate = (content_names + [ name ]).join("、")
+      break if candidate.length > MAX_CONTENT_LENGTH
+
+      content_names << name
+    end
+
+    content_names.join("、")
+  end
+
+  def translate_food_names(names)
+    translations = {}
+    untranslated = []
+
+    names.each do |name|
+      known_translation = FOOD_NAME_TRANSLATIONS[name.downcase]
+      if known_translation
+        translations[name] = known_translation
+      else
+        untranslated << name
+      end
+    end
+
+    if untranslated.any?
+      translated = MealScanner::DeeplTranslator.new.translate_many(untranslated)
+      untranslated.zip(translated).each do |name, translation|
+        translations[name] = translation
+      end
+    end
+
+    translations
+  end
+
   def nutrient_quantity(totals, code, precision)
     value = totals.dig(code, "quantity")
     return nil if value.nil?

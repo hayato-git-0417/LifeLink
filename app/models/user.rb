@@ -12,6 +12,7 @@ class User < ActiveRecord::Base
 
   # 値の対応付け #
   enum :gender, { unspecified: 0, male: 1, female: 2, other: 3 }, validate: true
+  enum :activity_level, { low: 0, moderate: 1, high: 2 }, validate: true
   enum :icon, { person_blue: 0, person_pink: 1, person_green: 2, cat: 3, penguin: 4 }, validate: true
 
   # アソシエーション #
@@ -35,6 +36,9 @@ class User < ActiveRecord::Base
 
   # 入力チェック #
   validates :name, presence: true, length: { maximum: 50 }
+  validates :height_cm, :weight_kg, presence: true, on: :create
+  validates :height_cm, :weight_kg, numericality: { greater_than: 0, less_than: 1000 }, allow_nil: true
+  validates :gender, inclusion: { in: %w[male female] }, on: :create
   validates :birthdate, presence: true
   validate :birthdate_not_in_future
   validate :password_contains_letters_and_numbers # 入力内容をチェックするときに、このメソッドを実行してください」とRailsに登録する

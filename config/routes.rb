@@ -13,6 +13,7 @@ Rails.application.routes.draw do
       resource :me, only: %i[show update], controller: "me"
       resource :goal, only: %i[show update] do
         get :nutrition_defaults
+        post :nutrition_suggestion
       end
 
       # 記録（spec.md 8章）。睡眠・ワークは手動での新規作成がないので create はない
@@ -35,6 +36,7 @@ Rails.application.routes.draw do
           post :scan
         end
       end
+      resources :food_compositions, only: :index
       # ホームと詳細画面のグラフ（フェーズ4）
       resource :home, only: :show
       resources :daily_achievements, only: :index
@@ -60,4 +62,3 @@ Rails.application.routes.draw do
   # Can be used by load balancers and uptime monitors to verify that the app is live.
   get "up" => "rails/health#show", as: :rails_health_check
 end
-

@@ -1,14 +1,41 @@
 require "test_helper"
+require "minitest/mock"
 
 # フェーズ3: 食事の記録（手入力・写真つき）
 class MealsTest < ActionDispatch::IntegrationTest
   setup do
-    @user = create_user
+    @user = valid_user
     @headers = auth_headers(@user)
+  end
+
+  def valid_user(**attrs)
+    password = "password123"
+    create_user(**{ password: password, password_confirmation: password }.merge(attrs))
   end
 
   def photo(name = "meal.png", type = "image/png")
     fixture_file_upload(name, type)
+  end
+
+  test "修正した内容をヒントに写真を再解析し、保存せず結果を返す" do
+    normalizer = ->(_photo, &block) { block.call(StringIO.new("image")) }
+    scanner = ->(photo:, content_hint:) do
+      assert_respond_to photo, :read
+      assert_equal "パフェ2つ", content_hint
+      { content: "パフェ2つ（アイスクリーム）", calories: 800,
+        protein_g: 12, fat_g: 30, carbs_g: 120 }
+    end
+    MealScanner::ImageNormalizer.stub(:with_upload, normalizer) do
+      OpenaiMealScanner.stub(:call, scanner) do
+        assert_no_difference "Meal.count" do
+          post "/api/v1/meals/scan", headers: @headers,
+               params: { meal: { photo: photo, content: "パフェ2つ" } }
+        end
+        assert_response :ok
+        assert_equal 800, json.dig("scan", "calories")
+        assert_equal "パフェ2つ（アイスクリーム）", json.dig("scan", "content")
+      end
+    end
   end
 
   test "未ログインは 401" do
@@ -43,7 +70,7 @@ class MealsTest < ActionDispatch::IntegrationTest
       assert_response :created
       assert_nil json.dig("meal", "photo_url")
       @user.meals.create!(meal_type: :dinner, eaten_at: Time.zone.local(2026, 10, 5, 19))
-      create_user.meals.create!(meal_type: :lunch, eaten_at: Time.current)
+      valid_user.meals.create!(meal_type: :lunch, eaten_at: Time.current)
 
       get "/api/v1/meals", headers: @headers
       assert_response :ok
@@ -53,6 +80,77 @@ class MealsTest < ActionDispatch::IntegrationTest
       get "/api/v1/meals", params: { date: "2026-10-05" }, headers: @headers
       assert_equal %w[dinner], json["meals"].map { |m| m["meal_type"] }
     end
+  end
+
+  test "食品と摂取量から栄養値を計算し、更新・解除できる" do
+    food = FoodComposition.create!(
+      food_code: "01001",
+      name: "ごはん",
+      calories: 168,
+      protein_g: 2.5,
+      fat_g: 0.3,
+      carbs_g: 37.1,
+      fiber_g: 1.5
+    )
+    params = {
+      meal: {
+        meal_type: "lunch",
+        eaten_at: "2026-10-06T12:15:00+09:00",
+        content: "ごはん",
+        food_items_json: [ { food_composition_id: food.id, weight_g: 150 } ].to_json
+      }
+    }
+
+    post "/api/v1/meals", headers: @headers, params: params, as: :json
+
+    assert_response :created
+    meal = json["meal"]
+    assert_equal 252, meal["calories"]
+    assert_equal 3.8, meal["protein_g"]
+    assert_equal 0.5, meal["fat_g"]
+    assert_equal 55.7, meal["carbs_g"]
+    assert_not meal.key?("fiber_g")
+    assert_not meal.fetch("food_items").first.key?("fiber_g")
+    assert_equal 150.0, meal.dig("food_items", 0, "weight_g")
+
+    patch "/api/v1/meals/#{meal["id"]}",
+          headers: @headers,
+          params: { meal: { comment: "ごはんを食べた" } },
+          as: :json
+    assert_response :ok
+    assert_equal 252, json.dig("meal", "calories")
+    assert_equal 1, json.dig("meal", "food_items").length
+
+    patch "/api/v1/meals/#{meal["id"]}",
+          headers: @headers,
+          params: { meal: { food_items_json: [ { food_composition_id: food.id, weight_g: 200 } ].to_json } },
+          as: :json
+    assert_response :ok
+    assert_equal 336, json.dig("meal", "calories")
+
+    patch "/api/v1/meals/#{meal["id"]}",
+          headers: @headers,
+          params: { meal: { calories: 123, food_items_json: "[]" } },
+          as: :json
+    assert_response :ok
+    assert_equal 123, json.dig("meal", "calories")
+    assert_empty json.dig("meal", "food_items")
+  end
+
+  test "食品指定が不正なら食事を保存しない" do
+    post "/api/v1/meals",
+         headers: @headers,
+         params: {
+           meal: {
+             meal_type: "lunch",
+             eaten_at: "2026-10-06T12:15:00+09:00",
+             food_items_json: [ { food_composition_id: 999_999, weight_g: 100 } ].to_json
+           }
+         },
+         as: :json
+
+    assert_response :unprocessable_entity
+    assert_equal 0, @user.meals.count
   end
 
   test "from・to で期間の一覧（詳細画面の食事タブ）" do
@@ -87,6 +185,20 @@ class MealsTest < ActionDispatch::IntegrationTest
     assert_equal 0, @user.meals.count
   end
 
+  test "写真解析サービスのサイズ制限・回数制限を再試行できるエラーとして返す" do
+    {
+      413 => "写真が解析サービスのサイズ制限を超えています。小さめの写真で再度お試しください",
+      429 => "写真解析サービスが混み合っています。少し待ってから再度お試しください"
+    }.each do |status, message|
+      MealScanner.stub(:call, ->(**) { raise MealScanner::ApiError.new(service: "LogMeal", status: status) }) do
+        post "/api/v1/meals/scan", headers: @headers, params: { meal: { photo: photo } }
+      end
+
+      assert_response :unprocessable_entity
+      assert_equal [ message ], json["errors"]
+    end
+  end
+
   test "詳細・修正・写真を外す・削除" do
     meal = @user.meals.create!(meal_type: :breakfast, eaten_at: Time.zone.local(2026, 10, 6, 7), calories: 400)
     meal.photo.attach(io: File.open(file_fixture("meal.png")), filename: "meal.png", content_type: "image/png")
@@ -112,7 +224,7 @@ class MealsTest < ActionDispatch::IntegrationTest
   end
 
   test "他人の食事は見られない・直せない・消せない（404）" do
-    others = create_user.meals.create!(meal_type: :lunch, eaten_at: Time.current)
+    others = valid_user.meals.create!(meal_type: :lunch, eaten_at: Time.current)
 
     get "/api/v1/meals/#{others.id}", headers: @headers
     assert_response :not_found

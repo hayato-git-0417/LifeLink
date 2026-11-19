@@ -17,8 +17,9 @@ module ActiveSupport
       @user_seq = (@user_seq || 0) + 1
       User.create!({
         email: "user#{@user_seq}-#{SecureRandom.hex(4)}@example.com",
-        password: "password",
+        password: "password123",
         name: "ユーザー#{@user_seq}",
+        gender: :male, height_cm: 170, weight_kg: 65, activity_level: :moderate,
         birthdate: Date.new(2000, 4, 1)
       }.merge(attrs))
     end

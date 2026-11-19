@@ -20,7 +20,7 @@ end
 
 # ---------------------------------------------------------------
 # 栄養の基準: 日本人の食事摂取基準（2025年版）厚生労働省
-# 18歳以上・身体活動レベル「ふつう」だけ入れる。
+# 1歳以上・身体活動レベル「ふつう」。1〜17歳は ChildNutritionStandards で登録する。
 #   calories  … 「参考表 推定エネルギー必要量（kcal/日）」身体活動レベル ふつう
 #   protein_g … 「たんぱく質の食事摂取基準」推奨量
 #   fiber_g   … 「炭水化物の食事摂取基準」食物繊維の目標量（○○以上）の値
@@ -32,6 +32,8 @@ end
 #   FANCL「たんぱく質は1日にどれくらい必要？」（たんぱく質、厚労省の表を引用）
 #   → 公式の報告書（策定検討会報告書）の表と最終確認すること【要確認】
 # ---------------------------------------------------------------
+ChildNutritionStandards.call
+
 FAT_ENERGY_RATIO = 0.25
 CARBS_ENERGY_RATIO = 0.575
 
@@ -68,6 +70,12 @@ nutrition_rows.each do |gender, rows|
 end
 
 # ---------------------------------------------------------------
+# 食品成分: 文部科学省「日本食品標準成分表2020年版（八訂）」の5項目
+# ---------------------------------------------------------------
+imported_foods = FoodCompositionImporter.call
+puts "食品成分 #{imported_foods} 件を登録しました"
+
+# ---------------------------------------------------------------
 # 動作確認用のデモユーザー2人（パスワードはどちらも password）
 #   demo1@example.com たろう / demo2@example.com はなこ
 # 昨日までの7日分の記録つき。お互いにフォローしている。
@@ -91,7 +99,7 @@ User.where(email: demo_users.pluck(:email)).destroy_all
 
 users = demo_users.map do |attrs|
   user = User.create!(email: attrs[:email], password: DEMO_PASSWORD, password_confirmation: DEMO_PASSWORD,
-                      name: attrs[:name], icon: attrs[:icon], gender: attrs[:gender], birthdate: attrs[:birthdate])
+                      height_cm: 170, weight_kg: 65, activity_level: :moderate, name: attrs[:name], icon: attrs[:icon], gender: attrs[:gender], birthdate: attrs[:birthdate])
   user.character.update!(last_reset_on: today - (DEMO_DAYS + 1)) # キャラは User 作成時に自動で作られる
 
   standard = NutritionStandard.moderate.where(gender: attrs[:gender]).for_age(user.age).first
@@ -151,4 +159,5 @@ Follow.create!(follower: taro, followed: hanako)
 Follow.create!(follower: hanako, followed: taro)
 
 puts "seed 完了: キャラ画像 #{CharacterAnimation.count} 件 / 栄養基準 #{NutritionStandard.count} 件 / " \
+     "食品成分 #{FoodComposition.count} 件 / " \
      "デモユーザー #{users.size} 人（#{demo_users.pluck(:email).join(', ')}、パスワード #{DEMO_PASSWORD}）"

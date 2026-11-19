@@ -1,9 +1,9 @@
 require "test_helper"
 
 class UserTest < ActiveSupport::TestCase
-  test "名前と生年月日があれば作れる。性別とアイコンの既定は未回答・person_blue" do
+  test "身長・体重・性別を含めて作れる。アイコンの既定はperson_blue" do
     user = create_user
-    assert user.unspecified?
+    assert user.male?
     assert user.person_blue?
   end
 

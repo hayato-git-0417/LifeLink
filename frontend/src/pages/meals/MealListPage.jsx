@@ -1,5 +1,6 @@
 // 食事の一覧（食事トップの「一覧」）。1日ずつ表示し、前の日・次の日へ移れる
 import { useEffect, useState } from 'react'
+import { useLocation, useSearchParams } from 'react-router-dom'
 import { api } from '../../api/client.js'
 import AppShell from '../../components/AppShell.jsx'
 import ErrorList from '../../components/ErrorList.jsx'
@@ -13,7 +14,12 @@ import { sumNutrients } from './mealTypes.js'
 
 export default function MealListPage() {
   const today = toDateString()
-  const [date, setDate] = useState(today)
+  const [searchParams] = useSearchParams()
+  const location = useLocation()
+  const [date, setDate] = useState(() => {
+    const requested = searchParams.get('date')
+    return requested && /^\d{4}-\d{2}-\d{2}$/.test(requested) && requested <= today && toDateString(new Date(requested + 'T00:00:00')) === requested ? requested : today
+  })
   const [meals, setMeals] = useState(null)
   const [errors, setErrors] = useState([])
 
@@ -34,7 +40,7 @@ export default function MealListPage() {
   }
 
   return (
-    <AppShell title="食事の一覧" backTo="/meals">
+    <AppShell title="食事の一覧" backTo={location.state?.fromDetails ? '/details?tab=meal&view=list' : '/meals'}>
       <div className={styles.page}>
         <div className={styles.dateNav}>
           <button type="button" className={styles.dateButton} onClick={() => changeDate(shiftDate(date, -1))} aria-label="前の日">

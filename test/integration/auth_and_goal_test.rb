@@ -3,14 +3,14 @@ require "test_helper"
 # フェーズ2: 新規登録 → ログイン → 目標保存 → 自分の情報、未ログインは 401
 class AuthAndGoalTest < ActionDispatch::IntegrationTest
   SIGN_UP = {
-    email: "taro@example.com", password: "password", password_confirmation: "password",
-    name: "たろう", icon: "cat", birthdate: "2006-10-13", gender: "male"
+    email: "taro@example.com", password: "password123", password_confirmation: "password123",
+    height_cm: 170, weight_kg: 65, activity_level: "moderate", name: "たろう", icon: "cat", birthdate: "2006-10-13", gender: "male"
   }.freeze
 
   GOAL = {
     goal: {
       sleep_goal_type: "time_range", bedtime: "00:00", wake_time: "07:00", work_goal_minutes: 420,
-      calorie_goal: 2600, protein_goal_g: 65, fat_goal_g: 72.2, carbs_goal_g: 373.8, fiber_goal_g: 20,
+      calorie_goal: 2600, protein_goal_g: 65, fat_goal_g: 72.2, carbs_goal_g: 373.8,
       breakfast_time: "07:00", lunch_time: "12:00", dinner_time: "19:00"
     },
     exercise_tasks: [ { title: "1キロ走る" }, { title: "腕立て伏せ100回" } ]
@@ -52,7 +52,7 @@ class AuthAndGoalTest < ActionDispatch::IntegrationTest
       assert_equal false, json["available"]
 
       # ログイン
-      post "/api/v1/auth/sign_in", params: { email: "taro@example.com", password: "password" }, as: :json
+      post "/api/v1/auth/sign_in", params: { email: "taro@example.com", password: "password123" }, as: :json
       assert_response :ok
       headers = auth_headers_from(response)
       assert headers["access-token"].present?
@@ -66,13 +66,15 @@ class AuthAndGoalTest < ActionDispatch::IntegrationTest
       # ④ の初期値（ログイン中なら自分の生年月日・性別から）
       get "/api/v1/goal/nutrition_defaults", headers: headers
       assert_response :ok
-      assert_equal 2600, json.dig("nutrition_defaults", "calorie_goal")
+      assert_equal 2840, json.dig("nutrition_defaults", "calorie_goal")
+      assert_not json.fetch("nutrition_defaults").key?("fiber_goal_g")
 
       # 目標を保存
       put "/api/v1/goal", params: GOAL, headers: headers, as: :json
       assert_response :ok
       assert_equal "00:00", json.dig("goal", "bedtime")
       assert_equal 420, json.dig("goal", "target_sleep_minutes")
+      assert_not json.fetch("goal").key?("fiber_goal_g")
       assert_equal [ "1キロ走る", "腕立て伏せ100回" ], json["exercise_tasks"].map { _1["title"] }
 
       get "/api/v1/goal", headers: headers
@@ -134,7 +136,7 @@ class AuthAndGoalTest < ActionDispatch::IntegrationTest
 
   test "プロフィール変更と、目標保存のエラー" do
     user = create_user(email: "taro@example.com")
-    post "/api/v1/auth/sign_in", params: { email: "taro@example.com", password: "password" }, as: :json
+    post "/api/v1/auth/sign_in", params: { email: "taro@example.com", password: "password123" }, as: :json
     headers = auth_headers_from(response)
 
     patch "/api/v1/me", params: { user: { name: "じろう", icon: "penguin" } }, headers: headers, as: :json
@@ -154,5 +156,25 @@ class AuthAndGoalTest < ActionDispatch::IntegrationTest
     assert_response :unprocessable_entity
     get "/api/v1/registrations/email_available", params: { email: "not-an-email" }
     assert_response :unprocessable_entity
+  end
+  test "身長と体重と性別は新規登録時に必須" do
+    [{ height_cm: nil }, { weight_kg: "" }, { gender: nil }, { gender: "unspecified" }, { gender: "other" }, { height_cm: 0 }, { weight_kg: -1 }].each do |invalid|
+      assert_no_difference ["User.count", "Character.count"] do
+        post "/api/v1/auth", params: SIGN_UP.merge(invalid), as: :json
+      end
+      assert_response :unprocessable_entity
+      assert json.fetch("field_errors").key?(invalid.keys.first.to_s)
+    end
+  end
+
+  test "身長と体重は保存され自分のプロフィールから取得できる" do
+    post "/api/v1/auth", params: SIGN_UP, as: :json
+    assert_response :ok
+    user = User.find_by!(email: SIGN_UP[:email])
+    assert_equal 170, user.height_cm
+    assert_equal 65, user.weight_kg
+    get "/api/v1/me", headers: auth_headers_from(response)
+    assert_equal 170.0, json.dig("user", "height_cm")
+    assert_equal 65.0, json.dig("user", "weight_kg")
   end
 end

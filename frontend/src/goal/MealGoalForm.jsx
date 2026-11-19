@@ -1,5 +1,6 @@
 // 目標設定: 食事の目標（栄養5項目）と食事時刻。新規登録④（デザインなし。③と同じ見た目）・目標設定・目標変更で使う
 // basis は GET /goal/nutrition_defaults の basis（初期値を出した年齢・性別）
+import FieldError from '../components/FieldError.jsx'
 import IconBadge from '../components/IconBadge.jsx'
 import { ClockIcon, MealIcon } from '../components/icons.jsx'
 import styles from '../styles/form.module.css'
@@ -8,7 +9,7 @@ import goal from './GoalForm.module.css'
 
 const GENDER_LABELS = { male: '男性', female: '女性', unspecified: '未回答', other: 'その他' }
 
-export default function MealGoalForm({ value, onChange, basis, onResetDefaults, loadingDefaults }) {
+export default function MealGoalForm({ value, onChange, basis, onResetDefaults, loadingDefaults, errors = {} }) {
   return (
     <div className={goal.sections}>
       <section className={styles.card}>
@@ -21,11 +22,13 @@ export default function MealGoalForm({ value, onChange, basis, onResetDefaults, 
         {basis && (
           <p className={`${styles.hint} ${goal.basis}`}>
             {basis.age}歳・{GENDER_LABELS[basis.gender] ?? basis.gender}
-            {basis.averaged ? '（男女の平均）' : ''}の基準値です。自由に変えられます。
+            {basis.averaged ? '（男女の平均）' : ''}{basis.activity_label ? '・' + basis.activity_label : ''}の目安です。自由に変えられます。
             <br />
             出典: {basis.source}
           </p>
         )}
+        {basis?.explanation && <p className={styles.hint}>{basis.explanation}</p>}
+        {basis?.notice && <p className={styles.notice} role="status">{basis.notice}</p>}
         <div className={goal.nutrients}>
           {NUTRIENT_FIELDS.map(({ key, label, unit, step }) => (
             <label key={key} className={goal.nutrient}>
@@ -37,19 +40,24 @@ export default function MealGoalForm({ value, onChange, basis, onResetDefaults, 
                   inputMode="decimal"
                   min="0"
                   step={step}
+                  aria-invalid={Boolean(errors[key])}
+                  aria-describedby={errors[key] ? key + '-error' : undefined}
+                  disabled={loadingDefaults}
                   value={value[key]}
                   onChange={(event) => onChange({ [key]: event.target.value })}
                 />
                 <span className={goal.unit}>{unit}</span>
               </span>
+              <FieldError errors={errors} name={key} />
             </label>
           ))}
         </div>
         {onResetDefaults && (
           <button type="button" className={`${styles.linkButton} ${goal.reset}`} onClick={onResetDefaults} disabled={loadingDefaults}>
-            {loadingDefaults ? '読み込み中…' : '年齢・性別から出し直す'}
+            {loadingDefaults ? '読み込み中…' : '入力情報から出し直す'}
           </button>
         )}
+
       </section>
 
       <section className={styles.card}>
@@ -66,9 +74,12 @@ export default function MealGoalForm({ value, onChange, basis, onResetDefaults, 
               <input
                 className={`${styles.input} ${goal.timeInput}`}
                 type="time"
-                value={value[key]}
+                aria-invalid={Boolean(errors[key])}
+                  aria-describedby={errors[key] ? key + '-error' : undefined}
+                  value={value[key]}
                 onChange={(event) => onChange({ [key]: event.target.value })}
               />
+              <FieldError errors={errors} name={key} />
             </label>
           ))}
         </div>

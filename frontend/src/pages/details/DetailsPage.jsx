@@ -4,17 +4,18 @@
 // 睡眠・ワークのタブでは記録ごとに開始・終了日時の修正と削除ができる。睡眠の質は表示しない（spec.md 5章）
 // /users/:id/details は相互フォローの人の詳細（読み取り専用。修正・削除なし。データは GET /users/:id/records）
 import { useCallback, useEffect, useState } from 'react'
-import { useParams, useSearchParams } from 'react-router-dom'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { api } from '../../api/client.js'
 import AppShell from '../../components/AppShell.jsx'
 import { CATEGORY_COLORS } from '../../components/chartTheme.js'
 import DurationChart from '../../components/DurationChart.jsx'
 import ErrorList from '../../components/ErrorList.jsx'
 import { ChevronLeftIcon, ChevronRightIcon, ExerciseIcon, MealIcon, SleepIcon, WorkIcon } from '../../components/icons.jsx'
-import ScoreTrendChart from '../../components/ScoreTrendChart.jsx'
+import MealNutritionChart, { MealTimeChart } from './MealCharts.jsx'
+import { mealNutrientSummary, mealTimeRows } from './mealChartData.js'
 import ExerciseDurationChart from './ExerciseDurationChart.jsx'
 import ExerciseRecordList from './ExerciseRecordList.jsx'
-import { datesBetween, formatDate, formatDay, formatMinutes, formatNumber, shiftDate, toDateString } from '../../lib/format.js'
+import { datesBetween, formatDate, formatMinutes, formatNumber, shiftDate, toDateString } from '../../lib/format.js'
 import form from '../../styles/form.module.css'
 import { NUTRIENTS, sumNutrients } from '../meals/mealTypes.js'
 import styles from './Details.module.css'
@@ -59,6 +60,9 @@ export default function DetailsPage() {
   const [records, setRecords] = useState(null)
   const [errors, setErrors] = useState([])
   const [owner, setOwner] = useState(null)
+  const [mealMetric, setMealMetric] = useState('calories')
+  const [mealView, setMealView] = useState('nutrition')
+  const nutrient = NUTRIENTS.find((item) => item.key === mealMetric) || NUTRIENTS[0]
 
   const load = useCallback(async () => {
     const params = { from, to }
@@ -67,15 +71,16 @@ export default function DetailsPage() {
       return { scores: { daily_achievements: data.daily_achievements, current_points: data.current_points }, list: data }
     }
     const [scores, list, taskData] = await Promise.all([
-      api('/daily_achievements', { params }),
+      tab.key === 'meal' ? Promise.resolve({ daily_achievements: [], current_points: {} }) : api('/daily_achievements', { params }),
       api(tab.path, { params }),
-      tab.key === 'exercise' ? api('/exercise_tasks/today') : Promise.resolve(null),
+      tab.key === 'exercise' ? api('/exercise_tasks/today') : tab.key === 'meal' ? api('/goal') : Promise.resolve(null),
     ])
     if (tab.key === 'exercise') {
       const apiTitles = Array.isArray(list.exercise_task_titles) ? list.exercise_task_titles : []
       const activeTaskTitles = (taskData?.exercise_tasks || []).map((task) => task.title)
       list.exercise_task_titles = [...new Set([...apiTitles, ...activeTaskTitles])]
     }
+    if (tab.key === 'meal') list.meal_goal = taskData?.goal
     return { scores, list }
   }, [from, to, tab.key, tab.path, userId])
 
@@ -182,7 +187,7 @@ export default function DetailsPage() {
           !errors.length && <p className={form.loading}>読み込み中…</p>
         ) : (
           <>
-            <Summary tab={tab.key} records={records} achievements={achievements.daily_achievements} />
+            <Summary tab={tab.key} records={records} achievements={achievements.daily_achievements} nutrient={nutrient} />
 
             <div className={`${form.segmented} ${styles.views}`} role="tablist" aria-label="表示">
               {views.map((entry) => (
@@ -199,87 +204,70 @@ export default function DetailsPage() {
               ))}
             </div>
 
-{view.key === 'hours' ? (
-  <section className={`${styles.card} ${styles.panel} ${styles.chartPanel}`}>
-    <h2 className={styles.heading}>
-      日ごとの{TIMED_KINDS[tab.key].durationLabel}
-    </h2>
-    <div className={styles.chart}>
-      <DurationChart
-        rows={durationRows(dates, records[`${tab.key}_records`])}
-        color={CATEGORY_COLORS[tab.key]}
-        label={TIMED_KINDS[tab.key].durationLabel}
-        height="100%"
-      />
-    </div>
-    <p className={styles.note}>{HOURS_NOTES[tab.key]}</p>
-  </section>
-) : view.key === 'chart' ? (
-  <section className={`${styles.card} ${styles.panel} ${styles.chartPanel}`}>
-    <h2 className={styles.heading}>
-      {tab.key === 'exercise'
-        ? '1日の運動時間（項目別）'
-        : `${tab.label}のスコアとポイントの推移`}
-    </h2>
-    <div className={styles.chart}>
-      {tab.key === 'exercise' ? (
-        <ExerciseDurationChart
-          dates={dates}
-          dailyTotals={records.daily_duration_totals}
-          taskTitles={records.exercise_task_titles}
-          height="100%"
-        />
-      ) : (
-        <ScoreTrendChart
-          rows={chartRows(tab.key, dates, achievements, today)}
-          color={CATEGORY_COLORS[tab.key]}
-          height="100%"
-        />
-      )}
-    </div>
-    {tab.key !== 'exercise' && (
-      <p className={styles.note}>
-        ポイントは日ごとに確定した値です（今日は現在の値）。
-      </p>
-    )}
-  </section>
-) : (
-  <section className={`${styles.card} ${styles.panel}`}>
-    {TIMED_KINDS[tab.key] ? (
-      <TimedRecordList
-        kind={tab.key}
-        records={records[`${tab.key}_records`]}
-        readOnly={readOnly}
-        onChanged={reload}
-        onError={setErrors}
-      />
-    ) : tab.key === 'meal' ? (
-      <MealDays dates={dates} meals={records.meals} />
-    ) : readOnly ? (
-      <ExerciseDays
-        dates={dates}
-        distance={records}
-        achievements={achievements.daily_achievements}
-      />
-    ) : (
-      <ExerciseRecordList
-        records={records.exercise_records}
-        taskTitles={records.exercise_task_titles}
-        onChanged={reload}
-        onError={setErrors}
-      />
-    )}
-  </section>
-)}
-                <h2 className={styles.heading}>{tab.key === 'exercise' ? '1日の運動時間（項目別）' : `${tab.label}のスコアとポイントの推移`}</h2>
+            {view.key === 'hours' ? (
+              <section className={`${styles.card} ${styles.panel} ${styles.chartPanel}`}>
+                <h2 className={styles.heading}>
+                  日ごとの{TIMED_KINDS[tab.key].durationLabel}
+                </h2>
+                <div className={styles.chart}>
+                  <DurationChart
+                    rows={durationRows(dates, records[`${tab.key}_records`])}
+                    color={CATEGORY_COLORS[tab.key]}
+                    label={TIMED_KINDS[tab.key].durationLabel}
+                    height="100%"
+                  />
+                </div>
+                <p className={styles.note}>{HOURS_NOTES[tab.key]}</p>
+              </section>
+            ) : view.key === 'chart' ? (
+              <section className={`${styles.card} ${styles.panel} ${styles.chartPanel}`}>
+                <h2 className={styles.heading}>
+                  {tab.key === 'exercise'
+                    ? '1日の運動時間（項目別）'
+                    : mealView === 'time' ? '食事時刻の推移' : `日ごとの${nutrient.key === 'calories' ? '摂取カロリー' : nutrient.label}`}
+                </h2>
+                {tab.key === 'meal' && (
+                  <div className={styles.mealControls}>
+                    <div className={styles.mealSwitch} role="group" aria-label="食事グラフの表示">
+                      {[['nutrition', '栄養'], ['time', '食事時刻']].map(([key, label]) => (
+                        <button key={key} type="button" className={styles.mealSwitchButton} aria-pressed={mealView === key} onClick={() => setMealView(key)}>{label}</button>
+                      ))}
+                    </div>
+                    {mealView === 'nutrition' && (
+                      <label className={styles.mealMetric}>
+                        <span>栄養素</span>
+                        <select className={form.input} value={mealMetric} onChange={(event) => setMealMetric(event.target.value)}>
+                          {NUTRIENTS.map((item) => <option key={item.key} value={item.key}>{item.label}（{item.unit}）</option>)}
+                        </select>
+                      </label>
+                    )}
+                  </div>
+                )}
                 <div className={styles.chart}>
                   {tab.key === 'exercise' ? (
-                    <ExerciseDurationChart dates={dates} dailyTotals={records.daily_duration_totals} taskTitles={records.exercise_task_titles} height="100%" />
+                    <ExerciseDurationChart
+                      dates={dates}
+                      dailyTotals={records.daily_duration_totals}
+                      taskTitles={records.exercise_task_titles}
+                      height="100%"
+                    />
                   ) : (
-                    <ScoreTrendChart rows={chartRows(tab.key, dates, achievements, today)} color={CATEGORY_COLORS[tab.key]} height="100%" />
+                    mealView === 'time' ? (
+                      <MealTimeChart dates={dates} meals={records.meals} />
+                    ) : (
+                      <MealNutritionChart dates={dates} meals={records.meals} nutrient={nutrient} goal={records.meal_goal?.[nutrient.goalKey]} />
+                    )
                   )}
                 </div>
-                {tab.key !== 'exercise' && <p className={styles.note}>ポイントは日ごとに確定した値です（今日は現在の値）。</p>}
+                {tab.key !== 'exercise' && (
+                  <p className={styles.note} title={mealView === 'nutrition' ? '朝食・昼食・夕食・間食で色分けしています。平均は栄養値の入力がある日で計算し、一部未入力の食事は合計に含めません。' : undefined}>
+                    {mealView === 'time'
+                      ? mealTimeRows(dates, records.meals).length
+                        ? '食べた時刻を日本時間で表示しています。'
+                        : readOnly ? '共有されている記録には食事時刻が含まれていません。' : 'この期間に時刻付きの食事記録はありません。'
+                      : '未記録・未入力の日は非表示。平均は栄養値を入力した日で計算。'}
+                  </p>
+                )}
               </section>
             ) : (
               <section className={`${styles.card} ${styles.panel}`}>
@@ -291,12 +279,21 @@ export default function DetailsPage() {
                     onChanged={reload}
                     onError={setErrors}
                   />
-                 ) : tab.key === 'meal' ? (
-                  <MealDays dates={dates} meals={records.meals} />
+                ) : tab.key === 'meal' ? (
+                  <MealDays dates={dates} meals={records.meals} readOnly={readOnly} />
                 ) : readOnly ? (
-                  <ExerciseDays dates={dates} distance={records} achievements={achievements.daily_achievements} />
+                  <ExerciseDays
+                    dates={dates}
+                    distance={records}
+                    achievements={achievements.daily_achievements}
+                  />
                 ) : (
-                  <ExerciseRecordList records={records.exercise_records} taskTitles={records.exercise_task_titles} onChanged={reload} onError={setErrors} />
+                  <ExerciseRecordList
+                    records={records.exercise_records}
+                    taskTitles={records.exercise_task_titles}
+                    onChanged={reload}
+                    onError={setErrors}
+                  />
                 )}
               </section>
             )}
@@ -318,24 +315,13 @@ function durationRows(dates, records) {
   return dates.map((date) => ({ date, minutes: minutesByDate[date] ?? null }))
 }
 
-// グラフの行。行のない日・確定前のポイントは null。今日のポイントは現在の値
-function chartRows(tab, dates, achievements, today) {
-  const byDate = Object.fromEntries(achievements.daily_achievements.map((row) => [row.target_date, row]))
-  return dates.map((date) => {
-    const row = byDate[date]
-    let points = row?.[`${tab}_points`] ?? null
-    if (date === today && points == null) points = achievements.current_points[tab]
-    return { day: formatDay(date), score: row ? row[`${tab}_score`] : null, points }
-  })
-}
-
 function averageScore(tab, achievements) {
   if (achievements.length === 0) return null
   return achievements.reduce((sum, row) => sum + row[`${tab}_score`], 0) / achievements.length
 }
 
 // 期間の合計（上のタイル）
-function Summary({ tab, records, achievements }) {
+function Summary({ tab, records, achievements, nutrient }) {
   const tiles = []
   if (TIMED_KINDS[tab]) {
     const finished = records[`${tab}_records`].filter((record) => !record.in_progress)
@@ -345,10 +331,11 @@ function Summary({ tab, records, achievements }) {
     tiles.push({ label: `合計${label}`, value: formatMinutes(total) })
     tiles.push({ label: '1日平均', value: days ? formatMinutes(total / days) : '-' })
   } else if (tab === 'meal') {
-    const totals = sumNutrients(records.meals)
-    const days = new Set(records.meals.map((meal) => meal.recorded_on)).size
-    tiles.push({ label: '合計カロリー', value: `${formatNumber(totals.calories)} kcal` })
-    tiles.push({ label: '1日平均', value: days ? `${formatNumber(totals.calories / days)} kcal` : '-' })
+    const summary = mealNutrientSummary(records.meals, nutrient.key)
+    const label = nutrient.key === 'calories' ? 'カロリー' : nutrient.label
+    tiles.push({ label: '合計' + label, value: summary.total == null ? '-' : formatNumber(summary.total) + ' ' + nutrient.unit })
+    tiles.push({ label: '1日平均', value: summary.average == null ? '-' : formatNumber(summary.average) + ' ' + nutrient.unit })
+    tiles.push({ label: '記録日数', value: summary.days + '日' })
   } else if (tab === 'exercise') {
     const durationDays = (Array.isArray(records.daily_duration_totals) ? records.daily_duration_totals : [])
       .filter((day) => Number(day.duration_minutes) > 0)
@@ -356,11 +343,13 @@ function Summary({ tab, records, achievements }) {
     tiles.push({ label: '合計運動時間', value: formatMinutes(total) })
     tiles.push({ label: '1日平均', value: durationDays.length ? formatMinutes(total / durationDays.length) : '-' })
   }
-  const average = averageScore(tab, achievements)
-  tiles.push({ label: '平均スコア', value: average == null ? '-' : `${Math.round(average)}%` })
+  if (tab !== 'meal') {
+    const average = averageScore(tab, achievements)
+    tiles.push({ label: '平均スコア', value: average == null ? '-' : `${Math.round(average)}%` })
+  }
 
   return (
-    <div className={styles.tiles} title="1日平均は記録した日で割った値">
+    <div className={styles.tiles} title={tab === 'meal' ? '1日平均は選択した栄養素の入力がある日で計算しています。一部未入力の食事は合計に含みません。' : '1日平均は記録した日で割った値'}>
       {tiles.map((tile) => (
         <div key={tile.label} className={styles.tile}>
           <span className={styles.tileLabel}>{tile.label}</span>
@@ -372,33 +361,46 @@ function Summary({ tab, records, achievements }) {
 }
 
 // 食事タブ: 日ごとの栄養値の合計（新しい日から）
-function MealDays({ dates, meals }) {
+function MealDays({ dates, meals, readOnly }) {
   const days = [...dates].reverse().map((date) => {
     const list = meals.filter((meal) => meal.recorded_on === date)
     return { date, count: list.length, totals: sumNutrients(list) }
   })
-  if (meals.length === 0) return <p className={styles.empty}>この期間の記録はありません。</p>
   return (
-    <ul className={styles.records}>
-      {days
-        .filter((day) => day.count > 0)
-        .map((day) => (
-          <li key={day.date} className={styles.record}>
-            <div className={styles.recordMain}>
-              <span className={styles.recordTitle}>
-                {formatDate(day.date)}
-                <span className={styles.recordTag}>{day.count}食</span>
-              </span>
-              <span className={styles.recordStrong}>{formatNumber(day.totals.calories)} kcal</span>
-              <span className={styles.recordSub}>
-                {NUTRIENTS.filter((n) => n.key !== 'calories')
-                  .map((n) => `${n.label} ${formatNumber(day.totals[n.key])}${n.unit}`)
-                  .join('　')}
-              </span>
-            </div>
-          </li>
-        ))}
-    </ul>
+    <>
+      {!readOnly && (
+        <Link to={'/meals/list?date=' + dates[dates.length - 1]} state={{ fromDetails: true }} className={styles.mealListLink}>
+          食事記録一覧へ<ChevronRightIcon size={16} />
+        </Link>
+      )}
+      {meals.length === 0 ? <p className={styles.empty}>この期間の記録はありません。</p> : (
+        <ul className={styles.records}>
+          {days.filter((day) => day.count > 0).map((day) => {
+            const Row = readOnly ? 'div' : Link
+            const navigation = readOnly ? {} : { to: '/meals/list?date=' + day.date, state: { fromDetails: true }, 'aria-label': formatDate(day.date) + 'の食事記録一覧を見る' }
+            return (
+              <li key={day.date} className={styles.record}>
+                <Row className={styles.mealRecordLink} {...navigation}>
+                  <div className={styles.recordMain}>
+                    <span className={styles.recordTitle}>
+                      {formatDate(day.date)}
+                      <span className={styles.recordTag}>{day.count}食</span>
+                    </span>
+                    <span className={styles.recordStrong}>{formatNumber(day.totals.calories)} kcal</span>
+                    <span className={styles.recordSub}>
+                      {NUTRIENTS.filter((n) => n.key !== 'calories')
+                        .map((n) => n.label + ' ' + formatNumber(day.totals[n.key]) + n.unit)
+                        .join('　')}
+                    </span>
+                  </div>
+                  {!readOnly && <ChevronRightIcon size={18} />}
+                </Row>
+              </li>
+            )
+          })}
+        </ul>
+      )}
+    </>
   )
 }
 

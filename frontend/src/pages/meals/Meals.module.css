@@ -18,7 +18,7 @@
   font-weight: 700;
 }
 
-/* ---------- 今日の摂取量: 左にカロリーの円グラフ、右に PFC・食物繊維のゲージ ---------- */
+/* ---------- 今日の摂取量: 左にカロリーの円グラフ、右に PFC のゲージ ---------- */
 .summary {
   display: grid;
   grid-template-columns: 118px minmax(0, 1fr);
@@ -344,6 +344,12 @@
   font-size: 0.78rem;
 }
 
+.rescanHint {
+  color: var(--ink-soft);
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
+
 /* 区分（見出しと選択肢を1行に） */
 .typeRow {
   display: flex;
@@ -396,7 +402,7 @@
   outline-offset: 1px;
 }
 
-/* 栄養は3列（名前の下に入力。単位は入力欄の中の右に出す） */
+/* 栄養は2列×2行（名前の下に入力。単位は入力欄の中の右に出す） */
 .nutrientSet {
   margin: 0;
   padding: 0;
@@ -405,9 +411,61 @@
 
 .nutrientInputs {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 6px 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 12px;
   margin-top: 4px;
+}
+
+.foodPicker {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.foodResults,
+.foodItems {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.foodResult {
+  width: 100%;
+  padding: 8px 10px;
+  border: var(--line);
+  border-radius: 10px;
+  background: var(--paper);
+  color: var(--ink);
+  text-align: left;
+}
+
+.foodItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.85rem;
+}
+
+.foodItem label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.foodWeight {
+  width: 76px;
+  padding: 6px;
+}
+
+.foodNote {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 0.78rem;
 }
 
 .nutrientField {
@@ -488,3 +546,8 @@
   box-shadow: none;
   transform: translateY(2px);
 }
+
+.portionList { display: grid; gap: 8px; margin: 10px 0; }
+.portionRow { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; }
+.portionRow > span:first-child { flex: 1; min-width: 0; }
+.portionRow small { display: block; color: var(--ink-soft); }

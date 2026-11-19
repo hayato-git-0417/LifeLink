@@ -180,7 +180,7 @@ Api Get "/me"
 Api Put "/goal" @{
   goal = @{
     sleep_goal_type = "time_range"; bedtime = "00:00"; wake_time = "07:00"; work_goal_minutes = 420
-    calorie_goal = 2600; protein_goal_g = 65; fat_goal_g = 72.2; carbs_goal_g = 373.8; fiber_goal_g = 20
+    calorie_goal = 2600; protein_goal_g = 65; fat_goal_g = 72.2; carbs_goal_g = 373.8
     breakfast_time = "07:00"; lunch_time = "12:00"; dinner_time = "19:00"
   }
   exercise_tasks = @(@{ title = "1キロ走る" }, @{ title = "腕立て伏せ100回" })
@@ -223,7 +223,7 @@ Api Delete "/exercise_tasks/1/completion"
 
 # 食事（写真なし）。meal_type は breakfast / lunch / dinner / snack
 Api Post "/meals" @{ meal = @{ meal_type = "lunch"; eaten_at = "2026-10-06T12:15:00+09:00"; content = "カレーライス"
-  calories = 750; protein_g = 20.5; fat_g = 25; carbs_g = 110.2; fiber_g = 4.5; comment = "大盛り" } }
+  calories = 750; protein_g = 20.5; fat_g = 25; carbs_g = 110.2; comment = "大盛り" } }
 Api Get "/meals?date=2026-10-06"
 Api Patch "/meals/1" @{ meal = @{ calories = 700 } }
 Api Patch "/meals/1" @{ meal = @{ remove_photo = $true } }   # 写真を外す
@@ -274,4 +274,13 @@ Api Get "/notifications"                   # 新しい順50件と unread_count
 Api Patch "/notifications/1/read"          # 1件既読
 Api Post "/notifications/read_all"         # まとめて既読（通知の画面を開いたとき）
 Api Get "/meals?from=2026-10-01&to=2026-10-07"   # 食事の期間の一覧（詳細画面の食事タブ）
+```
+
+### 食品成分表
+
+文部科学省「日本食品標準成分表2020年版（八訂）」の2,478食品を `db/data/food_composition_2020.csv` に収録しています。食事記録で食品名を検索し、食べた量を入力すると、カロリー・たんぱく質・脂質・炭水化物を計算します。食物繊維は入力・表示・食事スコアの対象外です。データをDBへ登録・更新するには、マイグレーション後に次を実行します（デモユーザーは作り直しません）。
+
+```powershell
+ruby bin/rails db:migrate
+ruby bin/rails runner "puts FoodCompositionImporter.call"
 ```

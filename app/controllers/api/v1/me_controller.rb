@@ -18,7 +18,7 @@ module Api
       private
 
       def profile_params
-        params.require(:user).permit(:name, :icon, :birthdate, :gender)
+        params.require(:user).permit(:name, :icon, :birthdate, :gender, :height_cm, :weight_kg, :activity_level)
       end
 
       # goal_registered: false のときフロントは目標設定画面へ誘導する（spec.md 5章）
@@ -30,6 +30,9 @@ module Api
           icon: user.icon,
           birthdate: user.birthdate,
           gender: user.gender,
+          height_cm: user.height_cm&.to_f,
+          weight_kg: user.weight_kg&.to_f,
+          activity_level: user.activity_level,
           age: user.age,
           goal_registered: user.goal.present?,
           followers_count: user.passive_follows.count,

@@ -6,9 +6,10 @@ import { Link, useNavigate } from 'react-router-dom'
 import { api } from '../api/client.js'
 import { useAuth } from '../auth/useAuth.js'
 import AppShell from '../components/AppShell.jsx'
+import FieldError from '../components/FieldError.jsx'
 import ErrorList from '../components/ErrorList.jsx'
 import ProfileFields from '../components/ProfileFields.jsx'
-import { validateProfile } from '../components/validateProfile.js'
+import { validateProfileFields } from '../components/validateProfile.js'
 import GoalBasicsForm from '../goal/GoalBasicsForm.jsx'
 import { applyNutritionDefaults, newGoalDraft, toGoalPayload, validateBasics, validateMeals } from '../goal/goalDraft.js'
 import MealGoalForm from '../goal/MealGoalForm.jsx'
@@ -22,14 +23,16 @@ export default function SignupPage() {
   const { refreshMe } = useAuth()
   const [step, setStep] = useState(1)
   const [errors, setErrors] = useState([])
+  const [fieldErrors, setFieldErrors] = useState({})
   const [busy, setBusy] = useState(false) //「通信などの処理中です」という状態に切り替える命令、true になるとボタンが押せなくなり、連打による二重送信を防げる
   const [account, setAccount] = useState({ email: '', password: '', password_confirmation: '' })
-  const [showPassword, setShowPassword] = useState(false) // パスワードを隠すやつ　false は非表示、true は表示
+  const [showPassword, setShowPassword] = useState(false) // パスワードを隠すやつ false は非表示、true は表示
   const [profile, setProfile] = useState({
     icon: 'person_blue',
     name: '',
     birthdate: '',
-    gender: 'unspecified' ,
+    gender: '',
+    activity_level: '',
     height_cm: '',
     weight_kg: '',
   })
@@ -38,24 +41,29 @@ export default function SignupPage() {
   const [defaultsKey, setDefaultsKey] = useState(null)
   const [basis, setBasis] = useState(null)
 
+  useEffect(() => {
+    const first = document.getElementById(Object.keys(fieldErrors)[0] + '-error')
+    first?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }, [fieldErrors])
+
   const updateGoal = (changes) => setGoal((current) => ({ ...current, ...changes }))
 
   /* ページを切り替える関数 */
   function go(nextStep) {
     setErrors([]) // 前のエラーメッセージを消す
+    setFieldErrors({})
     setStep(nextStep) // 表示するステップを次に変更
     window.scrollTo(0, 0) // 画面を一番上までスクロール
   }
 
   // ④を開いたら、年齢・性別から栄養目標の初期値を出す（ログイン前なので生年月日・性別を渡す）
   async function loadDefaults(force = false) {
-    const key = `${profile.birthdate}/${profile.gender}`
+    const key = [profile.birthdate, profile.gender, profile.height_cm, profile.weight_kg, profile.activity_level].join('/')
     if (!force && key === defaultsKey) return
     setBusy(true)
     try {
-      const data = await api('/goal/nutrition_defaults', {
-        params: { birthdate: profile.birthdate, gender: profile.gender },
-      })
+      const inputs = { birthdate: profile.birthdate, gender: profile.gender, height_cm: profile.height_cm, weight_kg: profile.weight_kg, activity_level: profile.activity_level }
+      const data = await api('/goal/nutrition_suggestion', { method: 'POST', body: inputs })
       setGoal((current) => applyNutritionDefaults(current, data.nutrition_defaults))
       setBasis(data.nutrition_defaults.basis)
       setDefaultsKey(key)
@@ -76,32 +84,35 @@ export default function SignupPage() {
   /*「次へ」を押してフォームを送信したときの処理 */
   async function submitAccount(event) {
     event.preventDefault()  //  ブラウザ標準のフォーム送信によるページ移動・再読み込みを防ぐ処理
-    const found = []  //  入力チェックで見つかったエラーメッセージを格納する配列
+    const found = {}
 
     //.test(account.password)：パスワードの中に、そのパターンに当てはまる部分があるか確認する
     const hasLetter = /[a-zA-Z]/.test(account.password)
     const hasNumber = /[0-9]/.test(account.password)
     if (!hasLetter || !hasNumber) {
-      found.push('パスワードは英字と数字をそれぞれ1文字以上含めてください')
+      found.password = 'パスワードは英字と数字をそれぞれ1文字以上含めてください'
     }
 
-    //  エラーメッセージをfoundにpush（格納する）
-    if (!account.email.trim()) found.push('メールアドレスを入力してください')
-    if (account.password.length < PASSWORD_MIN) found.push(`パスワードは${PASSWORD_MIN}文字以上にしてください`)
-    if (account.password !== account.password_confirmation) found.push('パスワード（確認用）が一致しません')
-    if (found.length) return setErrors(found)
+    // 項目ごとにエラーメッセージを設定する
+    if (!account.email.trim()) found.email = 'メールアドレスを入力してください'
+    if (account.password.length < PASSWORD_MIN) found.password = `パスワードは${PASSWORD_MIN}文字以上にしてください`
+    if (account.password !== account.password_confirmation) found.password_confirmation = 'パスワード（確認用）が一致しません'
+    setErrors([])
+    setFieldErrors(found)
+    if (Object.keys(found).length) return
 
     setBusy(true) //  送信ボタンを押せなくする
     // 入力されたメールアドレスが登録に使えるかをRailsに問い合わせ、返ってきた結果を data に入れる処理
     try {
       const data = await api('/registrations/email_available', { params: { email: account.email.trim() } })
       if (!data.available) {
-        setErrors(['このメールアドレスはすでに登録されています'])
+        setFieldErrors({ email: 'このメールアドレスはすでに登録されています' })
         return
       }
       go(2) // 新規登録の2つ目の画面へ切り替える
     } catch (error) {
-      setErrors(error.messages)
+      if (error.status === 422) setFieldErrors({ email: error.messages })
+      else setErrors(error.messages)
     } finally { //  通信に失敗した場合
       setBusy(false)
     }
@@ -110,24 +121,30 @@ export default function SignupPage() {
   /* 名前や生年月日などを、フロント側でチェックする */
   function submitProfile(event) {
     event.preventDefault()
-    const found = validateProfile(profile)
-    if (found.length) return setErrors(found)
+    const found = validateProfileFields(profile)
+    setErrors([])
+    setFieldErrors(found)
+    if (Object.keys(found).length) return
     go(3)
   }
 
   /* 睡眠・ワーク・運動の目標を、フロント側でチェックする */
   function submitBasics(event) {
     event.preventDefault()
-    const found = validateBasics(goal)
-    if (found.length) return setErrors(found)
+    const found = validateBasics(goal, true)
+    setErrors([])
+    setFieldErrors(found)
+    if (Object.keys(found).length) return
     go(4)
   }
 
   /* 最後の画面で登録ボタンを押したときに、Railsと通信して登録を完了する処理 */
   async function submitAll(event) {
     event.preventDefault() // .preventDefault ブラウザが標準で行う動作を止める
-    const found = validateMeals(goal) // 食事の目標をチェックする
-    if (found.length) return setErrors(found)
+    const found = validateMeals(goal, true) // 食事の目標をチェックする
+    setErrors([])
+    setFieldErrors(found)
+    if (Object.keys(found).length) return
 
     setBusy(true)
     setErrors([])
@@ -138,7 +155,13 @@ export default function SignupPage() {
         body: { ...account, email: account.email.trim(), ...profile, name: profile.name.trim() },
       })
     } catch (error) {
-      setErrors(error.messages)
+      const fields = error.fieldErrors || {}
+      if (Object.keys(fields).length) {
+        const accountFields = ['email', 'password', 'password_confirmation']
+        go(Object.keys(fields).some((key) => accountFields.includes(key)) ? 1 : 2)
+        setFieldErrors(fields)
+        setErrors(fields.base || [])
+      } else setErrors(error.messages)
       setBusy(false)
       return
     }
@@ -158,7 +181,7 @@ export default function SignupPage() {
   return (
     <AppShell title="新規登録" guest>
       <StepIndicator current={step} />
-      <ErrorList errors={errors} />
+      {step !== 4 && <ErrorList errors={errors} />}
 
       {step === 1 && (
         <form className={styles.form} onSubmit={submitAccount} noValidate>
@@ -170,9 +193,12 @@ export default function SignupPage() {
                 type="email"
                 autoComplete="email"
                 placeholder="例：name@example.com"  // emailのプレースホルダ
+                aria-invalid={Boolean(fieldErrors.email)}
+                aria-describedby={fieldErrors.email ? 'email-error' : undefined}
                 value={account.email}
                 onChange={(event) => setAccount({ ...account, email: event.target.value })}
               />
+              <FieldError errors={fieldErrors} name="email" />
             </label>
             <div className={styles.field}>
               <label className={styles.label} htmlFor="password">
@@ -185,6 +211,8 @@ export default function SignupPage() {
                   className={styles.input}
                   type={showPassword ? 'text' : 'password'}
                   autoComplete="new-password"
+                  aria-invalid={Boolean(fieldErrors.password)}
+                  aria-describedby={fieldErrors.password ? 'password-error' : undefined}
                   value={account.password}
                   onChange={(event) =>
                     setAccount({ ...account, password: event.target.value })
@@ -201,6 +229,7 @@ export default function SignupPage() {
                   <img src={showPassword ? '../icons/eye-open.svg' : '../icons/eye-closed.svg'} alt="" width="24" height="24"/>
                 </button>
               </div>
+              <FieldError errors={fieldErrors} name="password" />
 
               <span className={styles.hint}>
                 {PASSWORD_MIN}文字以上・半角英字と数字を両方含む（記号使用可）
@@ -212,9 +241,12 @@ export default function SignupPage() {
                 className={styles.input}
                 type="password"
                 autoComplete="new-password"
+                aria-invalid={Boolean(fieldErrors.password_confirmation)}
+                aria-describedby={fieldErrors.password_confirmation ? 'password_confirmation-error' : undefined}
                 value={account.password_confirmation}
                 onChange={(event) => setAccount({ ...account, password_confirmation: event.target.value })}
               />
+              <FieldError errors={fieldErrors} name="password_confirmation" />
             </label>
           </section>
           <div className={styles.actions}>
@@ -230,7 +262,7 @@ export default function SignupPage() {
 
       {step === 2 && (
         <form className={styles.form} onSubmit={submitProfile} noValidate>
-          <ProfileFields value={profile} onChange={(changes) => setProfile({ ...profile, ...changes })} />
+          <ProfileFields errors={fieldErrors} value={profile} onChange={(changes) => setProfile({ ...profile, ...changes })} />
           <div className={`${styles.actions} ${styles.actionsBetween}`}>
             <button className={styles.button} type="button" onClick={() => go(1)}>
               戻る
@@ -245,7 +277,7 @@ export default function SignupPage() {
       {step === 3 && (
         <form className={styles.form} onSubmit={submitBasics} noValidate>
           <p className={signup.lead}>理想の生活リズムを決めましょう。キャラはこの目標に沿って暮らします。</p>
-          <GoalBasicsForm value={goal} onChange={updateGoal} />
+          <GoalBasicsForm errors={fieldErrors} value={goal} onChange={updateGoal} />
           <div className={`${styles.actions} ${styles.actionsBetween}`}>
             <button className={styles.button} type="button" onClick={() => go(2)}>
               戻る
@@ -259,7 +291,9 @@ export default function SignupPage() {
 
       {step === 4 && (
         <form className={styles.form} onSubmit={submitAll} noValidate>
+          <ErrorList errors={errors} />
           <MealGoalForm
+            errors={fieldErrors}
             value={goal}
             onChange={updateGoal}
             basis={basis}
