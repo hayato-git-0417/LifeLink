@@ -7,6 +7,8 @@ module Api
       MAX_RANGE_DAYS = 366
 
       before_action :authenticate_user!
+      # 記録しなかった日の進化ポイントの減少（spec.md 4.3）。その日の最初のアクセスで昨日までの分をまとめて行う
+      before_action :process_evolution_decay
 
       # 入力が正しくないときは、メッセージを付けて 422 を返すために使う
       class InvalidParam < StandardError; end
@@ -32,6 +34,16 @@ module Api
 
       def resolve_character_state
         CharacterStateResolver.call(user: current_user)
+      end
+
+      # ログインなしで呼べる API（栄養の初期値）では何もしない
+      def process_evolution_decay
+        EvolutionDecayProcessor.call(user: current_user) if current_user
+      end
+
+      # 記録を新しく保存したら進化ポイントを加算する（その日・その項目の1回目だけ。修正・削除では呼ばない）
+      def award_evolution_points(item)
+        EvolutionPointAwarder.call(user: current_user, item: item)
       end
 
       # 記録が変わった日の達成度を計算し直す（中身はフェーズ4）
@@ -101,6 +113,24 @@ module Api
           json[:"#{item}_points"] = finalized ? row[:"#{item}_points"] : nil
         end
         json
+      end
+
+      # 進化（spec.md 4.3）。段階・累計ポイント・次の段階までのゲージ・継続日数・今日記録したときの倍率。
+      # ホームと進化のテストパネル（開発用）で使う
+      def evolution_json(character)
+        today = current_user.local_date
+        last_recorded_on = character.last_recorded_on
+        streak_days = character.streak_days
+        {
+          stage: character.evolution_stage,
+          max_stage: EvolutionRules.max_stage,
+          points: character.evolution_points,
+          **EvolutionRules.progress(points: character.evolution_points, stage: character.evolution_stage),
+          streak_days: EvolutionRules.current_streak(last_recorded_on: last_recorded_on, streak_days: streak_days, today: today),
+          # 倍率は 10 分の 1 単位の整数（14 = 1.4倍）。表示はフロントで整える
+          multiplier_tenths: EvolutionRules.today_multiplier_tenths(last_recorded_on: last_recorded_on, streak_days: streak_days, today: today),
+          recorded_items_today: character.evolution_point_logs.recorded.where(target_date: today).pluck(:item)
+        }
       end
 
       # キャラのいまのポイント（項目ごと＋総合）

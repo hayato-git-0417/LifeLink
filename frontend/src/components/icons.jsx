@@ -129,6 +129,16 @@ export function SproutIcon(props) {
   )
 }
 
+// キャラの進化（きらきら）
+export function SparkleIcon(props) {
+  return (
+    <Icon {...props}>
+      <path d="M10.5 3.5c.6 4 2.4 5.9 6.5 6.5-4.1.6-5.9 2.5-6.5 6.5-.6-4-2.4-5.9-6.5-6.5 4.1-.6 5.9-2.5 6.5-6.5Z" />
+      <path d="M18 14.5c.3 1.7 1 2.4 2.5 2.7-1.5.3-2.2 1-2.5 2.7-.3-1.7-1-2.4-2.5-2.7 1.5-.3 2.2-1 2.5-2.7Z" />
+    </Icon>
+  )
+}
+
 export function CameraIcon(props) {
   return (
     <Icon {...props}>

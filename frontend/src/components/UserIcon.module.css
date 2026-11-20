@@ -3,6 +3,34 @@
   flex-shrink: 0;
 }
 
+.photoIcon {
+  display: block;
+  flex-shrink: 0;
+  border: var(--avatar-border-width, 3px) solid var(--ink);
+  border-radius: 50%;
+  clip-path: circle(50%);
+  object-fit: cover;
+  box-sizing: border-box;
+}
+
+.sproutIcon {
+  position: relative;
+  display: block;
+  flex: 0 0 auto;
+  overflow: hidden;
+  border: 1.5px solid var(--ink);
+  border-radius: 50%;
+  box-sizing: border-box;
+}
+
+.sproutIcon img {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  max-width: none;
+  transform: translate(-50%, -50%);
+}
+
 /* 5つを1行に（幅 375px のスマホでも収まるようにアイコンは 48px） */
 .picker {
   display: flex;
@@ -38,3 +66,5 @@
   background: var(--leaf);
   color: var(--paper);
 }
+
+

@@ -1,0 +1,342 @@
+/* 進化のテストパネル（開発用）。ホーム右上の「テスト」ボタンと、下から出るシート */
+.toggle {
+  position: absolute;
+  top: 74px;
+  right: var(--gutter);
+  z-index: 3;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  padding: 5px 7px 4px;
+  border: 2px dashed var(--ink);
+  border-radius: 12px;
+  background: #fff4cc;
+  color: var(--ink);
+  font-size: 0.66rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.sheet {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: min(100%, var(--max-width));
+  max-height: 64dvh;
+  padding: 10px 14px calc(14px + env(safe-area-inset-bottom));
+  overflow-y: auto;
+  border-top: var(--line);
+  border-radius: 18px 18px 0 0;
+  background: var(--paper);
+  box-shadow: 0 -8px 24px rgb(74 58 46 / 0.25);
+  transform: translateX(-50%);
+  overscroll-behavior: contain;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.title {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.title small {
+  margin-left: 4px;
+  color: var(--ink-soft);
+  font-size: 0.7rem;
+}
+
+.close {
+  display: inline-flex;
+  padding: 6px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ink);
+}
+
+/* 今の状態: キャラの姿と数字 */
+.status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.preview {
+  flex-shrink: 0;
+  width: 84px;
+  height: 84px;
+  border: var(--dash);
+  border-radius: 14px;
+  background: var(--wall);
+  object-fit: contain;
+  animation: pop 0.45s ease-out;
+}
+
+@keyframes pop {
+  0% {
+    transform: scale(0.7);
+    opacity: 0.4;
+  }
+  70% {
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.facts {
+  display: grid;
+  flex: 1;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px 8px;
+  margin: 0;
+}
+
+.facts div {
+  min-width: 0;
+}
+
+.facts dt {
+  color: var(--ink-soft);
+  font-size: 0.64rem;
+  font-weight: 700;
+}
+
+.facts dd {
+  margin: 0;
+  overflow: hidden;
+  font-size: 0.86rem;
+  font-weight: 700;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-variant-numeric: tabular-nums;
+}
+
+.message {
+  margin: 0;
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: #fff4cc;
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 8px;
+  border-top: var(--dash);
+}
+
+.group h3 {
+  margin: 0;
+  font-size: 0.8rem;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.hint {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 0.7rem;
+  line-height: 1.4;
+}
+
+.inlineLabel {
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+/* 小さいボタン（押すと沈む） */
+.chip {
+  min-height: 34px;
+  padding: 4px 12px;
+  border: var(--line);
+  border-radius: 10px;
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 0.82rem;
+  font-weight: 700;
+  box-shadow: 0 2px 0 var(--ink);
+}
+
+.chip:active:not(:disabled) {
+  box-shadow: none;
+  transform: translateY(2px);
+}
+
+.chip:disabled {
+  opacity: 0.5;
+}
+
+.done {
+  background: var(--leaf-soft);
+}
+
+.reset {
+  align-self: flex-start;
+  margin-top: 4px;
+  border-color: var(--danger);
+  color: var(--danger);
+  box-shadow: 0 2px 0 var(--danger);
+}
+
+.segmented {
+  display: inline-flex;
+  overflow: hidden;
+  border: var(--line);
+  border-radius: 10px;
+}
+
+.segment {
+  min-width: 34px;
+  min-height: 30px;
+  border: 0;
+  border-left: 2px solid var(--ink);
+  background: var(--paper);
+  font-weight: 700;
+}
+
+.segment:first-child {
+  border-left: 0;
+}
+
+.segmentActive {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.input {
+  width: 8.5em;
+  min-height: 34px;
+  padding: 4px 8px;
+  border: 2px solid var(--line-soft);
+  border-radius: 10px;
+  background: var(--color-input);
+  font-size: 0.9rem;
+}
+
+.input:focus {
+  border-color: var(--ink);
+  outline: none;
+}
+
+/* 段階の一覧（今の段階を囲む） */
+.stages {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  padding: 3px 1px 4px;
+  border: 2px solid transparent;
+  border-radius: 10px;
+  background: var(--wall);
+  color: var(--ink);
+  line-height: 1.2;
+}
+
+.stage img {
+  width: 100%;
+  max-width: 56px;
+  aspect-ratio: 1;
+  object-fit: contain;
+}
+
+.stage span {
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.stage small {
+  color: var(--ink-soft);
+  font-size: 0.58rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.current {
+  border-color: var(--ink);
+  background: #fff4cc;
+}
+
+/* 最近の増減 */
+.logs {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.74rem;
+}
+
+.logs li {
+  display: grid;
+  grid-template-columns: 3em minmax(0, 1fr) 4.2em auto;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.logDate {
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+.logWhat {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.plus,
+.minus {
+  font-weight: 700;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.plus {
+  color: var(--leaf-text);
+}
+
+.minus {
+  color: var(--danger);
+}
+
+.logAfter {
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .preview {
+    animation: none;
+  }
+}

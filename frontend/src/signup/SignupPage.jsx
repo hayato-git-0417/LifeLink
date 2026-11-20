@@ -3,7 +3,7 @@
 // ①ではメールの重複だけ API で確認する。目標の保存だけ失敗したときは目標設定画面へ移る。
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { api } from '../api/client.js'
+import { api, clearAuth } from '../api/client.js'
 import { useAuth } from '../auth/useAuth.js'
 import AppShell from '../components/AppShell.jsx'
 import FieldError from '../components/FieldError.jsx'
@@ -17,7 +17,7 @@ import styles from '../styles/form.module.css'
 import StepIndicator from './StepIndicator.jsx'
 import signup from './Signup.module.css'
 
-const PASSWORD_MIN = 8 // パスワードの最低文字数
+const PASSWORD_MIN = 8
 export default function SignupPage() {
   const navigate = useNavigate()
   const { refreshMe } = useAuth()
@@ -25,6 +25,7 @@ export default function SignupPage() {
   const [errors, setErrors] = useState([])
   const [fieldErrors, setFieldErrors] = useState({})
   const [busy, setBusy] = useState(false) //「通信などの処理中です」という状態に切り替える命令、true になるとボタンが押せなくなり、連打による二重送信を防げる
+  const [resumingSignup, setResumingSignup] = useState(false)
   const [account, setAccount] = useState({ email: '', password: '', password_confirmation: '' })
   const [showPassword, setShowPassword] = useState(false) // パスワードを隠すやつ false は非表示、true は表示
   const [profile, setProfile] = useState({
@@ -35,6 +36,10 @@ export default function SignupPage() {
     activity_level: '',
     height_cm: '',
     weight_kg: '',
+    avatar: null,
+    avatarUrl: null,
+    useAvatar: false,
+    removeAvatar: false,
   })
   const [goal, setGoal] = useState(newGoalDraft)
   // 栄養目標の初期値を出した「生年月日・性別」。②を変えたら④で出し直す
@@ -48,7 +53,6 @@ export default function SignupPage() {
 
   const updateGoal = (changes) => setGoal((current) => ({ ...current, ...changes }))
 
-  /* ページを切り替える関数 */
   function go(nextStep) {
     setErrors([]) // 前のエラーメッセージを消す
     setFieldErrors({})
@@ -80,8 +84,6 @@ export default function SignupPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step])
 
-
-  /*「次へ」を押してフォームを送信したときの処理 */
   async function submitAccount(event) {
     event.preventDefault()  //  ブラウザ標準のフォーム送信によるページ移動・再読み込みを防ぐ処理
     const found = {}
@@ -101,15 +103,45 @@ export default function SignupPage() {
     setFieldErrors(found)
     if (Object.keys(found).length) return
 
-    setBusy(true) //  送信ボタンを押せなくする
-    // 入力されたメールアドレスが登録に使えるかをRailsに問い合わせ、返ってきた結果を data に入れる処理
+    setBusy(true)
+    setResumingSignup(false)
     try {
       const data = await api('/registrations/email_available', { params: { email: account.email.trim() } })
       if (!data.available) {
-        setFieldErrors({ email: 'このメールアドレスはすでに登録されています' })
+        try {
+          await api('/auth/sign_in', {
+            method: 'POST',
+            body: { email: account.email.trim(), password: account.password },
+          })
+          const current = await api('/me')
+          if (current.user?.goal_registered) {
+            clearAuth()
+            setFieldErrors({ email: 'このメールアドレスはすでに登録されています' })
+            return
+          }
+          setProfile((previous) => ({
+            ...previous,
+            icon: current.user.icon,
+            name: current.user.name,
+            birthdate: current.user.birthdate,
+            gender: current.user.gender,
+            height_cm: current.user.height_cm ?? '',
+            weight_kg: current.user.weight_kg ?? '',
+            activity_level: current.user.activity_level || 'moderate',
+            avatar: null,
+            avatarUrl: current.user.avatar_url || null,
+            useAvatar: Boolean(current.user.avatar_selected),
+            removeAvatar: false,
+          }))
+          setResumingSignup(true)
+          go(2)
+        } catch {
+          clearAuth()
+          setFieldErrors({ email: 'このメールアドレスはすでに登録されています' })
+        }
         return
       }
-      go(2) // 新規登録の2つ目の画面へ切り替える
+      go(2)
     } catch (error) {
       if (error.status === 422) setFieldErrors({ email: error.messages })
       else setErrors(error.messages)
@@ -118,7 +150,6 @@ export default function SignupPage() {
     }
   }
 
-  /* 名前や生年月日などを、フロント側でチェックする */
   function submitProfile(event) {
     event.preventDefault()
     const found = validateProfileFields(profile)
@@ -128,7 +159,6 @@ export default function SignupPage() {
     go(3)
   }
 
-  /* 睡眠・ワーク・運動の目標を、フロント側でチェックする */
   function submitBasics(event) {
     event.preventDefault()
     const found = validateBasics(goal, true)
@@ -138,7 +168,6 @@ export default function SignupPage() {
     go(4)
   }
 
-  /* 最後の画面で登録ボタンを押したときに、Railsと通信して登録を完了する処理 */
   async function submitAll(event) {
     event.preventDefault() // .preventDefault ブラウザが標準で行う動作を止める
     const found = validateMeals(goal, true) // 食事の目標をチェックする
@@ -150,10 +179,61 @@ export default function SignupPage() {
     setErrors([])
     try {
       // ユーザーを作る（キャラもサーバーで作られる）。トークンは api() が保存する
-      await api('/auth', {
-        method: 'POST',
-        body: { ...account, email: account.email.trim(), ...profile, name: profile.name.trim() },
-      })
+      const formData = new FormData()
+      formData.append('email', account.email.trim())
+      formData.append('password', account.password)
+      formData.append('password_confirmation', account.password_confirmation)
+      formData.append('name', profile.name.trim())
+      formData.append('icon', profile.icon)
+      formData.append('birthdate', profile.birthdate)
+      formData.append('gender', profile.gender)
+      formData.append('height_cm', profile.height_cm)
+      formData.append('weight_kg', profile.weight_kg)
+      formData.append('activity_level', profile.activity_level)
+      if (profile.avatar && profile.useAvatar) formData.append('avatar', profile.avatar)
+      if (!resumingSignup) {
+        try {
+          await api('/auth', { method: 'POST', body: formData })
+        } catch (createError) {
+          const duplicateEmail = createError.status === 422
+            && createError.messages?.some((message) => /(メールアドレス|email).*(存在|登録|使用|already|taken)/i.test(message))
+          if (!duplicateEmail) throw createError
+
+          // 前回の登録が途中で止まり、ユーザーだけ作成済みなら同じ認証情報で続きを行う
+          try {
+            await api('/auth/sign_in', {
+              method: 'POST',
+              body: { email: account.email.trim(), password: account.password },
+            })
+            const current = await api('/me')
+            if (current.user?.goal_registered) {
+              clearAuth()
+              throw createError
+            }
+          } catch {
+            clearAuth()
+            throw createError
+          }
+        }
+      }
+      setResumingSignup(true)
+      // 新規登録画面で確定したアイコンをユーザープロフィールにも保存し、設定画面で同じ表示にする
+      const profileData = new FormData()
+      profileData.append('user[name]', profile.name.trim())
+      profileData.append('user[icon]', profile.icon)
+      profileData.append('user[birthdate]', profile.birthdate)
+      profileData.append('user[gender]', profile.gender)
+      profileData.append('user[height_cm]', profile.height_cm)
+      profileData.append('user[weight_kg]', profile.weight_kg)
+      profileData.append('user[activity_level]', profile.activity_level)
+      profileData.append('user[avatar_selected]', String(Boolean(profile.useAvatar)))
+      if (profile.avatar && profile.useAvatar) {
+        profileData.append('user[avatar]', profile.avatar)
+      }
+      if (profile.removeAvatar) {
+        profileData.append('user[remove_avatar]', 'true')
+      }
+      await api('/me', { method: 'PATCH', body: profileData })
     } catch (error) {
       const fields = error.fieldErrors || {}
       if (Object.keys(fields).length) {
@@ -161,18 +241,17 @@ export default function SignupPage() {
         go(Object.keys(fields).some((key) => accountFields.includes(key)) ? 1 : 2)
         setFieldErrors(fields)
         setErrors(fields.base || [])
-      } else setErrors(error.messages)
+      } else setErrors(error.messages || [error.message || '登録に失敗しました'])
       setBusy(false)
       return
     }
 
     try {
-      // 目標を保存する
       await api('/goal', { method: 'PUT', body: toGoalPayload(goal) })
       await refreshMe()
       navigate('/', { replace: true })
     } catch (error) {
-      // ログイン中のユーザー情報を取得し、ホームへ移動する
+      // アカウントはできたので、目標設定画面で入力の続きから直してもらう
       await refreshMe().catch(() => {})
       navigate('/goal-setup', { replace: true, state: { draft: goal, errors: error.messages } })
     }
@@ -262,7 +341,7 @@ export default function SignupPage() {
 
       {step === 2 && (
         <form className={styles.form} onSubmit={submitProfile} noValidate>
-          <ProfileFields errors={fieldErrors} value={profile} onChange={(changes) => setProfile({ ...profile, ...changes })} />
+          <ProfileFields errors={fieldErrors} value={profile} onChange={(changes) => setProfile((current) => ({ ...current, ...changes }))} />
           <div className={`${styles.actions} ${styles.actionsBetween}`}>
             <button className={styles.button} type="button" onClick={() => go(1)}>
               戻る

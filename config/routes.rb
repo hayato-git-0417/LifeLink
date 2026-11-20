@@ -26,7 +26,7 @@ Rails.application.routes.draw do
           end
         end
       end
-      resources :exercise_records, only: %i[index create destroy]
+      resources :exercise_records, only: %i[index create update destroy]
       resources :exercise_tasks, only: [] do
         get :today, on: :collection
         resource :completion, only: %i[create destroy], controller: "exercise_task_completions"
@@ -54,6 +54,17 @@ Rails.application.routes.draw do
       resources :notifications, only: :index do
         patch :read, on: :member
         post :read_all, on: :collection
+      end
+
+      # 進化のテストパネル（開発用。development・test だけ。本番にはルートを作らない）
+      if Rails.env.local?
+        namespace :dev do
+          resource :evolution, only: %i[show update destroy] do
+            post :record
+            post :advance
+            post :simulate
+          end
+        end
       end
     end
   end

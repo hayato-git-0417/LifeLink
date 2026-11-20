@@ -95,6 +95,13 @@
   content: '';
 }
 
+.floor[data-show-baseboard='false']::before {
+  top: 0;
+  height: 2px;
+  border: 0;
+  background: #30251e;
+}
+
 /* 窓は上（生活リズムカードの横）。時計と額は床を基準に置き、背の高い画面でもキャラのまわりにまとめる。
    ただし低い画面では、カードや窓と重ならない高さ（上から約 296px より下）にとどめる */
 .window {
@@ -205,7 +212,6 @@
 
 /* ---------- 上段: ユーザーと、通知ベル・メニュー ---------- */
 .top,
-.rhythm,
 .stage,
 .toasts,
 .buttons {
@@ -234,6 +240,10 @@
   color: var(--ink);
   text-decoration: none;
   box-shadow: 0 3px 0 var(--ink);
+}
+
+.userCard > img {
+  border-width: 2px;
 }
 
 .userCard:active {
@@ -279,101 +289,7 @@
   margin-left: auto;
 }
 
-/* ---------- 生活リズムカード（押すと記録の詳細） ---------- */
-.rhythm {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  width: min(63%, 250px);
-  margin-top: 12px;
-  padding: 9px 12px 12px;
-  border: var(--line);
-  border-radius: var(--radius);
-  background: var(--paper);
-  color: var(--ink);
-  text-decoration: none;
-  box-shadow: 0 3px 0 var(--ink);
-}
-
-.rhythm:active {
-  box-shadow: 0 0 0 var(--ink);
-  transform: translateY(3px);
-}
-
-.rhythmHead {
-  display: flex;
-  align-items: baseline;
-  gap: 6px;
-  margin-bottom: 1px;
-}
-
-.rhythmTitle {
-  font-size: 0.92rem;
-  font-weight: 700;
-}
-
-.rhythmTotal {
-  font-size: 1.45rem;
-  line-height: 1.1;
-  font-variant-numeric: tabular-nums;
-}
-
-.rhythmMore {
-  align-self: center;
-  margin-left: auto;
-  color: var(--ink-soft);
-}
-
-.row {
-  display: grid;
-  grid-template-columns: 3.1em minmax(0, 1fr) 2.6em;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.8rem;
-}
-
-.rowLabel {
-  font-weight: 700;
-}
-
-.bar {
-  height: 12px;
-  overflow: hidden;
-  border: var(--line);
-  border-radius: 6px;
-  background: var(--paper-deep);
-}
-
-.fill {
-  display: block;
-  height: 100%;
-  border-right: 2px solid var(--ink);
-  transition: width 0.5s ease;
-}
-
-.fill_meal {
-  background: var(--meal-deep);
-}
-
-.fill_work {
-  background: var(--work-deep);
-}
-
-.fill_exercise {
-  background: var(--exercise-deep);
-}
-
-.fill_sleep {
-  background: var(--sleep-deep);
-}
-
-.percent {
-  color: var(--ink-soft);
-  font-size: 0.76rem;
-  font-weight: 700;
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-}
+/* 進化カード（ユーザーの下）は EvolutionCard.module.css */
 
 /* ---------- キャラ（ラグの上に立つ）と吹き出し ---------- */
 .stage {
@@ -464,8 +380,8 @@
 /* 背の高い画面ではキャラも大きくする */
 .character {
   position: relative;
-  width: min(54vw, clamp(150px, 26vh, 230px));
-  width: min(54vw, clamp(150px, 26dvh, 230px));
+  width: 300px;
+  height: 300px;
   height: auto;
   aspect-ratio: 1;
   object-fit: contain;
@@ -519,8 +435,7 @@
 
   .room,
   .floor,
-  .rug,
-  .fill {
+  .rug {
     transition: none;
   }
 }
@@ -552,6 +467,76 @@
   font-weight: 700;
   text-align: center;
   box-shadow: 0 6px 16px rgb(74 58 46 / 0.18);
+}
+
+/* 進化・退化したときのお知らせ（進化カードと同じ金 / 退化は落ち着いた色） */
+.evolved {
+  border-color: #d9a227;
+  background: #fff4cc;
+  color: var(--ink);
+}
+
+.devolved {
+  border-color: var(--line-soft);
+  background: var(--paper-deep);
+  color: var(--ink-soft);
+}
+
+/* 進化・退化したときのキャラの動き（段階が変わってホームを読み直したとき） */
+.spotEvolved {
+  animation: evolve 1.1s ease-out;
+}
+
+.spotDevolved {
+  animation: devolve 0.9s ease-in-out;
+}
+
+@keyframes evolve {
+  0% {
+    transform: scale(1);
+    filter: none;
+  }
+  30% {
+    transform: scale(0.85);
+    filter: brightness(1.8) drop-shadow(0 0 14px #fde7a6);
+  }
+  60% {
+    transform: scale(1.12);
+    filter: brightness(1.25) drop-shadow(0 0 22px #f4c04f);
+  }
+  100% {
+    transform: scale(1);
+    filter: none;
+  }
+}
+
+@keyframes devolve {
+  0%,
+  100% {
+    transform: translateX(0);
+    filter: none;
+  }
+  20% {
+    transform: translateX(-6px);
+    filter: grayscale(0.8);
+  }
+  40% {
+    transform: translateX(6px);
+  }
+  60% {
+    transform: translateX(-4px);
+    filter: grayscale(0.6);
+  }
+  80% {
+    transform: translateX(3px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spotEvolved,
+  .spotDevolved {
+    animation: none;
+  }
 }
 
 /* ---------- 記録ボタン4つ（食事・ワーク・運動・睡眠） ---------- */
@@ -663,4 +648,254 @@
   color: var(--danger);
   font-size: 0.7rem;
   font-weight: 700;
+}
+
+/* キャラ画像のボタンを透明化 */
+/* キャラと状態のマーク（StateBadge）を重ねる枠 */
+.figure {
+  position: relative;
+  top: 50px;
+  display: inline-flex;
+}
+
+.characterButton {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.characterButton:disabled {
+  opacity: 1;
+  cursor: default;
+}
+
+/* 既存の .room にこの2つを追加 */
+.wall {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+}
+
+.room:not(.night) .wall {
+  background: var(--wall-image) center / cover no-repeat;
+}
+
+.floor {
+  position: absolute;
+  inset: auto 0 0;
+  height: var(--floor-h);
+  z-index: -1;
+  pointer-events: none;
+  background: var(--floor-image) center / 100% 100% no-repeat;
+}
+
+
+/* 設置画面 */
+
+/* 設置ボタン */
+.placeButton {
+  position: absolute;
+  left: 50%;
+  bottom: 16px;
+  translate: -50% 0;
+  z-index: 2;
+  width: min(60%, 220px);
+  min-height: 48px;
+  aspect-ratio: auto;
+  background: var(--work);
+  cursor: pointer;
+}
+
+.placeButton:disabled {
+  cursor: default;
+}
+
+/* 戻るボタン */
+.backButton {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 2;
+  min-height: 44px;
+  padding: 0 14px;
+  aspect-ratio: auto;
+  background: var(--paper);
+}
+
+.placementActions {
+  position: absolute;
+  inset-inline: 12px;
+  bottom: calc(16px + env(safe-area-inset-bottom));
+  z-index: 2;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.placementAction {
+  width: min(100%, 140px);
+  min-height: 48px;
+  aspect-ratio: auto;
+  background: var(--work);
+  cursor: pointer;
+}
+
+.removeAction {
+  background: #f6c6be;
+}
+
+.cancelAction {
+  background: var(--paper);
+}
+
+.roomEditActions {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  translate: -50% 0;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  width: min(calc(100% - 32px), 280px);
+}
+
+.roomEditAction {
+  min-height: 48px;
+  aspect-ratio: auto;
+  background: var(--work);
+  cursor: pointer;
+}
+
+.roomSaveButton {
+  background: #fff;
+}
+
+/* プリセット */
+.roomPresetButton {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 2;
+  min-height: 44px;
+  padding: 0 14px;
+  aspect-ratio: auto;
+  background: var(--paper);
+}
+
+.presetGrid {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.presetCard {
+  position: relative;
+  min-width: 0;
+}
+
+.room.presetRoom {
+  --floor-h: 33%;
+  width: 100%;
+  min-height: 0;
+  padding: 0;
+  aspect-ratio: 3 / 4;
+  border-radius: 4px;
+}
+
+.presetRoom .presetFurniture {
+  position: absolute;
+  height: auto;
+  aspect-ratio: auto;
+  transform: translate(-50%, -100%);
+}
+
+.presetApplyButton {
+  padding: 4px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.presetApplyButton::after > .presetApplyButton {
+  position: absolute;
+  inset: 0;
+  content: '';
+}
+
+.presetActions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.presetActions > button:only-child {
+  grid-column: 1 / -1;
+  justify-self: center;
+  width: min(100%, 148px);
+}
+
+.presetCard:has(.presetApplyButton[aria-pressed='true']) {
+  border-color: #70c4b6;
+}
+
+.presetNewCard {
+  width: 100%;
+  height: 100%;
+  min-height: 120px;
+  align-items: center;
+  justify-content: center;
+  border-style: dashed;
+}
+
+.presetNewCard > span:first-child {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.presetNameField {
+  display: grid;
+  gap: 6px;
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.presetNameField > input {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  min-height: 42px;
+  padding: 8px 12px;
+  border: var(--line);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+}
+
+.roomEditAction.removeAction {
+  background: #f6c6be;
+}
+
+.presetPreviewTarget {
+  position: relative;
+  width: 100%;
+}
+
+.presetPreviewTarget > .presetApplyButton {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
 }

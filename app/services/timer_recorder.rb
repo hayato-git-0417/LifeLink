@@ -32,10 +32,12 @@ class TimerRecorder
 
       result = success(record, auto_finished: auto_finished)
     end
+    # 就寝でワークを終えたときは、ワークを記録したことになる（進化ポイント）
+    award(:work, at) if result.success? && result.auto_finished
     result
   end
 
-  # 起床／ワーク終了
+  # 起床／ワーク終了。終えた時点で記録したことになり、進化ポイントを加算する（spec.md 4.3）
   def finish(at: Time.current)
     record = in_progress_record
     return failure(:not_in_progress) unless record
@@ -44,6 +46,7 @@ class TimerRecorder
     return failure_from(record) unless record.save
 
     refresh(record.recorded_on)
+    award(@kind, at)
     success(record)
   end
 
@@ -102,6 +105,11 @@ class TimerRecorder
 
   def refresh(*dates)
     DailyAchievementUpdater.call(user: @user, dates: dates)
+  end
+
+  # 止め忘れの自動終了（OverdueTimerCloser）はここを通らないので加算しない
+  def award(item, at)
+    EvolutionPointAwarder.call(user: @user, item: item, now: at)
   end
 
   def success(record, auto_finished: nil)

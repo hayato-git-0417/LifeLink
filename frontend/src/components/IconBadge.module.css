@@ -32,3 +32,8 @@
 .berry {
   background-color: #efd9e8;
 }
+
+/* 進化・退化の通知（ホームの進化カードと同じ金） */
+.gold {
+  background-color: #fde7a6;
+}

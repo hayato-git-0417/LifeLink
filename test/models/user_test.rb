@@ -8,22 +8,22 @@ class UserTest < ActiveSupport::TestCase
   end
 
   test "名前は必須で50文字まで" do
-    assert_not User.new(email: "a@example.com", password: "password", birthdate: Date.new(2000, 1, 1)).valid?
-    user = User.new(email: "a@example.com", password: "password", birthdate: Date.new(2000, 1, 1), name: "あ" * 51)
+    assert_not User.new(email: "a@example.com", password: "password1", birthdate: Date.new(2000, 1, 1)).valid?
+    user = User.new(email: "a@example.com", password: "password1", birthdate: Date.new(2000, 1, 1), name: "あ" * 51)
     assert_not user.valid?
     assert user.errors.of_kind?(:name, :too_long)
   end
 
   test "生年月日は必須で未来の日付は不可" do
     travel_to Time.zone.local(2026, 10, 6, 12) do
-      user = User.new(email: "a@example.com", password: "password", name: "a", birthdate: Date.new(2026, 10, 7))
+      user = User.new(email: "a@example.com", password: "password1", name: "a", birthdate: Date.new(2026, 10, 7))
       assert_not user.valid?
       assert user.errors.of_kind?(:birthdate, :in_future)
     end
   end
 
   test "存在しない性別・アイコンは enum のエラーになる" do
-    user = User.new(email: "a@example.com", password: "password", name: "a", birthdate: Date.new(2000, 1, 1), gender: "unknown", icon: "dog")
+    user = User.new(email: "a@example.com", password: "password1", name: "a", birthdate: Date.new(2000, 1, 1), gender: "unknown", icon: "dog")
     assert_not user.valid?
     assert user.errors.of_kind?(:gender, :inclusion)
     assert user.errors.of_kind?(:icon, :inclusion)

@@ -1,0 +1,165 @@
+/* ホームの進化カード（ユーザーカードの下、部屋の左上）。線・面・影は生活リズムカードと同じ作り。
+   ゲージの金色は「ポイント」の色（項目の色とは別。食事の黄より赤みのある金にして、項目と見分ける） */
+.card {
+  --gold: #f4c04f;
+  --gold-light: #fde7a6;
+
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  /* 375px 幅でも 1,000,000 pt と「進化5」が1行に収まる幅 */
+  width: min(100%, 300px);
+  margin-top: 12px;
+  padding: 9px 12px 10px;
+  border: var(--line);
+  border-radius: var(--radius);
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: 0 3px 0 var(--ink);
+}
+
+.head {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.label {
+  flex-shrink: 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.points {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.points strong {
+  font-size: 1.2rem;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.points small {
+  margin-left: 2px;
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.stage {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-self: center;
+  align-items: center;
+  gap: 2px;
+  margin-left: auto;
+  padding: 1px 8px 1px 6px;
+  border: var(--line);
+  border-radius: 999px;
+  background: var(--gold-light);
+  font-size: 0.74rem;
+  font-weight: 700;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.bar {
+  height: 14px;
+  overflow: hidden;
+  border: var(--line);
+  border-radius: 7px;
+  background: var(--paper-deep);
+}
+
+.fill {
+  display: block;
+  height: 100%;
+  border-right: 2px solid var(--ink);
+  background: linear-gradient(180deg, var(--gold-light) 0 35%, var(--gold) 35% 100%);
+  transition: width 0.6s ease;
+}
+
+.next {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 0.74rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.next strong {
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.foot {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-top: 5px;
+  border-top: var(--dash);
+}
+
+.multiplier {
+  font-size: 0.74rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.multiplier strong {
+  font-size: 0.92rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 今日記録した項目（記録した項目だけ、その項目の色で塗る） */
+.items {
+  display: flex;
+  gap: 3px;
+  margin-left: auto;
+}
+
+.item {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 21px;
+  height: 21px;
+  border: 1.5px dashed var(--line-soft);
+  border-radius: 50%;
+  color: var(--line-soft);
+}
+
+.done_meal,
+.done_work,
+.done_exercise,
+.done_sleep {
+  border: 1.5px solid var(--ink);
+  color: var(--ink);
+}
+
+.done_meal {
+  background: var(--meal);
+}
+
+.done_work {
+  background: var(--work);
+}
+
+.done_exercise {
+  background: var(--exercise);
+}
+
+.done_sleep {
+  background: var(--sleep);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fill {
+    transition: none;
+  }
+}

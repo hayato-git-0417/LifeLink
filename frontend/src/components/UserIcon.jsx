@@ -8,10 +8,29 @@ const INK = '#4a3a2e'
 const PAPER = '#fffbf0'
 const CHEEK = '#f6b9b0'
 
-export default function UserIcon({ icon, size = 64 }) {
+export default function UserIcon({ icon, avatarUrl, size = 64 }) {
   const item = USER_ICONS.find((entry) => entry.key === icon) || USER_ICONS[0]
-  // 丸の外にはみ出す部分を切り取る（id は画面の中で重ならないようにする）
+  // アイコンの種類に関係なく毎回同じ順でフックを呼ぶ
   const clipId = `avatar${useId().replace(/[^a-zA-Z0-9]/g, '')}`
+  if (avatarUrl) {
+    return (
+      <img
+        className={styles.photoIcon}
+        src={avatarUrl}
+        width={size}
+        height={size}
+        alt={`${item.label}のプロフィール写真`}
+      />
+    )
+  }
+  if (item.kind === 'sprout') {
+    return (
+      <span className={styles.sproutIcon} style={{ width: size, height: size }} role="img" aria-label="芽">
+        <img src="/favicon.svg" width={size * 1.25} height={size * 1.25} alt="" />
+      </span>
+    )
+  }
+  // 丸の外にはみ出す部分を切り取る（id は画面の中で重ならないようにする）
   return (
     <svg className={styles.icon} viewBox="0 0 64 64" width={size} height={size} role="img" aria-label={item.label}>
       <defs>

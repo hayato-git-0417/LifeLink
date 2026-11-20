@@ -1,4 +1,4 @@
-# 移動距離の手入力の記録。運動タイマーは作らないので ended_at・duration_minutes は使わない（spec.md 2章）
+# 運動の記録。ホームの運動タイマーの記録（timer: duration_minutes と memo にタスク名）と、移動距離の手入力（manual: distance_km）の2種類
 class ExerciseRecord < ApplicationRecord
   belongs_to :user
 
@@ -7,7 +7,7 @@ class ExerciseRecord < ApplicationRecord
   before_validation :fill_recorded_on
 
   validates :started_at, :recorded_on, presence: true
-  # 移動距離の手入力にしか使わないので距離は必須
+  # タイマーの記録は運動時間（1分以上）が必須
   validates :duration_minutes, presence: true, numericality: { only_integer: true, greater_than: 0 }, if: :timer?
   validates :memo, length: { maximum: 255 }
 

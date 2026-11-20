@@ -3,7 +3,7 @@ require "test_helper"
 # フェーズ2: 新規登録 → ログイン → 目標保存 → 自分の情報、未ログインは 401
 class AuthAndGoalTest < ActionDispatch::IntegrationTest
   SIGN_UP = {
-    email: "taro@example.com", password: "password123", password_confirmation: "password123",
+    email: "taro@example.com", password: "password1", password_confirmation: "password1",
     height_cm: 170, weight_kg: 65, activity_level: "moderate", name: "たろう", icon: "cat", birthdate: "2006-10-13", gender: "male"
   }.freeze
 
@@ -52,7 +52,7 @@ class AuthAndGoalTest < ActionDispatch::IntegrationTest
       assert_equal false, json["available"]
 
       # ログイン
-      post "/api/v1/auth/sign_in", params: { email: "taro@example.com", password: "password123" }, as: :json
+      post "/api/v1/auth/sign_in", params: { email: "taro@example.com", password: "password1" }, as: :json
       assert_response :ok
       headers = auth_headers_from(response)
       assert headers["access-token"].present?
@@ -136,7 +136,7 @@ class AuthAndGoalTest < ActionDispatch::IntegrationTest
 
   test "プロフィール変更と、目標保存のエラー" do
     user = create_user(email: "taro@example.com")
-    post "/api/v1/auth/sign_in", params: { email: "taro@example.com", password: "password123" }, as: :json
+    post "/api/v1/auth/sign_in", params: { email: "taro@example.com", password: "password1" }, as: :json
     headers = auth_headers_from(response)
 
     patch "/api/v1/me", params: { user: { name: "じろう", icon: "penguin" } }, headers: headers, as: :json

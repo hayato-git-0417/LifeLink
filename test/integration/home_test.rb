@@ -29,7 +29,8 @@ class HomeTest < ActionDispatch::IntegrationTest
         character = json["character"]
         assert_equal "hungry", character["state"] # 朝食の記録なし
         assert_equal "空腹", character["state_label"]
-        assert_equal "/characters/hungry.png", character["image_path"]
+        assert_equal "/characters/stages/0.png", character["image_path"] # 進化の段階の姿（段階0＝卵）が状態の画像より優先
+        assert_equal false, character["image_shows_state"] # 卵の絵は空腹を表していないので、ホームで状態のマークを重ねる
         assert_equal({ "sleep" => 300, "meal" => 300, "exercise" => 300, "work" => 300, "total" => 300 }, character["points"])
         assert_equal({ "key" => "kanashii", "label" => "悲しい" }, character["mood"])
 

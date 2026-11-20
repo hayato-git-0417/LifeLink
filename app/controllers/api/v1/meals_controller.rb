@@ -68,6 +68,7 @@ module Api
         return render_errors(result.errors) unless result.success?
 
         refresh_daily_achievements(meal.recorded_on)
+        award_evolution_points(:meal)
 
         render json: {
           meal: meal_json(meal)

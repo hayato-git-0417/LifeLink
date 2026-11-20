@@ -18,8 +18,8 @@ export default function DurationChart({ rows, color, label, height = 220 }) {
     minutes: row.minutes,
     hours: row.minutes == null ? null : row.minutes / 60,
   }))
-  // 一番長い棒の上にも2段の数字が入るよう、上に余白（margin.top）をとる
-  const maxHours = Math.max(1, ...data.map((row) => row.hours ?? 0))
+  // 縦軸の上限は24時間で固定（日によって棒の高さの基準が変わらないように）。棒の上の2段の数字は margin.top の余白に入る
+  const maxHours = 24
 
   return (
     <div style={{ height }}>

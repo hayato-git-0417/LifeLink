@@ -7,18 +7,19 @@ import { useAuth } from '../../auth/useAuth.js'
 import AppShell from '../../components/AppShell.jsx'
 import ErrorList from '../../components/ErrorList.jsx'
 import IconBadge from '../../components/IconBadge.jsx'
-import { BellIcon, ExerciseIcon, MoonIcon, PersonIcon, SproutIcon } from '../../components/icons.jsx'
+import { BellIcon, ExerciseIcon, MoonIcon, PersonIcon, SparkleIcon, SproutIcon } from '../../components/icons.jsx'
 import UserIcon from '../../components/UserIcon.jsx'
 import { formatDate, formatTime } from '../../lib/format.js'
 import form from '../../styles/form.module.css'
 import styles from './NotificationsPage.module.css'
 
-// 種類ごとの印（キャラ＝若葉、寝る前の声かけ＝睡眠の色、運動タスク＝運動の色）
+// 種類ごとの印（キャラ＝若葉、寝る前の声かけ＝睡眠の色、運動タスク＝運動の色、進化・退化＝金のきらきら）
 const TYPE_MARKS = {
   follow: { tone: 'paper', Icon: PersonIcon },
   character: { tone: 'leaf', Icon: SproutIcon },
   reminder: { tone: 'sleep', Icon: MoonIcon },
   task: { tone: 'exercise', Icon: ExerciseIcon },
+  evolution: { tone: 'gold', Icon: SparkleIcon },
 }
 
 export default function NotificationsPage() {

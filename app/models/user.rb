@@ -5,17 +5,16 @@
 class User < ActiveRecord::Base
   # Include default devise modules. Others available are:
   # :confirmable, :lockable, :timeoutable, :trackable and :omniauthable
-  # # config/initializers/devise.rbにパスワード設定がある
   devise :database_authenticatable, :registerable,
          :recoverable, :rememberable, :validatable
   include DeviseTokenAuth::Concerns::User
 
-  # 値の対応付け #
+  has_one_attached :avatar
+
   enum :gender, { unspecified: 0, male: 1, female: 2, other: 3 }, validate: true
   enum :activity_level, { low: 0, moderate: 1, high: 2 }, validate: true
-  enum :icon, { person_blue: 0, person_pink: 1, person_green: 2, cat: 3, penguin: 4 }, validate: true
+  enum :icon, { person_blue: 0, person_pink: 1, person_green: 2, cat: 3, penguin: 4, sprout: 5, person_yellow: 6 }, validate: true
 
-  # アソシエーション #
   has_one :character, dependent: :destroy
   has_one :goal, dependent: :destroy
   has_many :exercise_tasks, dependent: :destroy
@@ -34,14 +33,14 @@ class User < ActiveRecord::Base
   has_many :notifications, dependent: :destroy
   has_many :sent_notifications, class_name: "Notification", foreign_key: :actor_id, dependent: :nullify, inverse_of: :actor
 
-  # 入力チェック #
   validates :name, presence: true, length: { maximum: 50 }
   validates :height_cm, :weight_kg, presence: true, on: :create
   validates :height_cm, :weight_kg, numericality: { greater_than: 0, less_than: 1000 }, allow_nil: true
   validates :gender, inclusion: { in: %w[male female] }, on: :create
   validates :birthdate, presence: true
   validate :birthdate_not_in_future
-  validate :password_contains_letters_and_numbers # 入力内容をチェックするときに、このメソッドを実行してください」とRailsに登録する
+  validate :password_contains_letters_and_numbers
+  validate :avatar_must_be_an_image
 
   # 1ユーザー1匹。登録した日はポイントに反映しない（spec.md 3.2）ので last_reset_on = 登録日
   after_create :create_initial_character
@@ -57,6 +56,12 @@ class User < ActiveRecord::Base
     birthdate && self.class.age_on(birthdate, on: on)
   end
 
+  # このユーザーにとっての日付（進化のポイント・継続日数・休んだ日の判定に使う）。
+  # いまはアプリ全体の Time.zone（日本時間 0:00 区切り）。ユーザーごとのタイムゾーンを持つときはここだけ変える（docs/decisions.md）
+  def local_date(time = Time.current)
+    time.in_time_zone.to_date
+  end
+
   def following?(other)
     active_follows.exists?(followed_id: other.id)
   end
@@ -68,8 +73,9 @@ class User < ActiveRecord::Base
 
   private
 
+  # 登録した日は「休んだ日」の減少の対象外（decay_processed_through = 登録日）
   def create_initial_character
-    create_character!(last_reset_on: Time.zone.today)
+    create_character!(last_reset_on: Time.zone.today, decay_processed_through: local_date)
   end
 
   def birthdate_not_in_future
@@ -78,15 +84,20 @@ class User < ActiveRecord::Base
     errors.add(:birthdate, :in_future) if birthdate > Time.zone.today
   end
 
-  # パスワードに英数字を含む条件本体
   def password_contains_letters_and_numbers
     return if password.blank?
 
     has_letter = password.match?(/[a-zA-Z]/)
     has_number = password.match?(/[0-9]/)
-
     unless has_letter && has_number
       errors.add(:password, "は英字と数字をそれぞれ1文字以上含めてください")
     end
+  end
+
+  def avatar_must_be_an_image
+    return unless avatar.attached?
+
+    errors.add(:avatar, "は画像ファイルを選択してください") unless avatar.blob.content_type.to_s.start_with?("image/")
+    errors.add(:avatar, "は10MB以下にしてください") if avatar.blob.byte_size > 10.megabytes
   end
 end
