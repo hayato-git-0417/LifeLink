@@ -822,7 +822,7 @@
   cursor: pointer;
 }
 
-.presetApplyButton::after > .presetApplyButton {
+.presetApplyButton::after {
   position: absolute;
   inset: 0;
   content: '';

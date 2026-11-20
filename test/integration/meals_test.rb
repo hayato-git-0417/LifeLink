@@ -187,11 +187,15 @@ class MealsTest < ActionDispatch::IntegrationTest
 
   test "写真解析サービスのサイズ制限・回数制限を再試行できるエラーとして返す" do
     {
-      413 => "写真が解析サービスのサイズ制限を超えています。小さめの写真で再度お試しください",
-      429 => "写真解析サービスが混み合っています。少し待ってから再度お試しください"
+      413 => "写真のサイズが大きすぎます。小さめの写真でお試しください",
+      429 => "OpenAI APIの利用上限、またはリクエスト制限に達しました"
     }.each do |status, message|
-      MealScanner.stub(:call, ->(**) { raise MealScanner::ApiError.new(service: "LogMeal", status: status) }) do
-        post "/api/v1/meals/scan", headers: @headers, params: { meal: { photo: photo } }
+      normalizer = ->(_photo, &block) { block.call(StringIO.new("image")) }
+      scanner = ->(**) { raise "OpenAI APIエラー (HTTP #{status})" }
+      MealScanner::ImageNormalizer.stub(:with_upload, normalizer) do
+        OpenaiMealScanner.stub(:call, scanner) do
+          post "/api/v1/meals/scan", headers: @headers, params: { meal: { photo: photo } }
+        end
       end
 
       assert_response :unprocessable_entity

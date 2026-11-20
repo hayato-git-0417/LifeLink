@@ -254,7 +254,7 @@ class MealScannerTest < ActiveSupport::TestCase
 
     MealScanner::LogmealClient.stub(:new, client) do
       MealScanner::DeeplTranslator.stub(:new, translator) do
-        result = MealScanner.call(photo: photo)
+        result = MealScanner.new(photo: photo).call
         client.verify
         @translated_names = translator.translated_names
         result
