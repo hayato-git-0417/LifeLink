@@ -40,7 +40,7 @@ export default function GoalEditPage() {
   async function resetDefaults() {
     setBusy(true)
     try {
-      const data = await api('/goal/nutrition_defaults')
+      const data = await api('/goal/nutrition_suggestion', { method: 'POST', body: {} })
       setBasis(data.nutrition_defaults.basis)
       setGoal((current) => applyNutritionDefaults(current, data.nutrition_defaults))
     } catch (error) {
@@ -85,7 +85,8 @@ export default function GoalEditPage() {
           {tab === 'basics' ? (
             <GoalBasicsForm value={goal} onChange={updateGoal} />
           ) : (
-            <MealGoalForm value={goal} onChange={updateGoal} basis={basis} onResetDefaults={resetDefaults} loadingDefaults={busy} />
+            <MealGoalForm value={goal} onChange={updateGoal} basis={basis} onResetDefaults={() => resetDefaults()}
+              loadingDefaults={busy} />
           )}
           <button className={`${form.button} ${form.primary} ${form.block}`} type="submit" disabled={busy}>
             {busy ? '保存中…' : '設定を保存する'}

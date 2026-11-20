@@ -1,6 +1,22 @@
-.birthdate {
-  max-width: 220px;
+.birthdateSet {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: none;
 }
+
+.birthdateSet > legend { margin-bottom: 6px; padding: 0; }
+
+.birthdate {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) repeat(2, minmax(0, 1fr)) 44px;
+  gap: 8px;
+}
+
+.birthdate select { min-width: 0; padding: 8px; }
 
 .genderSet {
   margin: 0;
@@ -318,3 +334,45 @@
     gap: 8px;
   }
 }
+
+.calendarPicker {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: end;
+  height: 46px;
+  border: 2px solid var(--line-soft);
+  border-radius: var(--radius-small);
+  background: var(--color-input);
+  cursor: pointer;
+}
+
+.calendarPicker:hover { border-color: #cdb79a; }
+.calendarPicker:focus-within { outline: 3px solid rgb(74 58 46 / 0.45); outline-offset: 1px; }
+
+.calendarInput {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.calendarInput::-webkit-calendar-picker-indicator {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  cursor: pointer;
+}
+
+.activityOptions { display: grid; gap: 8px; margin: 8px 0; }
+.activityOption { display: flex; align-items: center; gap: 10px; padding: 10px; border: 2px solid var(--line-soft); border-radius: 12px; cursor: pointer; }
+.activityOption:has(input:checked) { border-color: var(--ink); background: var(--paper); }
+.activityOption input { accent-color: var(--ink); flex-shrink: 0; }
+.activityOption strong { display: block; font-size: 0.88rem; }
+.activityOption small { display: block; color: var(--ink-soft); font-size: 0.76rem; }

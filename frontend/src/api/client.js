@@ -33,10 +33,11 @@ export function clearAuth() {
 
 // API のエラー。messages はそのまま画面に出せる日本語の配列
 export class ApiError extends Error {
-  constructor(status, messages) {
+  constructor(status, messages, fieldErrors = {}) {
     super(messages.join('\n'))
     this.status = status
     this.messages = messages
+    this.fieldErrors = fieldErrors
   }
 }
 
@@ -88,7 +89,7 @@ export async function api(path, { method = 'GET', body, params } = {}) {
       unauthorizedHandler?.()
     }
     const messages = Array.isArray(data?.errors) ? data.errors : [`エラーが発生しました（${response.status}）`]
-    throw new ApiError(response.status, messages)
+    throw new ApiError(response.status, messages, data?.field_errors)
   }
   return data
 }

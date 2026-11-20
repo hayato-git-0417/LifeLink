@@ -1,7 +1,7 @@
 // 食事を記録（デザイン p.14）／修正（/meals/:id/edit）。写真・内容・区分・時間・栄養値・コメント。
 // 写真はスマホのカメラ／ファイル選択（capture="environment"）。送信は multipart（meal[photo]）。
-// 写真を選ぶと自動で圧縮（JPEG・長辺1000px以下・1MB未満）し、解析API（/meals/scan）で内容・栄養値を自動入力する。
-// 解析結果は手で修正できるよう、内容・栄養値は入力欄のまま残す。
+// 写真を選ぶと自動で圧縮（JPEG・長辺1536px以下・2MB未満）し、解析API（/meals/scan）で料理名・栄養値を取得する。
+// 料理名は自動入力し、内容・栄養値は入力欄で修正できるようにする。
 // スマホ（375×667）でスクロールを減らすため、写真は小さな枠で内容・時間の横に置き、栄養は2列、コメントは折りたたむ
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
@@ -13,22 +13,16 @@ import { fromDateTimeLocal, toDateTimeLocal } from '../../lib/format.js'
 import form from '../../styles/form.module.css'
 import styles from './Meals.module.css'
 import { guessMealType, MEAL_TYPES, NUTRIENTS } from './mealTypes.js'
+import { portionNutritionTotals } from './portionNutrition.js'
 
 // 解析APIへ送る画像の条件
-const PHOTO_TARGET_BYTES = 1024 * 1024 // 1MB未満
-const PHOTO_MAX_SIDE = 1000
-const PHOTO_INPUT_MAX_MB = 30 // 圧縮前の画像の上限
+const PHOTO_TARGET_BYTES = 2 * 1024 * 1024 // 2MB未満
+const PHOTO_MAX_SIDE = 1536
 
-// 画像をJPEGへ変換し、長辺1000px以下・1MB未満に圧縮する
+// 元画像のサイズにかかわらず、JPEG・長辺1536px以下・2MB未満に圧縮する
 async function compressPhoto(file) {
   if (!file.type.startsWith('image/')) {
     throw new Error('画像ファイルを選択してください')
-  }
-
-  if (file.size > PHOTO_INPUT_MAX_MB * 1024 * 1024) {
-    throw new Error(
-      `撮影した写真が大きすぎます。${PHOTO_INPUT_MAX_MB}MB以下の画像を選択してください`
-    )
   }
 
   let bitmap
@@ -36,9 +30,15 @@ async function compressPhoto(file) {
 
   try {
     if ('createImageBitmap' in window) {
-      bitmap = await createImageBitmap(file)
-    } else {
-      // createImageBitmapに対応していないブラウザ用
+      try {
+        bitmap = await createImageBitmap(file)
+      } catch {
+        bitmap = null
+      }
+    }
+
+    if (!bitmap) {
+      // ImageBitmap に対応していない・デコードできないブラウザ用
       bitmap = await new Promise((resolve, reject) => {
         const image = new Image()
         imageUrl = URL.createObjectURL(file)
@@ -63,7 +63,7 @@ async function compressPhoto(file) {
       throw new Error('写真のサイズを読み取れませんでした')
     }
 
-    // 縦横比を維持して長辺を1000px以下にする
+    // 縦横比を維持して長辺を1536px以下にする
     let scale = Math.min(
       1,
       PHOTO_MAX_SIDE / Math.max(originalWidth, originalHeight)
@@ -76,7 +76,7 @@ async function compressPhoto(file) {
       throw new Error('画像の圧縮に対応していないブラウザです')
     }
 
-    // 画質を調整しても1MB未満にならなければ、画像自体も縮小する
+    // 画質を調整しても2MB未満にならなければ、画像自体も縮小する
     for (let attempt = 0; attempt < 12; attempt += 1) {
       const width = Math.max(1, Math.round(originalWidth * scale))
       const height = Math.max(1, Math.round(originalHeight * scale))
@@ -87,7 +87,7 @@ async function compressPhoto(file) {
       context.clearRect(0, 0, width, height)
       context.drawImage(bitmap, 0, 0, width, height)
 
-      for (const quality of [0.85, 0.75, 0.65, 0.55, 0.45, 0.35]) {
+      for (const quality of [0.92, 0.85, 0.78, 0.7, 0.6]) {
         const blob = await new Promise((resolve) => {
           canvas.toBlob(resolve, 'image/jpeg', quality)
         })
@@ -108,7 +108,7 @@ async function compressPhoto(file) {
     }
 
     throw new Error(
-      '写真を1MB未満に圧縮できませんでした。別の写真をお試しください'
+      '写真を2MB未満に圧縮できませんでした。別の写真をお試しください'
     )
   } catch (error) {
     if (error instanceof Error && error.message) {
@@ -139,6 +139,19 @@ function emptyMeal() {
   }
 }
 
+function foodItemNutrients(items) {
+  return Object.fromEntries(
+    NUTRIENTS.map(({ key }) => {
+      const total = items.reduce(
+        (sum, item) =>
+          sum + (Number(item[key]) || 0) * (Number(item.weight_g) || 0) / 100,
+        0,
+      )
+      return [key, key === 'calories' ? String(Math.round(total)) : (Math.round(total * 10) / 10).toFixed(1)]
+    }),
+  )
+}
+
 export default function MealFormPage() {
   const { id } = useParams()
   const editing = Boolean(id)
@@ -146,6 +159,9 @@ export default function MealFormPage() {
   const fileInput = useRef(null)
 
   const [meal, setMeal] = useState(null)
+  const [mealGoal, setMealGoal] = useState(null)
+  const [scanPortions, setScanPortions] = useState([])
+  const [nutritionInfo, setNutritionInfo] = useState(null)
   const [photoFile, setPhotoFile] = useState(null)
   const [photoPreview, setPhotoPreview] = useState(null)
   const [currentPhotoUrl, setCurrentPhotoUrl] = useState(null)
@@ -153,16 +169,21 @@ export default function MealFormPage() {
   const [errors, setErrors] = useState([])
   const [busy, setBusy] = useState(false)
   const [scanning, setScanning] = useState(false)
+  const [foodQuery, setFoodQuery] = useState('')
+  const [foodResults, setFoodResults] = useState([])
+  const [foodItems, setFoodItems] = useState([])
 
   // 解析中・送信中は入力を止める
   const locked = busy || scanning
-
+  const mealType = meal ? guessMealType(mealGoal, new Date(meal.eaten_at)) : 'snack'
+  const mealContent = meal?.content || ''
   // 編集画面では保存済みの内容を読み込む
   // 新規画面では目標に合わせて食事区分を初期設定する
   useEffect(() => {
     let cancelled = false
 
     if (editing) {
+      api('/goal').then(({ goal }) => { if (!cancelled) setMealGoal(goal) }).catch(() => {})
       api(`/meals/${id}`)
         .then(({ meal: data }) => {
           if (cancelled) return
@@ -179,6 +200,12 @@ export default function MealFormPage() {
               ])
             ),
           })
+          setFoodItems(
+            (data.food_items ?? []).map((item) => ({
+              ...item,
+              weight_g: String(item.weight_g),
+            })),
+          )
 
           setCurrentPhotoUrl(data.photo_url ?? null)
         })
@@ -193,6 +220,7 @@ export default function MealFormPage() {
       api('/goal')
         .then(({ goal }) => {
           if (cancelled) return
+          setMealGoal(goal)
 
           setMeal({
             ...emptyMeal(),
@@ -209,6 +237,29 @@ export default function MealFormPage() {
     }
   }, [editing, id])
 
+  useEffect(() => {
+    const query = foodQuery.trim()
+    if (!query) {
+      return undefined
+    }
+
+    let cancelled = false
+    const timer = window.setTimeout(() => {
+      api('/food_compositions', { params: { q: query } })
+        .then(({ foods }) => {
+          if (!cancelled) setFoodResults(foods)
+        })
+        .catch((error) => {
+          if (!cancelled) setErrors(error.messages || ['食品の検索に失敗しました'])
+        })
+    }, 250)
+
+    return () => {
+      cancelled = true
+      window.clearTimeout(timer)
+    }
+  }, [foodQuery])
+
   // プレビュー用の一時URLを解放する
   useEffect(() => {
     return () => {
@@ -219,9 +270,99 @@ export default function MealFormPage() {
   }, [photoPreview])
 
   const update = (changes) => {
+    if ('content' in changes || NUTRIENTS.some(({ key }) => key in changes)) setNutritionInfo(null)
     setMeal((current) =>
       current ? { ...current, ...changes } : current
     )
+  }
+
+  function replaceFoodItems(items) {
+    setFoodItems(items)
+    if (items.length) {
+      update(foodItemNutrients(items))
+    } else {
+      update(Object.fromEntries(NUTRIENTS.map(({ key }) => [key, ''])))
+    }
+  }
+
+  function addFoodItem(food) {
+    replaceFoodItems([
+      ...foodItems,
+      {
+        food_composition_id: food.id,
+        name: food.name,
+        weight_g: '100',
+        ...Object.fromEntries(NUTRIENTS.map(({ key }) => [key, food[key]])),
+      },
+    ])
+    setFoodQuery('')
+    setFoodResults([])
+  }
+
+  function updateFoodWeight(index, weight_g) {
+    replaceFoodItems(foodItems.map((item, itemIndex) =>
+      itemIndex === index ? { ...item, weight_g } : item,
+    ))
+  }
+
+  function removeFoodItem(index) {
+    replaceFoodItems(foodItems.filter((_, itemIndex) => itemIndex !== index))
+  }
+
+  function applyPortionWeights() {
+    if (locked || foodItems.length) return
+    const totals = portionNutritionTotals(scanPortions)
+    if (!Object.values(totals).some((value) => value != null && value !== '')) return
+    setMeal((current) => ({ ...current, ...totals }))
+    setNutritionInfo({ content: mealContent, basis: '品目ごとの栄養値 × 手動調整した重量', warning: Object.values(totals).some((value) => value === '') ? '一部の栄養値は推定できないため空欄です。' : null })
+  }
+
+  async function scanPhoto(photo, contentHint = '') {
+    const scanBody = new FormData()
+    scanBody.append('meal[photo]', photo)
+    if (contentHint.trim()) scanBody.append('meal[content]', contentHint.trim())
+
+    const response = await api('/meals/scan', { method: 'POST', body: scanBody })
+    const scan = response?.scan
+    if (!scan) throw new Error('写真の解析結果を取得できませんでした')
+    setScanPortions((scan.portion_estimates || []).map((portion) => ({ ...portion, weight_g: portion.weight_g == null ? '' : String(portion.weight_g) })))
+    setNutritionInfo({
+      content: scan.content || mealContent,
+      basis: scan.nutrition_basis || '写真からの推定',
+      warning: [scan.nutrition_warning, scan.warning].filter(Boolean).join(' '),
+    })
+
+    setMeal((current) => {
+      if (!current) return current
+      const updated = { ...current, content: scan.content ?? current.content }
+      if (!foodItems.length) {
+        NUTRIENTS.forEach(({ key }) => {
+          updated[key] = scan[key] == null ? '' : String(scan[key])
+        })
+      }
+      return updated
+    })
+  }
+
+  // 入力中の内容をヒントに、選択中または保存済みの写真を再解析する
+  async function rescanPhoto() {
+    if (locked || (!photoFile && (removePhoto || !currentPhotoUrl))) return
+    setErrors([])
+    setScanning(true)
+    try {
+      let photo = photoFile
+      if (!photo) {
+        const response = await fetch(currentPhotoUrl)
+        if (!response.ok) throw new Error('保存済みの写真を読み込めませんでした')
+        const blob = await response.blob()
+        photo = await compressPhoto(new File([blob], 'meal-photo', { type: blob.type }))
+      }
+      await scanPhoto(photo, meal?.content ?? '')
+    } catch (error) {
+      setErrors(error.messages || [error.message || '写真の再解析に失敗しました'])
+    } finally {
+      setScanning(false)
+    }
   }
 
   // 写真を選択・撮影したら、自動圧縮してから解析する
@@ -229,6 +370,7 @@ export default function MealFormPage() {
     const selectedFile = event.target.files?.[0]
     if (!selectedFile) return
 
+    setNutritionInfo(null)
     setErrors([])
     setScanning(true)
 
@@ -237,7 +379,7 @@ export default function MealFormPage() {
     setPhotoPreview(null)
 
     try {
-      // JPEG・長辺1000px以下・1MB未満に変換する
+      // JPEG・長辺1536px以下・2MB未満に変換する
       const compressedFile = await compressPhoto(selectedFile)
       const previewUrl = URL.createObjectURL(compressedFile)
 
@@ -245,38 +387,7 @@ export default function MealFormPage() {
       setPhotoPreview(previewUrl)
       setRemovePhoto(false)
 
-      // 圧縮済みの写真を解析APIへ送信する
-      const scanBody = new FormData()
-      scanBody.append('meal[photo]', compressedFile)
-
-      const response = await api('/meals/scan', {
-        method: 'POST',
-        body: scanBody,
-      })
-
-      const scan = response?.scan
-
-      if (!scan) {
-        throw new Error('写真の解析結果を取得できませんでした')
-      }
-
-      setMeal((current) => {
-        if (!current) return current
-
-        // 解析で取得できた項目だけを更新する
-        const updated = {
-          ...current,
-          content: scan.content ?? current.content,
-        }
-
-        NUTRIENTS.forEach(({ key }) => {
-          if (scan[key] != null) {
-            updated[key] = String(scan[key])
-          }
-        })
-
-        return updated
-      })
+      await scanPhoto(compressedFile, meal?.content ?? '')
     } catch (error) {
       setErrors(
         error.messages ||
@@ -341,7 +452,7 @@ export default function MealFormPage() {
     try {
       const body = new FormData()
 
-      body.append('meal[meal_type]', meal.meal_type)
+      body.append('meal[meal_type]', mealType)
       body.append('meal[eaten_at]', fromDateTimeLocal(meal.eaten_at))
       body.append('meal[content]', (meal.content ?? '').trim())
       body.append('meal[comment]', (meal.comment ?? '').trim())
@@ -349,6 +460,13 @@ export default function MealFormPage() {
       NUTRIENTS.forEach(({ key }) => {
         body.append(`meal[${key}]`, meal[key] ?? '')
       })
+      body.append(
+        'meal[food_items_json]',
+        JSON.stringify(foodItems.map(({ food_composition_id, weight_g }) => ({
+          food_composition_id,
+          weight_g,
+        }))),
+      )
 
       // 保存する写真も、解析時に圧縮したJPEGを使う
       if (photoFile) {
@@ -444,6 +562,16 @@ export default function MealFormPage() {
                   <button
                     type="button"
                     className={`${form.linkButton} ${styles.smallLink}`}
+                    onClick={rescanPhoto}
+                    disabled={locked}
+                  >
+                    {scanning ? '解析中…' : '再解析する'}
+                  </button>
+                )}
+                {shownPhoto && (
+                  <button
+                    type="button"
+                    className={`${form.linkButton} ${styles.smallLink}`}
                     onClick={clearPhoto}
                     disabled={locked}
                   >
@@ -464,6 +592,14 @@ export default function MealFormPage() {
                     disabled={locked}
                     onChange={(event) => update({ content: event.target.value })}
                   />
+                  {shownPhoto && (
+                    <span className={styles.rescanHint}>
+                      内容の編集だけでは栄養値は変わりません。「再解析する」で再推定します。
+                      {foodItems.length
+                        ? '食品と量から計算した栄養値は保持します。'
+                        : '内容と栄養値を更新します。'}
+                    </span>
+                  )}
                 </label>
                 <label className={styles.field}>
                   <span className={styles.smallLabel}>時間</span>
@@ -478,28 +614,95 @@ export default function MealFormPage() {
               </div>
             </div>
 
-            <fieldset className={styles.typeRow} disabled={locked}>
+            <fieldset className={styles.typeRow} title="食べた時刻から自動設定します。朝・昼・夕は各1日1件、設定時刻の前後1時間以外は間食になります。">
               <legend className={styles.smallLabel}>区分</legend>
-              <div className={styles.mealTypes}>
+              <div className={styles.mealTypes} role="group" aria-label="食べた時刻から自動設定された食事区分">
                 {MEAL_TYPES.map(({ key, label }) => (
-                  <label key={key} className={`${styles.chip} ${meal.meal_type === key ? styles.chipOn : ''}`}>
-                    <input
-                      type="radio"
-                      name="meal_type"
-                      value={key}
-                      checked={meal.meal_type === key}
-                      onChange={() => update({ meal_type: key })}
-                    />
-                    {label}
-                  </label>
+                  <span key={key} className={styles.chip + ' ' + (mealType === key ? styles.chipOn : '')} aria-current={mealType === key ? 'true' : undefined}>{label}</span>
                 ))}
               </div>
             </fieldset>
 
+            <div className={styles.foodPicker}>
+              <label className={styles.field}>
+                <span className={styles.smallLabel}>食品成分表から食品を追加（100gあたり）</span>
+                <input
+                  className={`${form.input} ${styles.compactInput}`}
+                  type="search"
+                  placeholder="例: ごはん、さけ"
+                  value={foodQuery}
+                  disabled={locked}
+                  onChange={(event) => {
+                    setFoodQuery(event.target.value)
+                    setFoodResults([])
+                  }}
+                />
+              </label>
+              {foodResults.length > 0 && (
+                <ul className={styles.foodResults}>
+                  {foodResults.map((food) => (
+                    <li key={food.id}>
+                      <button
+                        type="button"
+                        className={styles.foodResult}
+                        disabled={locked}
+                        onClick={() => addFoodItem(food)}
+                      >
+                        {food.name}（{food.calories ?? '—'} kcal/100g）
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {foodItems.length > 0 && (
+                <ul className={styles.foodItems}>
+                  {foodItems.map((item, index) => (
+                    <li key={`${item.food_composition_id}-${index}`} className={styles.foodItem}>
+                      <span>{item.name}</span>
+                      <label>
+                        量
+                        <input
+                          className={`${form.input} ${styles.foodWeight}`}
+                          type="number"
+                          min="0.1"
+                          step="0.1"
+                          value={item.weight_g}
+                          disabled={locked}
+                          onChange={(event) => updateFoodWeight(index, event.target.value)}
+                        />
+                        g
+                      </label>
+                      <button
+                        type="button"
+                        className={form.linkButton}
+                        disabled={locked}
+                        onClick={() => removeFoodItem(index)}
+                      >
+                        削除
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <p className={styles.foodNote}>
+                食品と量から栄養を自動計算します。成分表に値がない項目は合計に含まれません。
+              </p>
+            </div>
+
             <fieldset className={styles.nutrientSet} disabled={locked}>
               <legend className={styles.smallLabel}>
-                {scanning ? '栄養（写真を解析中…）' : '栄養（写真から自動入力・修正できます）'}
+                {scanning
+                  ? '栄養（写真を解析中…）'
+                  : foodItems.length
+                    ? '栄養（食品と量から自動計算）'
+                    : '栄養（写真から自動入力・修正できます）'}
               </legend>
+              {!foodItems.length && nutritionInfo?.content === mealContent && (
+                <p className={styles.foodNote} role="status">
+                  {nutritionInfo.basis}。料理の種類と量には推定が含まれます。
+                  {nutritionInfo.warning && <><br />{nutritionInfo.warning}</>}
+                </p>
+              )}
               <div className={styles.nutrientInputs}>
                 {NUTRIENTS.map(({ key, label, unit, step }) => (
                   <label key={key} className={styles.nutrientField}>
@@ -512,6 +715,7 @@ export default function MealFormPage() {
                         min="0"
                         step={step}
                         value={meal[key] ?? ''}
+                        disabled={foodItems.length > 0}
                         onChange={(event) => update({ [key]: event.target.value })}
                       />
                       <span className={styles.unit}>{unit}</span>
@@ -520,6 +724,23 @@ export default function MealFormPage() {
                 ))}
               </div>
             </fieldset>
+
+            {!foodItems.length && scanPortions.length > 0 && nutritionInfo?.content === mealContent && (
+              <details className={styles.commentBox}>
+                <summary>推定した品目と量を確認・修正</summary>
+                <p className={styles.foodNote}>写真から推定した調理後の重量です。量が分かる場合は修正して再計算できます。</p>
+                <div className={styles.portionList}>
+                  {scanPortions.map((portion, index) => (
+                    <label key={index} className={styles.portionRow} title={portion.reference_name || '食品成分表の候補に一致しないためAIで推定'}>
+                      <span>{portion.name}<small>{portion.source === 'food_composition' ? '食品成分表' : 'AI推定'}</small></span>
+                      <input className={form.input + ' ' + styles.foodWeight} type="number" inputMode="decimal" min="0.1" max="10000" step="0.1" aria-label={portion.name + 'の重量'} value={portion.weight_g} disabled={locked} onChange={(event) => setScanPortions((current) => current.map((item, i) => i === index ? { ...item, weight_g: event.target.value } : item))} />
+                      <span>g</span>
+                    </label>
+                  ))}
+                </div>
+                <button type="button" className={form.button} disabled={locked || !Object.values(portionNutritionTotals(scanPortions)).some((value) => value != null && value !== '')} onClick={applyPortionWeights}>この量で栄養値を再計算</button>
+              </details>
+            )}
 
             <details className={styles.commentBox} open={Boolean(meal.comment)}>
               <summary className={styles.smallLabel}>コメント（任意）</summary>

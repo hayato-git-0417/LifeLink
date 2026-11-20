@@ -1,7 +1,7 @@
 # ある日・あるユーザーの4項目のスコア（0〜100、ワークだけ上限なし）を計算する（spec.md 3.1）。
 #   result = ScoreCalculator.call(user: user, date: Date.new(2026, 10, 6))
 #   result.sleep_score     # => 92.9（BigDecimal、小数1桁）
-#   result.total_percent   # => 76.5（今日の総合達成度）
+#   result.total_percent   # => 78.3（今日の総合達成度）
 # ポイントの換算（spec.md 3.2）もここにまとめる。四捨五入は BigDecimal で行う（float だと 76.45 → 76.4 になるため）。
 # 過去の日も「今の目標」で計算する（目標の履歴は持たない。docs/decisions.md）。
 class ScoreCalculator

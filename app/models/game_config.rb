@@ -15,6 +15,7 @@ module GameConfig
   def mood = config[:mood]
   def timer = config[:timer]
   def character = config[:character]
+  def meal_classification = config[:meal_classification]
   def meal_times = config[:meal_times]
   def pacemaker = config[:pacemaker]
   def evolution = config[:evolution]

@@ -33,12 +33,12 @@ class DailyFinalizerTest < ActiveSupport::TestCase
     finalized = finalize_at(at(day + 1, 0, 5))
     assert_equal 1, finalized.size
     row = finalized.first
-    assert_equal [ 86, 62, 0, 43 ], [ row.sleep_change, row.meal_change, row.exercise_change, row.work_change ]
-    assert_equal [ 706, 602, 410, 623, 599 ], [ row.sleep_points, row.meal_points, row.exercise_points, row.work_points, row.total_points ]
+    assert_equal [ 86, 74, 0, 43 ], [ row.sleep_change, row.meal_change, row.exercise_change, row.work_change ]
+    assert_equal [ 706, 614, 410, 623, 603 ], [ row.sleep_points, row.meal_points, row.exercise_points, row.work_points, row.total_points ]
     assert row.finalized?
 
     @character.reload
-    assert_equal [ 706, 602, 410, 623, 599 ],
+    assert_equal [ 706, 614, 410, 623, 603 ],
                  [ @character.sleep_points, @character.meal_points, @character.exercise_points, @character.work_points, @character.total_points ]
     assert_equal day, @character.last_reset_on
   end

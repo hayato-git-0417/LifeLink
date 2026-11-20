@@ -77,7 +77,7 @@
   spec.md 2.1 の止め忘れ（上限で自動終了）と同時計測のルールも入れる。上限は config/game.yml。
 - 運動の記録（exercise_records）：移動距離の手入力の作成・一覧（from,to）・削除だけ。タイマーは作らない。
 - 運動タスク：今日の一覧と達成状況、チェックの付け外し（exercise_task_completions、1日1回）。
-- 食事：CRUD。写真は has_one_attached :photo（multipart）、レスポンスに写真URL。食物繊維を含む5つの栄養値、meal_type、eaten_at、comment。
+- 食事：CRUD。写真は has_one_attached :photo（multipart）、レスポンスに写真URL。カロリー・たんぱく質・脂質・炭水化物の4つの栄養値、meal_type、eaten_at、comment。
   app/services/meal_scanner.rb はインターフェースだけ（今は nil を返す）。
 - 記録を保存・更新・削除したら、その日の daily_achievements を再計算する呼び出し口だけ用意（中身はフェーズ4）。
 - リクエストテストを書いて通す。

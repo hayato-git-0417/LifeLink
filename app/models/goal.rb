@@ -1,5 +1,5 @@
 class Goal < ApplicationRecord
-  NUTRIENT_COLUMNS = %i[calorie_goal protein_goal_g fat_goal_g carbs_goal_g fiber_goal_g].freeze
+  NUTRIENT_COLUMNS = %i[calorie_goal protein_goal_g fat_goal_g carbs_goal_g].freeze
   MEAL_TIME_COLUMNS = %i[breakfast_time lunch_time dinner_time].freeze
 
   belongs_to :user

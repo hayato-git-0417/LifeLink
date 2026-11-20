@@ -1,5 +1,6 @@
 // 目標設定: 睡眠（時間帯／時間の切り替え）・運動タスク（追加・削除）・ワーク時間（デザイン p.11 / p.12）
 // 新規登録③・目標設定・目標変更で使う。value は goalDraft.js の形、onChange には変更する項目だけ渡す
+import FieldError from '../components/FieldError.jsx'
 import IconBadge from '../components/IconBadge.jsx'
 import { CloseIcon, ExerciseIcon, PlusIcon, SleepIcon, WorkIcon } from '../components/icons.jsx'
 import styles from '../styles/form.module.css'
@@ -41,7 +42,7 @@ function HoursMinutes({ hours, minutes, onChange, label }) {
   )
 }
 
-export default function GoalBasicsForm({ value, onChange }) {
+export default function GoalBasicsForm({ value, onChange, errors = {} }) {
   const updateTask = (index, title) =>
     onChange({ tasks: value.tasks.map((task, i) => (i === index ? { ...task, title } : task)) })
   const removeTask = (index) => onChange({ tasks: value.tasks.filter((_, i) => i !== index) })
@@ -106,6 +107,7 @@ export default function GoalBasicsForm({ value, onChange }) {
             <p className={`${styles.hint} ${goal.below}`}>就寝時刻の30分前になると、キャラが声をかけます。</p>
           </>
         )}
+        <FieldError errors={errors} name="sleep" />
       </section>
 
       <section className={styles.card}>
@@ -152,6 +154,7 @@ export default function GoalBasicsForm({ value, onChange }) {
             項目を追加
           </button>
         )}
+        <FieldError errors={errors} name="tasks" />
       </section>
 
       <section className={styles.card}>
@@ -172,6 +175,7 @@ export default function GoalBasicsForm({ value, onChange }) {
             })
           }
         />
+        <FieldError errors={errors} name="work" />
       </section>
     </div>
   )

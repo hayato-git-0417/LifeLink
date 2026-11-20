@@ -7,11 +7,11 @@ module Api
         protected
 
         def render_create_error
-          render_errors(@resource.errors.full_messages)
+          render json: { errors: @resource.errors.full_messages, field_errors: @resource.errors.to_hash(true) }, status: :unprocessable_entity
         end
 
         def render_update_error
-          render_errors(@resource.errors.full_messages)
+          render json: { errors: @resource.errors.full_messages, field_errors: @resource.errors.to_hash(true) }, status: :unprocessable_entity
         end
       end
     end

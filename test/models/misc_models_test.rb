@@ -36,6 +36,7 @@ class MiscModelsTest < ActiveSupport::TestCase
     assert record.manual?
     assert_equal Date.new(2026, 10, 6), record.recorded_on
     assert_not @user.exercise_records.build(started_at: Time.current, distance_km: -1).valid?
+    assert @user.exercise_records.build(started_at: Time.current, record_method: :timer, duration_minutes: 1).valid?
   end
 
   test "栄養の基準: 年齢で引ける" do

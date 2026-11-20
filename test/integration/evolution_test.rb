@@ -17,16 +17,16 @@ class EvolutionTest < ActionDispatch::IntegrationTest
     auth_headers(@user)
   end
 
-  def post_meal(time)
+  def post_meal(time, meal_type: "lunch")
     post "/api/v1/meals", headers: headers, as: :json,
-                          params: { meal: { meal_type: "lunch", eaten_at: time.iso8601, content: "カレー", calories: 700 } }
+                          params: { meal: { meal_type: meal_type, eaten_at: time.iso8601, content: "カレー", calories: 700 } }
     assert_response :created
   end
 
   test "食事を記録するとポイントが入り、同じ日の2回目は入らない。ホームに段階・ゲージ・継続日数・倍率を返す" do
     travel_to at(DAY, 12) do
       post_meal(at(DAY, 12))
-      post_meal(at(DAY, 12, 30))
+      post_meal(at(DAY, 19), meal_type: "dinner")
       assert_equal 110, @character.reload.evolution_points
 
       get "/api/v1/home", headers: headers

@@ -25,6 +25,9 @@ ja:
         icon: アイコン
         birthdate: 生年月日
         gender: 性別
+        activity_level: 普段の活動量
+        height_cm: 身長
+        weight_kg: 体重
       follow:
         follower_id: フォローする人
         followed_id: フォローされる人
@@ -104,6 +107,8 @@ ja:
         photo: 写真
       nutrition_standard:
         gender: 性別
+        height_cm: 身長
+        weight_kg: 体重
         age_from: 年齢（から）
         age_to: 年齢（まで）
         activity_level: 身体活動レベル

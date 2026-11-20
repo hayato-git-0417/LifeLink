@@ -12,6 +12,7 @@ class User < ActiveRecord::Base
   has_one_attached :avatar
 
   enum :gender, { unspecified: 0, male: 1, female: 2, other: 3 }, validate: true
+  enum :activity_level, { low: 0, moderate: 1, high: 2 }, validate: true
   enum :icon, { person_blue: 0, person_pink: 1, person_green: 2, cat: 3, penguin: 4, sprout: 5, person_yellow: 6 }, validate: true
 
   has_one :character, dependent: :destroy
@@ -33,8 +34,12 @@ class User < ActiveRecord::Base
   has_many :sent_notifications, class_name: "Notification", foreign_key: :actor_id, dependent: :nullify, inverse_of: :actor
 
   validates :name, presence: true, length: { maximum: 50 }
+  validates :height_cm, :weight_kg, presence: true, on: :create
+  validates :height_cm, :weight_kg, numericality: { greater_than: 0, less_than: 1000 }, allow_nil: true
+  validates :gender, inclusion: { in: %w[male female] }, on: :create
   validates :birthdate, presence: true
   validate :birthdate_not_in_future
+  validate :password_contains_letters_and_numbers
   validate :avatar_must_be_an_image
 
   # 1ユーザー1匹。登録した日はポイントに反映しない（spec.md 3.2）ので last_reset_on = 登録日
@@ -77,6 +82,16 @@ class User < ActiveRecord::Base
     return if birthdate.nil?
 
     errors.add(:birthdate, :in_future) if birthdate > Time.zone.today
+  end
+
+  def password_contains_letters_and_numbers
+    return if password.blank?
+
+    has_letter = password.match?(/[a-zA-Z]/)
+    has_number = password.match?(/[0-9]/)
+    unless has_letter && has_number
+      errors.add(:password, "は英字と数字をそれぞれ1文字以上含めてください")
+    end
   end
 
   def avatar_must_be_an_image
