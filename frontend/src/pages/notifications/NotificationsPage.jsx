@@ -61,7 +61,11 @@ export default function NotificationsPage() {
               <li key={notification.id} className={`${styles.item} ${notification.read ? '' : styles.unread}`}>
                 <span className={styles.mark}>
                   {notification.actor ? (
-                    <UserIcon icon={notification.actor.icon} size={40} />
+                    <UserIcon
+                      icon={notification.actor.icon}
+                      avatarUrl={notification.actor.avatar_selected ? notification.actor.avatar_url : null}
+                      size={40}
+                    />
                   ) : (
                     <IconBadge tone={mark.tone} size={40}>
                       <mark.Icon size={22} />

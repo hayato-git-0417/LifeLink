@@ -3,13 +3,14 @@ Rails.application.routes.draw do
   # namespace ではなく scope にするのは、current_user などのヘルパー名を変えないため
   scope "api/v1" do
     mount_devise_token_auth_for "User", at: "auth", controllers: {
-      registrations: "api/v1/auth/registrations"
+      registrations: "api/v1/auth/registrations",
+      sessions: "api/v1/auth/sessions"
     }
   end
 
   namespace :api, defaults: { format: :json } do
     namespace :v1 do
-      get "registrations/email_available", to: "registrations#email_available"
+      get "registrations/account_id_available", to: "registrations#account_id_available"
       resource :me, only: %i[show update], controller: "me"
       resource :goal, only: %i[show update] do
         get :nutrition_defaults

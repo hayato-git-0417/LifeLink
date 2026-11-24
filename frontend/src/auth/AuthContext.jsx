@@ -43,8 +43,8 @@ export function AuthProvider({ children }) {
   }, [refreshMe, becomeGuest])
 
   const login = useCallback(
-    async (email, password) => {
-      await api('/auth/sign_in', { method: 'POST', body: { email, password } })
+    async (accountId, password) => {
+    await api('/auth/sign_in', {method: 'POST', body: { account_id: accountId.trim(), password }, })
       return refreshMe()
     },
     [refreshMe],

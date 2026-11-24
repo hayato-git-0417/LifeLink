@@ -15,6 +15,7 @@ export default function ProfileEditPage() {
   const { user, refreshMe } = useAuth()
   const [profile, setProfile] = useState(() => ({
     icon: user.icon,
+    accountId: user.account_id || '',
     name: user.name,
     birthdate: user.birthdate,
     gender: user.gender,
@@ -38,6 +39,7 @@ export default function ProfileEditPage() {
         setProfile((current) => ({
           ...current,
           icon: freshUser.icon,
+          accountId: freshUser.account_id || current.accountId,
           birthdate: freshUser.birthdate,
           avatarUrl: current.avatar ? current.avatarUrl : freshUser.avatar_url || null,
           useAvatar: current.avatar
@@ -61,6 +63,7 @@ export default function ProfileEditPage() {
     try {
       const formData = new FormData()
       formData.append('user[name]', profile.name.trim())
+      formData.append('user[account_id]', profile.accountId.trim())
       formData.append('user[icon]', profile.icon)
       formData.append('user[birthdate]', profile.birthdate)
       formData.append('user[gender]', profile.gender)

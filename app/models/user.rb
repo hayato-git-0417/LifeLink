@@ -34,6 +34,7 @@ class User < ActiveRecord::Base
   has_many :sent_notifications, class_name: "Notification", foreign_key: :actor_id, dependent: :nullify, inverse_of: :actor
 
   validates :name, presence: true, length: { maximum: 50 }
+  validates :account_id, presence: true, length: { in: 3..20 }, format: { with: /\A[a-zA-Z0-9_.]+\z/, message: "は半角英数字とアンダースコアで入力してください" }, uniqueness: { case_sensitive: false }
   validates :height_cm, :weight_kg, presence: true, on: :create
   validates :height_cm, :weight_kg, numericality: { greater_than: 0, less_than: 1000 }, allow_nil: true
   validates :gender, inclusion: { in: %w[male female] }, on: :create

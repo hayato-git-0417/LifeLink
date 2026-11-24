@@ -37,7 +37,13 @@ module Api
           body: notification.body,
           read: notification.read?,
           created_at: notification.created_at,
-          actor: actor && { id: actor.id, name: actor.name, icon: actor.icon }
+          actor: actor && {
+            id: actor.id,
+            name: actor.name,
+            icon: actor.icon,
+            avatar_url: actor.avatar.attached? ? rails_blob_path(actor.avatar, only_path: true) : nil,
+            avatar_selected: actor.avatar_selected
+          }
         }
       end
     end
