@@ -31,6 +31,9 @@ class HomeTest < ActionDispatch::IntegrationTest
         assert_equal "空腹", character["state_label"]
         assert_equal "/characters/stages/0.png", character["image_path"] # 進化の段階の姿（段階0＝卵）が状態の画像より優先
         assert_equal false, character["image_shows_state"] # 卵の絵は空腹を表していないので、ホームで状態のマークを重ねる
+        # 運動タイマー中にホームで差し替える汗汗の姿（卵は汗汗の絵がないのでマークを重ねる）
+        assert_equal({ "state" => "exercising", "state_label" => "汗汗", "image_path" => "/characters/stages/0.png", "image_shows_state" => false },
+                     character["exercising"])
         assert_equal({ "sleep" => 300, "meal" => 300, "exercise" => 300, "work" => 300, "total" => 300 }, character["points"])
         assert_equal({ "key" => "kanashii", "label" => "悲しい" }, character["mood"])
 

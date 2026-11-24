@@ -34,6 +34,13 @@ module Api
           image_path: character.image_path,
           # false なら画像は段階の姿だけなので、ホームで状態のマークを重ねる
           image_shows_state: character.image_shows_state?,
+          # 運動タイマーはブラウザの中だけで動くので、タイマー中にホームで差し替える汗汗の姿を今の段階で渡す
+          exercising: {
+            state: "exercising",
+            state_label: I18n.t("game.states.exercising"),
+            image_path: Character.image_path_for(character.evolution_stage, "exercising"),
+            image_shows_state: Character.image_shows_state_for?(character.evolution_stage, "exercising")
+          },
           mood: character.mood,
           points: ScoreCalculator::ITEMS.index_with { |item| character[:"#{item}_points"] }
                                         .merge(total: character.total_points)

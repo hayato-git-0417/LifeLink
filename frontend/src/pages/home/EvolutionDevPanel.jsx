@@ -2,6 +2,8 @@
 // ホーム右上の「テスト」で開き、/api/v1/dev/evolution（development の Rails だけにある）を呼ぶ。
 // 操作のたびにホームを読み直すので、キャラの姿・進化カード・通知の数がその場で変わる。
 // 記録そのもの（食事など）は作らず、進化のポイント・継続日数・休んだ日だけを本物の処理で動かす（app/services/evolution_sandbox.rb）
+// 「キャラの状態を見る」で選んだ状態は onPreview でホームの表示だけに当てる（状態は記録から毎回判定するので DB は変えない）。
+// 「自動」を選ぶか、ページを読み直すと本当の状態に戻る
 import { useEffect, useState } from 'react'
 import { api } from '../../api/client.js'
 import ErrorList from '../../components/ErrorList.jsx'
@@ -68,9 +70,10 @@ function logText(log) {
   return `${ITEM_LABELS[log.item]} ×${formatMultiplier(log.multiplier_tenths)}`
 }
 
-export default function EvolutionDevPanel({ onChanged }) {
+export default function EvolutionDevPanel({ onChanged, onPreview }) {
   const [open, setOpen] = useState(false)
   const [state, setState] = useState(null)
+  const [previewKey, setPreviewKey] = useState(null) // ホームに当てている状態（null は本当の状態）
   const [message, setMessage] = useState('')
   const [errors, setErrors] = useState([])
   const [busy, setBusy] = useState(false)
@@ -88,6 +91,12 @@ export default function EvolutionDevPanel({ onChanged }) {
       active = false
     }
   }, [open])
+
+  // 段階が変わったら、その段階の姿で当て直す
+  const previewEntry = (previewKey && state?.states.find((entry) => entry.state === previewKey)) || null
+  useEffect(() => {
+    onPreview?.(previewEntry)
+  }, [onPreview, previewEntry])
 
   async function run(path, options = {}, confirmMessage) {
     if (confirmMessage && !window.confirm(confirmMessage)) return
@@ -127,6 +136,7 @@ export default function EvolutionDevPanel({ onChanged }) {
       >
         <SparkleIcon size={16} strokeWidth={2.4} />
         テスト
+        {previewEntry && <span className={styles.toggleState}>{previewEntry.label}</span>}
       </button>
 
       {open && (
@@ -178,6 +188,41 @@ export default function EvolutionDevPanel({ onChanged }) {
                 {message || '下のボタンで試すと、ホームのキャラと進化カードも変わります'}
               </p>
               <ErrorList errors={errors} />
+
+              <section className={styles.group}>
+                <h3>キャラの状態を見る（ホームの表示だけ）</h3>
+                <ul className={styles.states}>
+                  <li>
+                    <button
+                      type="button"
+                      className={`${styles.stateOption} ${previewKey === null ? styles.current : ''}`}
+                      aria-pressed={previewKey === null}
+                      onClick={() => setPreviewKey(null)}
+                    >
+                      <img src={state.image_path} alt="" />
+                      <span>自動</span>
+                    </button>
+                  </li>
+                  {state.states.map((entry) => (
+                    <li key={entry.state}>
+                      <button
+                        type="button"
+                        className={`${styles.stateOption} ${previewKey === entry.state ? styles.current : ''}`}
+                        aria-pressed={previewKey === entry.state}
+                        onClick={() => setPreviewKey(entry.state)}
+                      >
+                        <img src={entry.image_path} alt="" />
+                        <span>{entry.label}</span>
+                        {!entry.image_shows_state && entry.state !== 'normal' && <small>絵なし</small>}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+                <p className={styles.hint}>
+                  今の段階（進化{evolution.stage}）での姿・動き・夜の部屋・状態マークを確かめられます。記録・通知・保存された状態は変わりません。
+                  「自動」で本当の状態（今は{state.states.find((entry) => entry.state === state.state)?.label}）に戻ります。「絵なし」は段階の絵＋状態マークで出ます。
+                </p>
+              </section>
 
               <section className={styles.group}>
                 <h3>今日の記録（1項目1日1回）</h3>

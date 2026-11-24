@@ -2,17 +2,14 @@
 # 実行: ruby bin/rails db:seed
 
 # ---------------------------------------------------------------
-# キャラの画像（8状態）。画像本体は public/characters/<state>.png
+# キャラの画像（5状態）。画像本体は public/characters/<state>.png（段階ごとの絵は stages/。Character#image_path）
 # ---------------------------------------------------------------
 {
   normal: "デフォルト",
   sleeping: "睡眠中",
-  sleep_deprived: "睡眠不足",
-  full: "満腹",
   hungry: "空腹",
   exercising: "汗汗（運動中）",
-  studying: "勉強中",
-  fat: "太り（運動不足）"
+  studying: "勉強中"
 }.each do |state, description|
   animation = CharacterAnimation.find_or_initialize_by(state: state)
   animation.update!(gif_path: "/characters/#{state}.png", description: description)

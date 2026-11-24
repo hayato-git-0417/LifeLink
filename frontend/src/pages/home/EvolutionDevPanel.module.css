@@ -281,6 +281,58 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* 状態の一覧（ホームに当てている状態を囲む） */
+.states {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.stateOption {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  padding: 3px 1px 4px;
+  border: 2px solid transparent;
+  border-radius: 10px;
+  background: var(--wall);
+  color: var(--ink);
+  line-height: 1.2;
+}
+
+.stateOption img {
+  width: 100%;
+  max-width: 52px;
+  aspect-ratio: 1;
+  object-fit: contain;
+}
+
+.stateOption span {
+  font-size: 0.66rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.stateOption small {
+  color: var(--ink-soft);
+  font-size: 0.56rem;
+}
+
+/* 「テスト」ボタンの下に、ホームに当てている状態名 */
+.toggleState {
+  margin-top: 1px;
+  padding: 0 4px;
+  border-radius: 6px;
+  background: var(--ink);
+  color: #fff4cc;
+  font-size: 0.6rem;
+}
+
 .current {
   border-color: var(--ink);
   background: #fff4cc;

@@ -389,11 +389,8 @@
 
 /* アニメーション: 通常はふわふわ、睡眠中はゆっくり、運動中は小刻み（spec.md 4章） */
 .anim_normal,
-.anim_full,
 .anim_hungry,
-.anim_studying,
-.anim_sleep_deprived,
-.anim_fat {
+.anim_studying {
   animation: float 2.8s ease-in-out infinite;
 }
 
@@ -898,4 +895,24 @@
   border: 0;
   background: transparent;
   cursor: pointer;
+}
+
+.room {
+  --floor-height: 30%;
+}
+
+.wall {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: var(--floor-height);
+  left: 0;
+  height: auto;
+  background-position: center bottom;
+}
+
+.floor {
+  top: auto;
+  bottom: 0;
+  height: var(--floor-height);
 }
