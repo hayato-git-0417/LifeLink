@@ -25,14 +25,16 @@ class DevEvolutionTest < ActionDispatch::IntegrationTest
     assert_equal %w[0 1 2 3 4 4].map { |n| "/characters/stages/#{n}.png" }, json["stages"].map { |s| s["image_path"] }
   end
 
-  test "今の段階での状態ごとの姿を返す（状態別の絵がない状態はマークを重ねる）" do
+  test "今の段階での状態ごとの姿を返す（状態別の絵がないときはマークを重ねる）" do
     patch "/api/v1/dev/evolution", headers: headers, params: { points: 3_000 }, as: :json # 段階2
     assert_response :ok
     assert_equal "normal", json["state"]
     states = json["states"].index_by { |s| s["state"] }
     assert_equal Character.states.keys, states.keys
     assert_equal [ "/characters/stages/2_hungry.png", true, "空腹" ], states["hungry"].values_at("image_path", "image_shows_state", "label")
-    assert_equal [ "/characters/stages/2.png", false ], states["fat"].values_at("image_path", "image_shows_state")
+    assert_equal "/characters/stages/2.png", states["normal"]["image_path"] # デフォルトは段階の絵（マークは出さない）
+    patch "/api/v1/dev/evolution", headers: headers, params: { points: 0 }, as: :json # 段階0（卵）は状態別の絵がない
+    assert_equal [ "/characters/stages/0.png", false ], json["states"].find { |s| s["state"] == "hungry" }.values_at("image_path", "image_shows_state")
     assert_equal "normal", @user.character.reload.state # 表示だけなので DB の状態は変えない
   end
 

@@ -208,8 +208,10 @@ export default function HomePage({ wallImage, floorImage, placedFurniture }) {
     setExerciseOpen(false)
   }
   const sleeping = home?.character.state === 'sleeping'
-  // 表示するキャラ（テストパネルで状態を選んでいればその姿）。夜の部屋・動き・状態マーク・話しかけたときのひとことに使う
-  const character = home && (previewCharacter ? { ...home.character, ...previewCharacter } : home.character)
+  // 表示するキャラ。夜の部屋・動き・状態マーク・話しかけたときのひとことに使う。
+  // テストパネルで状態を選んでいればその姿、運動タイマーを動かしている間（一時停止中は除く）は汗汗の姿にする
+  const displayOverride = previewCharacter || (exerciseRunning ? home?.character.exercising : null)
+  const character = home && (displayOverride ? { ...home.character, ...displayOverride } : home.character)
   const night = character?.state === 'sleeping'
 
   // ホーム画面を離れたら、残っている予約を取り消す

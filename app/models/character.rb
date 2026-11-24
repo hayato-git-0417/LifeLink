@@ -1,6 +1,8 @@
 class Character < ApplicationRecord
-  # characters / character_state_logs / character_animations で共通の状態（spec.md 4章）
-  STATES = { normal: 0, sleeping: 1, sleep_deprived: 2, full: 3, hungry: 4, exercising: 5, studying: 6, fat: 7 }.freeze
+  # characters / character_state_logs / character_animations で共通の状態（spec.md 4章）。
+  # 睡眠不足(2)・満腹(3)・太り(7) は 2026-11-24 になくした（数字は詰めない）。
+  # exercising（汗汗）はサーバーでは判定せず、ホームで運動タイマーを動かしている間だけ表示する
+  STATES = { normal: 0, sleeping: 1, hungry: 4, exercising: 5, studying: 6 }.freeze
   POINT_COLUMNS = %i[sleep_points meal_points exercise_points work_points total_points].freeze
 
   belongs_to :user

@@ -207,3 +207,5 @@
 
 - 2026-11-24: 段階1〜4の状態ごとの画像（チーム作成）を `public/characters/stages/<段階>_<状態>.png` に追加。各段階に hungry・exercising・sleeping・studying の4枚（normal は既存の `<段階>.png` と同一）。段階1〜3のお茶碗の絵は段階4（おにぎりを思い浮かべる絵）に合わせて hungry とする（ユーザー回答）。sleep_deprived・full・fat と段階0・5の状態別の絵はまだないので、これまでどおり段階の絵＋状態マーク。段階5は 4_<状態>.png を使う。
 - 2026-11-24: 開発用テストパネルに「キャラの状態を見る」を追加。選んだ状態は**ホームの表示だけ**に当て（画像・動き・夜の部屋・状態マーク・話しかけたときのひとこと）、characters.state・記録・通知は変えない。状態は記録からホームを開くたびに判定し直すため、DB を書き換えても元に戻ってしまうから。「自動」かページの読み直しで本当の状態に戻る。要確認: 状態の判定そのもの（吹き出しの通知など）まで試したい場合は別途。
+- 2026-11-24: キャラの状態から 睡眠不足(sleep_deprived)・満腹(full)・太り(fat) をなくした（ユーザー指示）。enum の数字は詰めず 2・3・7 を欠番にし、既存の行はマイグレーションで normal にした（character_animations の行は削除）。睡眠不足の通知・吹き出しも一緒になくした（ユーザー回答）。game.yml の full_minutes_after_meal・sleep_deprived_score_below・fat_exercise_points_below と public/characters/ の3枚の画像も削除。spec.md 4章・7章を更新。
+- 2026-11-24: 汗汗(exercising) は「運動タスクにチェックしてから30分」をやめ、ホームで運動タイマーを動かしている間（一時停止中は除く）だけ表示する（ユーザー回答）。運動タイマーはブラウザの中だけで動くのでサーバーでは判定せず、ホーム API が今の段階の汗汗の画像（character.exercising）を返して表示だけ差し替える。characters.state・履歴は変えない。game.yml の exercising_minutes_after_task も削除。汗汗のひとことは運動中に合わせて「がんばってるよ！」などに変更。

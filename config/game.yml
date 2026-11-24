@@ -34,11 +34,7 @@ shared: &shared
   character:
     default_name: めばえ
     # 状態判定のしきい値（spec.md 4.1）
-    exercising_minutes_after_task: 30
-    full_minutes_after_meal: 90
     hungry_grace_minutes: 60
-    sleep_deprived_score_below: 80
-    fat_exercise_points_below: 300
 
   meal_classification:
     window_minutes: 60 # 設定した食事時刻の前後1時間
