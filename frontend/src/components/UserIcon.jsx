@@ -8,7 +8,7 @@ const INK = '#4a3a2e'
 const PAPER = '#fffbf0'
 const CHEEK = '#f6b9b0'
 
-export default function UserIcon({ icon, avatarUrl, size = 64 }) {
+export default function UserIcon({ icon, avatarUrl, size = 64, photoBorderWidth }) {
   const item = USER_ICONS.find((entry) => entry.key === icon) || USER_ICONS[0]
   // アイコンの種類に関係なく毎回同じ順でフックを呼ぶ
   const clipId = `avatar${useId().replace(/[^a-zA-Z0-9]/g, '')}`
@@ -19,6 +19,7 @@ export default function UserIcon({ icon, avatarUrl, size = 64 }) {
         src={avatarUrl}
         width={size}
         height={size}
+        style={photoBorderWidth ? { borderWidth: `${photoBorderWidth}px` } : undefined}
         alt={`${item.label}のプロフィール写真`}
       />
     )

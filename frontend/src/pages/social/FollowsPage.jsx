@@ -111,7 +111,7 @@ export default function FollowsPage() {
             <SearchIcon size={18} className={styles.searchIcon} />
             <input
               className={`${form.input} ${styles.searchInput}`}
-              type="search"
+              type="text"
               placeholder="ユーザー名で検索"
               value={query}
               maxLength={50}
@@ -121,6 +121,16 @@ export default function FollowsPage() {
               }}
               aria-label="ユーザー名で検索"
             />
+            {query && (
+              <button
+                type="button"
+                className={styles.searchClear}
+                onClick={clearSearch}
+                aria-label="検索文字を消去"
+              >
+                ×
+              </button>
+            )}
           </span>
           <button type="submit" className={`${form.button} ${form.primary} ${styles.searchButton}`} disabled={searching}>
             検索
