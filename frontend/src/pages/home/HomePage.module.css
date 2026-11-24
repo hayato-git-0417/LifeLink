@@ -895,3 +895,23 @@
   background: transparent;
   cursor: pointer;
 }
+
+.room {
+  --floor-height: 30%;
+}
+
+.wall {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: var(--floor-height);
+  left: 0;
+  height: auto;
+  background-position: center bottom;
+}
+
+.floor {
+  top: auto;
+  bottom: 0;
+  height: var(--floor-height);
+}
