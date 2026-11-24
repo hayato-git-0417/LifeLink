@@ -80,13 +80,33 @@ export default function FurniturePlacementPage({ wallImage, floorImage, onPlaceF
             })
 
             if (overlapping.length === 0) {
-                const onFloor =
-                    furniture.placement === 'floor' &&
-                    floorBounds !== null &&
-                    position.y >= floorBounds.top &&
-                    position.y <= floorBounds.bottom
+                const placement = furniture.placement
 
-                return onFloor ? { supportPlacementId: null } : null
+                // 以前保存した placement: 'floor' にも対応する
+                if (placement === 'floor') {
+                    const withinFloor =
+                        floorBounds !== null &&
+                        position.y >= floorBounds.top &&
+                        position.y <= floorBounds.bottom
+
+                    return withinFloor
+                        ? { supportPlacementId: null }
+                        : null
+                }
+
+                const minY = placement?.minY ?? 0
+                const maxY = placement?.maxY ?? 100
+
+                // 家具画像の下辺を、部屋の下から測った位置に変換する
+                const heightFromBottom = 100 - position.y
+
+                const withinRange =
+                    heightFromBottom >= minY &&
+                    heightFromBottom <= maxY
+
+                return withinRange
+                    ? { supportPlacementId: null }
+                    : null
             }
 
         // 重なってよいのは、座面として使う家具1つだけ
