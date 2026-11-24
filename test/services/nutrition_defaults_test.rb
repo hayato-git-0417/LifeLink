@@ -12,6 +12,7 @@ class NutritionDefaultsTest < ActiveSupport::TestCase
       NutritionStandard.create!(gender: gender, age_from: from, age_to: to, activity_level: :moderate,
                                 calories: kcal, protein_g: p, fat_g: f, carbs_g: c, fiber_g: fiber)
     end
+    ChildNutritionStandards.call
     @today = Date.new(2026, 10, 6)
   end
 
@@ -19,7 +20,7 @@ class NutritionDefaultsTest < ActiveSupport::TestCase
     result = NutritionDefaults.call(birthdate: Date.new(2006, 4, 1), gender: "male", on: @today)
     assert_equal 2600, result[:calorie_goal]
     assert_equal 65.0, result[:protein_goal_g]
-    assert_equal 20.0, result[:fiber_goal_g]
+    assert_not result.key?(:fiber_goal_g)
     assert_equal "07:00", result[:breakfast_time]
     assert_equal 20, result[:basis][:age]
   end
@@ -34,18 +35,40 @@ class NutritionDefaultsTest < ActiveSupport::TestCase
       result = NutritionDefaults.call(birthdate: Date.new(2006, 4, 1), gender: gender, on: @today)
       assert_equal 2275, result[:calorie_goal] # (2600 + 1950) / 2
       assert_equal 57.5, result[:protein_goal_g]
-      assert_equal 19.0, result[:fiber_goal_g]
+      assert_not result.key?(:fiber_goal_g)
       assert result[:basis][:averaged]
     end
   end
 
-  test "18歳未満は一番若い区分、基準より上の年齢は一番上の区分" do
-    assert_equal 1950, NutritionDefaults.call(birthdate: Date.new(2012, 1, 1), gender: "female", on: @today)[:calorie_goal]
+  test "未成年は該当する年齢区分、基準より上の年齢は一番上の区分" do
+    assert_equal 2400, NutritionDefaults.call(birthdate: Date.new(2012, 1, 1), gender: "female", on: @today)[:calorie_goal]
     assert_equal 2050, NutritionDefaults.call(birthdate: Date.new(1960, 1, 1), gender: "female", on: @today)[:calorie_goal]
   end
 
   test "基準のデータがなければ nil" do
     NutritionStandard.delete_all
     assert_nil NutritionDefaults.call(birthdate: Date.new(2006, 4, 1), gender: "male", on: @today)
+  end
+  test "誕生日で子どもの区分から成人の区分に切り替わる" do
+    assert_equal 2850, NutritionDefaults.call(birthdate: Date.new(2008, 10, 7), gender: "male", on: @today)[:calorie_goal]
+    assert_equal 2600, NutritionDefaults.call(birthdate: Date.new(2008, 10, 6), gender: "male", on: @today)[:calorie_goal]
+  end
+
+  test "子どもの全区分を男女別に返す" do
+    ChildNutritionStandards::ROWS.each do |gender, rows|
+      rows.each do |from, to, calories, protein, _fiber|
+        [from, to].each do |age|
+          result = NutritionDefaults.call(birthdate: @today.prev_year(age), gender: gender, on: @today)
+          assert_equal calories, result[:calorie_goal]
+          assert_equal protein, result[:protein_goal_g]
+        end
+      end
+    end
+  end
+
+  test "1歳未満と欠けた年齢区分に成人値を代用しない" do
+    assert_nil NutritionDefaults.call(birthdate: @today, gender: "male", on: @today)
+    NutritionStandard.where(age_from: 1..17).delete_all
+    assert_nil NutritionDefaults.call(birthdate: @today.prev_year(14), gender: "male", on: @today)
   end
 end

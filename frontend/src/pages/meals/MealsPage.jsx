@@ -1,4 +1,4 @@
-// 食事トップ（デザイン p.13）。今日の摂取量（円グラフはカロリー）・PFC・食物繊維、記録する・一覧、今日の食事カード。
+// 食事トップ（デザイン p.13）。今日の摂取量（円グラフはカロリー）・PFC、記録する・一覧、今日の食事カード。
 // 「!」ボタンは作らない（spec.md 5章）
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'

@@ -13,21 +13,22 @@ export const NUTRIENTS = [
   { key: 'protein_g', goalKey: 'protein_goal_g', label: 'たんぱく質', unit: 'g', step: 0.1 },
   { key: 'fat_g', goalKey: 'fat_goal_g', label: '脂質', unit: 'g', step: 0.1 },
   { key: 'carbs_g', goalKey: 'carbs_goal_g', label: '炭水化物', unit: 'g', step: 0.1 },
-  { key: 'fiber_g', goalKey: 'fiber_goal_g', label: '食物繊維', unit: 'g', step: 0.1 },
 ]
 
-// 区分の初期値: 目標の食事時刻（朝・昼・夕）のうち今に一番近いもの。どれとも2時間以上離れていれば間食
+// 区分の初期値: 目標の食事時刻（朝・昼・夕）のうち今に一番近いもの。どれとも1時間を超えて離れていれば間食
 export function guessMealType(goal, date = new Date()) {
+  const defaults = { breakfast_time: "07:00", lunch_time: "12:00", dinner_time: "19:00" }
   const minutesNow = date.getHours() * 60 + date.getMinutes()
   let best = null
   MEAL_TYPES.forEach((type) => {
-    const time = type.goalTime && goal?.[type.goalTime]
+    const time = type.goalTime && (goal?.[type.goalTime] || defaults[type.goalTime])
     if (!time) return
     const [h, m] = time.split(':').map(Number)
-    const diff = Math.abs(minutesNow - (h * 60 + m))
+    const distance = Math.abs(minutesNow - (h * 60 + m))
+    const diff = Math.min(distance, 1440 - distance)
     if (!best || diff < best.diff) best = { key: type.key, diff }
   })
-  return best && best.diff <= 120 ? best.key : 'snack'
+  return best && best.diff <= 60 ? best.key : 'snack'
 }
 
 // 食事の配列の栄養値の合計（未入力は 0）

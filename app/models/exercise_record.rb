@@ -7,6 +7,7 @@ class ExerciseRecord < ApplicationRecord
   before_validation :fill_recorded_on
 
   validates :started_at, :recorded_on, presence: true
+  validates :distance_km, presence: true, numericality: { greater_than: 0, less_than: 1000, allow_nil: true }, if: :manual?
   # タイマーの記録は運動時間（1分以上）が必須
   validates :duration_minutes, presence: true, numericality: { only_integer: true, greater_than: 0 }, if: :timer?
   validates :memo, length: { maximum: 255 }

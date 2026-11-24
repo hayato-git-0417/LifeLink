@@ -231,3 +231,5 @@ main > .errors {
   align-items: center;
   width: 100%;
 }
+.fieldError { color: var(--danger); font-size: 0.85rem; }
+.input[aria-invalid="true"] { border-color: var(--danger); }

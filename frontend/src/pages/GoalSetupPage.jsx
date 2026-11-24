@@ -29,7 +29,7 @@ export default function GoalSetupPage() {
   async function loadDefaults(overwrite) {
     setBusy(true)
     try {
-      const data = await api('/goal/nutrition_defaults')
+      const data = await api(overwrite ? '/goal/nutrition_suggestion' : '/goal/nutrition_defaults', overwrite ? { method: 'POST', body: {} } : {})
       setBasis(data.nutrition_defaults.basis)
       if (overwrite) setGoal((current) => applyNutritionDefaults(current, data.nutrition_defaults))
     } catch (error) {

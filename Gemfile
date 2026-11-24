@@ -40,8 +40,6 @@ group :development, :test do
   gem "rubocop-rails-omakase", require: false
 end
 
-
-
 group :development, :test do
   # .env から環境変数（DBパスワード等）を読み込む
   gem "dotenv-rails"
@@ -50,3 +48,5 @@ end
 gem "devise_token_auth", ">= 1.2.6"
 
 gem "rails-i18n", "~> 7.0"
+
+gem "ruby-vips"

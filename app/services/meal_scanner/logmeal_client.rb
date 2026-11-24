@@ -76,11 +76,11 @@ class MealScanner
         http.request(request)
       end
 
-      unless response.is_a?(Net::HTTPSuccess)
-        raise "LogMeal API error: HTTP #{response.code} - #{response.body}"
-      end
+      raise ApiError.new(service: "LogMeal", status: response.code.to_i) unless response.is_a?(Net::HTTPSuccess)
 
-      JSON.parse(response.body)
+      JSON.parse(response.body.to_s.dup.force_encoding(Encoding::UTF_8))
+    rescue JSON::ParserError, Encoding::InvalidByteSequenceError
+      raise ApiError.new(service: "LogMeal")
     end
   end
 end

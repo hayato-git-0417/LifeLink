@@ -40,6 +40,9 @@ shared: &shared
     sleep_deprived_score_below: 80
     fat_exercise_points_below: 300
 
+  meal_classification:
+    window_minutes: 60 # 設定した食事時刻の前後1時間
+
   meal_times:
     # 新規登録④・目標変更の初期値（spec.md 2章）
     breakfast: "07:00"

@@ -1,7 +1,7 @@
 // 目標の入力中の値（新規登録③④・目標設定・目標変更で共通）と、PUT /goal に送る形への変換。
 // 時間（分）は画面では「時間」と「分」に分けて入力する。
 
-const NUTRIENT_KEYS = ['calorie_goal', 'protein_goal_g', 'fat_goal_g', 'carbs_goal_g', 'fiber_goal_g']
+const NUTRIENT_KEYS = ['calorie_goal', 'protein_goal_g', 'fat_goal_g', 'carbs_goal_g']
 export const MEAL_TIME_KEYS = ['breakfast_time', 'lunch_time', 'dinner_time']
 
 export const NUTRIENT_FIELDS = [
@@ -9,7 +9,6 @@ export const NUTRIENT_FIELDS = [
   { key: 'protein_goal_g', label: 'たんぱく質', unit: 'g', step: 0.1 },
   { key: 'fat_goal_g', label: '脂質', unit: 'g', step: 0.1 },
   { key: 'carbs_goal_g', label: '炭水化物', unit: 'g', step: 0.1 },
-  { key: 'fiber_goal_g', label: '食物繊維', unit: 'g', step: 0.1 },
 ]
 
 export const MEAL_TIME_FIELDS = [
@@ -35,7 +34,6 @@ export function newGoalDraft() {
     protein_goal_g: '',
     fat_goal_g: '',
     carbs_goal_g: '',
-    fiber_goal_g: '',
     breakfast_time: '07:00',
     lunch_time: '12:00',
     dinner_time: '19:00',
@@ -79,41 +77,41 @@ function isWholeNumber(value) {
 }
 
 // 新規登録③（睡眠・運動・ワーク）の入力チェック
-export function validateBasics(draft) {
-  const errors = []
+export function validateBasics(draft, fields = false) {
+  const errors = {}
   if (draft.sleep_goal_type === 'duration') {
     const minutes = toMinutes(draft.sleep_hours, draft.sleep_minutes)
     if (!isWholeNumber(draft.sleep_hours) || !isWholeNumber(draft.sleep_minutes) || minutes <= 0 || minutes > 24 * 60) {
-      errors.push('睡眠時間は0より長く、24時間以内で入力してください')
+      errors.sleep = '睡眠時間は0より長く、24時間以内で入力してください'
     }
   } else if (!draft.bedtime || !draft.wake_time) {
-    errors.push('就寝時刻と起床時刻を入力してください')
+    errors.sleep = '就寝時刻と起床時刻を入力してください'
   } else if (draft.bedtime === draft.wake_time) {
-    errors.push('就寝時刻と起床時刻は別の時刻にしてください')
+    errors.sleep = '就寝時刻と起床時刻は別の時刻にしてください'
   }
   if (draft.tasks.every((task) => !task.title.trim())) {
-    errors.push('運動タスクを1件以上入力してください')
+    errors.tasks = '運動タスクを1件以上入力してください'
   }
   const work = toMinutes(draft.work_hours, draft.work_minutes)
   if (!isWholeNumber(draft.work_hours) || !isWholeNumber(draft.work_minutes) || work <= 0 || work > 24 * 60) {
-    errors.push('ワーク時間は0より長く、24時間以内で入力してください')
+    errors.work = 'ワーク時間は0より長く、24時間以内で入力してください'
   }
-  return errors
+  return fields ? errors : Object.values(errors)
 }
 
 // 新規登録④（食事の目標・食事時刻）の入力チェック
-export function validateMeals(draft) {
-  const errors = []
+export function validateMeals(draft, fields = false) {
+  const errors = {}
   NUTRIENT_FIELDS.forEach(({ key, label }) => {
     const value = draft[key]
-    if (value === '' || Number.isNaN(Number(value)) || Number(value) <= 0) {
-      errors.push(`${label}の目標は0より大きい数で入力してください`)
+    if (value === '' || !Number.isFinite(Number(value)) || Number(value) <= 0) {
+      errors[key] = `${label}の目標は0より大きい数で入力してください`
     }
   })
   MEAL_TIME_FIELDS.forEach(({ key, label }) => {
-    if (!draft[key]) errors.push(`${label}の時刻を入力してください`)
+    if (!draft[key]) errors[key] = `${label}の時刻を入力してください`
   })
-  return errors
+  return fields ? errors : Object.values(errors)
 }
 
 // PUT /goal に送る形

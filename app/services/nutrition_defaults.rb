@@ -1,15 +1,14 @@
 # 年齢・性別から食事の目標の初期値を出す（新規登録④・目標変更で表示する値）。
 # 値は nutrition_standards（日本人の食事摂取基準 2025年版・身体活動レベル「ふつう」）から引く。
 #   - 性別が未回答・その他 → 男性と女性の平均（spec.md 2章）
-#   - 18歳未満 → 一番若い区分（18〜29歳）の値【仮: docs/decisions.md】
+#   - 1〜17歳も年齢区分ごとの基準を使用する。1歳未満は自動設定の対象外。
 #   - 基準にない年齢（上限より上）→ 一番上の区分の値
 class NutritionDefaults
   NUTRIENT_KEYS = {
     calorie_goal: :calories,
     protein_goal_g: :protein_g,
     fat_goal_g: :fat_g,
-    carbs_goal_g: :carbs_g,
-    fiber_goal_g: :fiber_g
+    carbs_goal_g: :carbs_g
   }.freeze
   STANDARD_GENDERS = %w[male female].freeze
 
@@ -22,6 +21,8 @@ class NutritionDefaults
   end
 
   def call
+    return nil if @age < 1
+
     standards = target_genders.map { |gender| standard_for(gender) }.compact
     return nil if standards.empty?
 
@@ -47,6 +48,6 @@ class NutritionDefaults
 
   def standard_for(gender)
     rows = NutritionStandard.moderate.where(gender: gender).order(:age_from)
-    rows.for_age(@age).first || (@age < rows.first&.age_from.to_i ? rows.first : rows.last)
+    rows.for_age(@age).first || (rows.last if rows.last && @age > rows.last.age_to)
   end
 end

@@ -77,11 +77,12 @@ class UserRecordsTest < ActionDispatch::IntegrationTest
                             comment: "ひみつ", calories: 700, protein_g: 20.5)
       @friend.exercise_records.create!(started_at: Time.zone.local(2026, 10, 6, 18), distance_km: 2.5, memo: "ジョギング")
       @friend.exercise_records.create!(started_at: Time.zone.local(2026, 10, 6, 20), distance_km: 1)
+      @friend.exercise_records.create!(started_at: Time.zone.local(2026, 10, 6, 21), record_method: :timer, duration_minutes: 15)
 
       get records_path(@friend, tab: "meal", from: "2026-10-05", to: "2026-10-07"), headers: auth_headers(@me)
       assert_response :ok
       meal = json["meals"].sole
-      assert_equal %w[recorded_on calories protein_g fat_g carbs_g fiber_g].sort, meal.keys.sort
+      assert_equal %w[recorded_on calories protein_g fat_g carbs_g].sort, meal.keys.sort
       assert_equal 700, meal["calories"]
       assert_equal 20.5, meal["protein_g"]
 

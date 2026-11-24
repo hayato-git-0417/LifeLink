@@ -1,5 +1,7 @@
 # DB設計書（sotuken_b）— Claude Code 用 Markdown 版
 
+> 2026-11-12変更: 食物繊維は画面・目標・解析・API・食事スコアの対象外。下記の `fiber_g` / `fiber_goal_g` 列は既存データ保持のため残している。食事スコアの現在の定義は `docs/spec.md` を参照。
+
 > 元ファイル: `sotuken_b_DB設計書.xlsx`（第1版たたき台, 2026-10-06）。この Markdown は Excel から機械的に変換したもの。数値を試算したいときは Excel の「達成度の計算」シートを使う。
 
 ## 設計の前提・ルール
@@ -31,6 +33,8 @@
 | 12 | 記録 | exercise_records | ExerciseRecord | 移動距離の手入力の記録（運動タイマーは作らない。started_at は入力した日時、ended_at・duration_minutes は使わない）。 | ホーム(p.1-2)の運動 / 運動(p.18)の移動距離 / 詳細(p.5) |
 | 13 | 記録 | meals | Meal | 1回の食事。写真は Active Storage（has_one_attached :photo）で保存し、このテーブルには列を持たない。 | ホーム(p.1-2) / 食事トップ(p.13) / 食事を記録(p.14) / 詳細(p.5) |
 | 14 | マスタ | nutrition_standards | NutritionStandard | 年齢・性別ごとの食事のデフォルト値。新規登録時に goals の初期値を決めるのに使う。値は db/seeds.rb で投入。 | 新規登録（内部処理） / 食事トップ(p.13) |
+| 16 | マスタ | food_compositions | FoodComposition | 食品成分表の食品名と100g当たりの5項目。db/seeds.rb で投入。 | 食事を記録(p.14) |
+| 17 | 記録 | meal_food_items | MealFoodItem | 食事に使った食品と摂取量（g）。 | 食事を記録(p.14) |
 | 15 | マスタ | character_animations | CharacterAnimation | キャラの状態（8種類）ごとに表示するGIFのパス。GIF本体は Rails の public/characters/ に置く（Reactを使う場合も使わない場合も同じパスで表示できる）。値は db/seeds.rb で投入。 | ホーム(p.1-2) |
 | 16 | キャラ | evolution_point_logs | EvolutionPointLog | 進化の累計ポイントの増減履歴（記録による加算・休んだ日の減少）。記録による加算は「キャラ・日・項目」で1行だけ（2026-11-10 追加。spec.md 4.3） | ホーム（進化カード） / 通知 |
 | － | フレームワーク | active_storage_blobs<br>active_storage_attachments<br>active_storage_variant_records | （Rails標準） | 食事写真の保存用。rails active_storage:install で自動生成されるので自分で設計しない。 | 食事を記録(p.14) |
@@ -56,6 +60,8 @@
 | characters | evolution_point_logs | 1 : 多 | evolution_point_logs.character_id | 親と一緒に削除 | has_many :evolution_point_logs, dependent: :destroy | belongs_to :character |
 | exercise_tasks | exercise_task_completions | 1 : 多 | exercise_task_completions.exercise_task_id | 親と一緒に削除 | has_many :exercise_task_completions, dependent: :destroy | belongs_to :exercise_task |
 | meals | 写真（Active Storage） | 1 : 0..1 | active_storage_attachments.record_id | 親と一緒に削除 | has_one_attached :photo | － |
+| meals | meal_food_items | 1 : 多 | meal_food_items.meal_id | 親と一緒に削除 | has_many :meal_food_items, dependent: :destroy | belongs_to :meal |
+| food_compositions | meal_food_items | 1 : 多 | meal_food_items.food_composition_id | 利用中は削除不可 | has_many :meal_food_items | belongs_to :food_composition |
 | （任意のデータ） | notifications | 多 : 1 | notifications.notifiable_type / notifiable_id | － | has_many :notifications, as: :notifiable | belongs_to :notifiable, polymorphic: true, optional: true |
 
 ## テーブル定義
@@ -359,6 +365,34 @@
 | `fiber_g` | 食物繊維（g/日） | DECIMAL(5,1) | decimal (precision: 5, scale: 1) |  |  |  |  |  | 食事摂取基準の目標量 |
 
 インデックス: ユニーク: `gender, age_from, activity_level`（重複登録を防ぐ）
+
+### food_compositions
+- 出典: 文部科学省「日本食品標準成分表2020年版（八訂）」、同梱の `db/data/food_composition_2020.csv`。
+- 食品成分は可食部100g当たり。利用可能炭水化物ではなく、成分表の「炭水化物」を `carbs_g` に使用する。
+- 成分表の「Tr（微量）」は0として収録し、空欄・「-」・「*」は値なしとして収録する。食事計算では値なしの項目を合計に加えない。
+
+| カラム | 内容 | 型 | 備考 |
+|---|---|---|---|
+| `food_code` | 食品番号 | VARCHAR | 一意。原典の番号 |
+| `name` | 食品名 | VARCHAR | 原典の名称 |
+| `calories` | エネルギー（kcal/100g） | DECIMAL(7,2) | |
+| `protein_g` | たんぱく質（g/100g） | DECIMAL(8,3) | |
+| `fat_g` | 脂質（g/100g） | DECIMAL(8,3) | |
+| `carbs_g` | 炭水化物（g/100g） | DECIMAL(8,3) | |
+| `fiber_g` | 食物繊維（g/100g） | DECIMAL(8,3) | |
+
+インデックス: ユニーク: `food_code` / 通常: `name`
+
+### meal_food_items
+- `weight_g` は食べた量。食品の成分値に基づき、食事保存時に既存の5栄養項目を再計算する。
+
+| カラム | 内容 | 型 | 備考 |
+|---|---|---|---|
+| `meal_id` | 食事ID | BIGINT | 外部キー |
+| `food_composition_id` | 食品成分ID | BIGINT | 外部キー |
+| `weight_g` | 摂取量（g） | DECIMAL(7,1) | 0より大きい値 |
+
+インデックス: 通常: `meal_id`, `food_composition_id`
 
 ### character_animations
 
@@ -773,4 +807,39 @@ class CreateCharacterAnimations < ActiveRecord::Migration[7.2]
   end
 end
 ```
+
+### 16-17. food_compositions / meal_food_items
+
+```ruby
+class CreateFoodCompositionsAndMealFoodItems < ActiveRecord::Migration[7.2]
+  def change
+    create_table :food_compositions do |t|
+      t.string :food_code, null: false
+      t.string :name, null: false
+      t.decimal :calories, precision: 7, scale: 2
+      t.decimal :protein_g, precision: 8, scale: 3
+      t.decimal :fat_g, precision: 8, scale: 3
+      t.decimal :carbs_g, precision: 8, scale: 3
+      t.decimal :fiber_g, precision: 8, scale: 3
+      t.timestamps
+      t.index :food_code, unique: true
+      t.index :name
+    end
+
+    create_table :meal_food_items do |t|
+      t.references :meal, null: false, foreign_key: true
+      t.references :food_composition, null: false, foreign_key: true
+      t.decimal :weight_g, precision: 7, scale: 1, null: false
+      t.timestamps
+    end
+  end
+end
+```
+
 - **（実行）**: `rails db:migrate` — db/schema.rb が更新されるので、それも一緒に push する。
+
+### 2026-11-17 プロフィール追加
+users.height_cm / weight_kg: decimal(5,1)、既存ユーザーはNULLを許容。新規作成時は両方必須、0より大きく1000未満。
+
+### 2026-11-18 普段の活動量
+users.activity_level: integer NOT NULL。low=0／moderate=1／high=2。既存ユーザーはmoderateで引き継ぎ、新規登録・プロフィール変更で保存する。

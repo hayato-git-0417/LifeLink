@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_11_15_130000) do
+ActiveRecord::Schema[7.2].define(version: 2026_11_18_000000) do
   create_table "active_storage_attachments", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -163,6 +163,20 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_15_130000) do
     t.index ["follower_id", "followed_id"], name: "index_follows_on_follower_id_and_followed_id", unique: true
   end
 
+  create_table "food_compositions", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.string "food_code", null: false
+    t.string "name", null: false
+    t.decimal "calories", precision: 7, scale: 2
+    t.decimal "protein_g", precision: 8, scale: 3
+    t.decimal "fat_g", precision: 8, scale: 3
+    t.decimal "carbs_g", precision: 8, scale: 3
+    t.decimal "fiber_g", precision: 8, scale: 3
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["food_code"], name: "index_food_compositions_on_food_code", unique: true
+    t.index ["name"], name: "index_food_compositions_on_name"
+  end
+
   create_table "goals", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.bigint "user_id", null: false
     t.integer "sleep_goal_type", default: 0, null: false
@@ -181,6 +195,16 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_15_130000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["user_id"], name: "index_goals_on_user_id", unique: true
+  end
+
+  create_table "meal_food_items", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "meal_id", null: false
+    t.bigint "food_composition_id", null: false
+    t.decimal "weight_g", precision: 7, scale: 1, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["food_composition_id"], name: "index_meal_food_items_on_food_composition_id"
+    t.index ["meal_id"], name: "index_meal_food_items_on_meal_id"
   end
 
   create_table "meals", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -264,6 +288,9 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_15_130000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.boolean "avatar_selected", default: false, null: false
+    t.decimal "height_cm", precision: 5, scale: 1
+    t.decimal "weight_kg", precision: 5, scale: 1
+    t.integer "activity_level", null: false
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["name"], name: "index_users_on_name"
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
@@ -295,6 +322,8 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_15_130000) do
   add_foreign_key "follows", "users", column: "followed_id"
   add_foreign_key "follows", "users", column: "follower_id"
   add_foreign_key "goals", "users"
+  add_foreign_key "meal_food_items", "food_compositions"
+  add_foreign_key "meal_food_items", "meals"
   add_foreign_key "meals", "users"
   add_foreign_key "notifications", "users"
   add_foreign_key "notifications", "users", column: "actor_id"

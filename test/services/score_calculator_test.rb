@@ -30,19 +30,19 @@ class ScoreCalculatorTest < ActiveSupport::TestCase
     result = ScoreCalculator.call(user: @user, date: DAY)
 
     assert_equal BigDecimal("92.9"), result.sleep_score
-    assert_equal BigDecimal("81.0"), result.meal_score
+    assert_equal BigDecimal("87.0"), result.meal_score
     assert_equal BigDecimal("50.0"), result.exercise_score
     assert_equal BigDecimal("71.4"), result.work_score
-    assert_equal BigDecimal("76.5"), result.total_percent
+    assert_equal BigDecimal("78.3"), result.total_percent
     assert_equal 4, result.recorded_items_count
   end
 
   test "spec.md 3.3 の計算例: ポイントの増減と総合ポイント" do
     assert_equal 86, ScoreCalculator.point_change(BigDecimal("92.9"))
-    assert_equal 62, ScoreCalculator.point_change(BigDecimal("81.0"))
+    assert_equal 74, ScoreCalculator.point_change(BigDecimal("87.0"))
     assert_equal 0, ScoreCalculator.point_change(BigDecimal("50.0"))
     assert_equal 43, ScoreCalculator.point_change(BigDecimal("71.4"))
-    assert_equal 599, ScoreCalculator.total_points(sleep: 706, meal: 602, exercise: 410, work: 623)
+    assert_equal 603, ScoreCalculator.total_points(sleep: 706, meal: 614, exercise: 410, work: 623)
   end
 
   test "100点で+100、0点で-100、ポイントは0〜1000に収める" do
@@ -84,7 +84,7 @@ class ScoreCalculatorTest < ActiveSupport::TestCase
     assert_equal 0, ScoreCalculator.call(user: @user, date: DAY).meal_score
 
     @user.meals.create!(meal_type: :lunch, eaten_at: at(12), calories: 2000) # カロリーだけ100点、ほかは0点
-    assert_equal BigDecimal("20.0"), ScoreCalculator.call(user: @user, date: DAY).meal_score
+    assert_equal BigDecimal("25.0"), ScoreCalculator.call(user: @user, date: DAY).meal_score
   end
 
   test "日付をまたぐ睡眠は起床した日に数え、同じ日の昼寝は合計する。時間帯の目標は 起床−就寝" do
