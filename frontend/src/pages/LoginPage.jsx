@@ -11,7 +11,7 @@ export default function LoginPage() {
   const { login } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
-  const [email, setEmail] = useState('')
+  const [accountId, setAccountId] = useState('')
   const [password, setPassword] = useState('')
   const [errors, setErrors] = useState([])
   const [submitting, setSubmitting] = useState(false)
@@ -21,7 +21,7 @@ export default function LoginPage() {
     setErrors([])
     setSubmitting(true)
     try {
-      const user = await login(email.trim(), password)
+      const user = await login(accountId.trim(), password)
       // 目標が未登録なら RequireUser が目標設定へ回す
       navigate(user.goal_registered ? location.state?.from || '/' : '/goal-setup', { replace: true })
     } catch (error) {
@@ -44,13 +44,16 @@ export default function LoginPage() {
           <h1 className={page.title}>ログイン</h1>
           <ErrorList errors={errors} />
           <label className={styles.field}>
-            <span className={styles.label}>メールアドレス</span>
+            <span className={styles.label}>ユーザーID</span>
             <input
               className={styles.input}
-              type="email"
-              autoComplete="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
+              type="text"
+              autoComplete="username"
+              autoCapitalize="off"
+              spellCheck={false}
+              placeholder="LifeLink_01"
+              value={accountId}
+              onChange={(event) => setAccountId(event.target.value)}
               required
             />
           </label>
@@ -68,7 +71,7 @@ export default function LoginPage() {
           <button
             className={`${styles.button} ${styles.primary} ${styles.block} ${page.submit}`}
             type="submit"
-            disabled={submitting || !email || !password}
+            disabled={submitting || !accountId || !password}
           >
             {submitting ? 'ログイン中…' : 'ログイン'}
           </button>

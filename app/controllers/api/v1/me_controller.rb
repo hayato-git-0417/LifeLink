@@ -21,14 +21,14 @@ module Api
       private
 
       def profile_params
-        params.require(:user).permit(:name, :icon, :birthdate, :gender, :height_cm, :weight_kg, :activity_level, :avatar, :avatar_selected, :remove_avatar)
+        params.require(:user).permit(:account_id, :name, :icon, :birthdate, :gender, :height_cm, :weight_kg, :activity_level, :avatar, :avatar_selected, :remove_avatar)
       end
 
       # goal_registered: false のときフロントは目標設定画面へ誘導する（spec.md 5章）
       def user_json(user)
         {
           id: user.id,
-          email: user.email,
+          account_id: user.account_id,
           name: user.name,
           icon: user.icon,
           avatar_url: user.avatar.attached? ? rails_blob_path(user.avatar, only_path: true) : nil,

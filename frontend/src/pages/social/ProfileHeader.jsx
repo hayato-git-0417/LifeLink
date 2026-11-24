@@ -13,7 +13,10 @@ export default function ProfileHeader({ user, followersCount, followingsCount, l
     <section className={styles.profile}>
       <UserIcon icon={user.icon} avatarUrl={user.avatar_selected ? user.avatar_url : null} size={84} photoBorderWidth={photoBorderWidth}/>
       <div className={styles.profileBody}>
-        <h2 className={styles.profileName}>{user.name}</h2>
+        <div className={styles.profileNameRow}>
+          <h2 className={styles.profileName}>{user.name}</h2>
+          {linkCounts && user.account_id && <span className={styles.profileAccountId}>@{user.account_id}</span>}
+        </div>
         <div className={styles.counts}>
           {counts.map((count) =>
             linkCounts ? (
@@ -34,3 +37,4 @@ export default function ProfileHeader({ user, followersCount, followingsCount, l
     </section>
   )
 }
+

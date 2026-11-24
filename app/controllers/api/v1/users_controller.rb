@@ -11,7 +11,8 @@ module Api
         query = params[:q].to_s.strip
         return render json: { users: [] } if query.empty?
 
-        users = User.where("name LIKE ?", "%#{User.sanitize_sql_like(query)}%")
+        escaped_query = User.sanitize_sql_like(query)
+        users = User.where("name LIKE :query OR LOWER(account_id) LIKE :account_query", query: "%#{escaped_query}%", account_query: "%#{escaped_query.downcase}%")
                     .where.not(id: current_user.id)
                     .order(:name, :id)
                     .limit(SEARCH_LIMIT)
@@ -45,7 +46,7 @@ module Api
       def user_list_json(users)
         following_ids = current_user.active_follows.where(followed_id: users.map(&:id)).pluck(:followed_id).to_set
         users.map do |user|
-          { id: user.id, name: user.name, icon: user.icon, avatar_url: user.avatar.attached? ? rails_blob_path(user.avatar, only_path: true) : nil, avatar_selected: user.avatar_selected, following: following_ids.include?(user.id) }
+          { id: user.id, account_id: user.account_id, name: user.name, icon: user.icon, avatar_url: user.avatar.attached? ? rails_blob_path(user.avatar, only_path: true) : nil, avatar_selected: user.avatar_selected, following: following_ids.include?(user.id) }
         end
       end
 
@@ -54,6 +55,7 @@ module Api
         character = user.character
         {
           id: user.id,
+          account_id: user.account_id,
           name: user.name,
           icon: user.icon,
           avatar_url: user.avatar.attached? ? rails_blob_path(user.avatar, only_path: true) : nil,
