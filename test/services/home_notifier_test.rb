@@ -10,14 +10,13 @@ class HomeNotifierTest < ActiveSupport::TestCase
     HomeNotifier.call(user: @user, resolved: resolved)
   end
 
-  test "キャラの状態の通知は状態ごとに1日1回（睡眠不足と空腹は別に数える）" do
+  test "キャラの状態の通知は空腹だけ・1日1回（ほかの状態では作らない）" do
     travel_to Time.zone.local(2026, 10, 6, 9) do
-      assert_equal 1, notify(state: "sleep_deprived").size
-      assert_empty notify(state: "sleep_deprived")
       assert_equal 1, notify(state: "hungry").size
-      assert_empty notify(state: "full")
+      assert_empty notify(state: "hungry")
+      %w[normal sleeping studying exercising].each { |state| assert_empty notify(state: state) }
     end
-    assert_equal %w[character character], @user.notifications.pluck(:notification_type)
+    assert_equal %w[character], @user.notifications.pluck(:notification_type)
 
     travel_to Time.zone.local(2026, 10, 7, 9) do
       assert_equal 1, notify(state: "hungry").size # 次の日はまた作る

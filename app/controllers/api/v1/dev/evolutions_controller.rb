@@ -1,4 +1,5 @@
 # 進化のテストパネル（開発用）。ホームの「進化テスト」から、記録・日を進める・毎日記録して進める・直接決める・リセットを試す。
+# 状態ごとの姿（states）も返し、パネルで選んだ状態をホームの表示だけに当てられるようにする。
 # ルートは development・test だけに作る（config/routes.rb）。念のためここでも本番では 404 にする。
 # 操作は EvolutionSandbox。どの操作も、今の進化の状態・段階ごとの画像・最近の増減履歴を返す
 module Api
@@ -75,8 +76,23 @@ module Api
             stages: EvolutionRules.thresholds.each_with_index.map do |points, stage|
               { stage: stage, points: points, image_path: Character.stage_image_path_for(stage) }
             end,
+            state: character.state,
+            states: states_json(character.evolution_stage),
             logs: character.evolution_point_logs.recent_first.limit(HISTORY_LIMIT).map { |log| log_json(log) }
           }
+        end
+
+        # 今の段階での状態ごとの姿（テストパネルの「状態を見る」）。ホームの表示だけを切り替えるのに使い、DB の状態は変えない
+        # （状態は記録から毎回判定し直すので、保存してもホームを開くと元に戻るため）
+        def states_json(stage)
+          Character.states.keys.map do |state|
+            {
+              state: state,
+              label: I18n.t("game.states.#{state}"),
+              image_path: Character.image_path_for(stage, state),
+              image_shows_state: Character.image_shows_state_for?(stage, state)
+            }
+          end
         end
 
         def log_json(log)

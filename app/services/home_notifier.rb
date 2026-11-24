@@ -1,12 +1,12 @@
 # ホーム表示時の判定で通知を作る（spec.md 7章【仮】）。プッシュ・メールはなし（アプリ内のみ）。
-# - character: 睡眠不足・空腹になったとき。状態ごとに1日1回
+# - character: 空腹になったとき。1日1回（睡眠不足の通知は 2026-11-24 に状態ごとなくした）
 # - reminder: 就寝リマインドの時間帯（睡眠目標が「時間帯」のときだけ）。1日1回
 # - task: 20時以降に未完了の運動タスクがあるとき。1日1回
 # 「1日1回」は、同じ種類・同じタイトルの通知が今日（日本時間）すでにあるかで判定する。
 # follow（フォローされた）はフォロー時に作る（フェーズ7）。
 #   HomeNotifier.call(user: current_user, resolved: CharacterStateResolver.call(user: current_user))
 class HomeNotifier
-  CHARACTER_STATES = %w[sleep_deprived hungry].freeze
+  CHARACTER_STATES = %w[hungry].freeze
 
   def self.call(user:, resolved:, now: Time.current)
     new(user: user, resolved: resolved, now: now).call

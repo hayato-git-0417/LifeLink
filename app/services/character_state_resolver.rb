@@ -30,22 +30,15 @@ class CharacterStateResolver
     )
   end
 
-  # 状態だけを返す（保存しない）
+  # 状態だけを返す（保存しない）。
+  # 汗汗（exercising）は運動タイマーがブラウザの中だけで動くのでここでは判定せず、ホームでタイマー中だけ表示する
   def decide
     if sleeping?
       [ :sleeping, "睡眠を計測中" ]
-    elsif exercised_recently?
-      [ :exercising, "運動タスクにチェックしてから#{@settings[:exercising_minutes_after_task]}分以内" ]
     elsif @user.work_records.in_progress.exists?
       [ :studying, "ワークを計測中" ]
-    elsif ate_recently?
-      [ :full, "食事から#{@settings[:full_minutes_after_meal]}分以内" ]
     elsif (meal_type = hungry_meal_type)
       [ :hungry, "#{I18n.t("game.meal_types.#{meal_type}")}の記録がない" ]
-    elsif sleep_deprived?
-      [ :sleep_deprived, "今日の睡眠スコアが#{@settings[:sleep_deprived_score_below]}未満" ]
-    elsif @character.exercise_points < @settings[:fat_exercise_points_below]
-      [ :fat, "運動ポイントが#{@settings[:fat_exercise_points_below]}未満" ]
     else
       [ :normal, nil ]
     end
@@ -55,16 +48,6 @@ class CharacterStateResolver
 
   def sleeping?
     @sleeping ||= @user.sleep_records.in_progress.exists?
-  end
-
-  def exercised_recently?
-    since = @now - @settings[:exercising_minutes_after_task].minutes
-    ExerciseTaskCompletion.joins(:exercise_task)
-                          .where(exercise_tasks: { user_id: @user.id }, completed_at: since..@now).exists?
-  end
-
-  def ate_recently?
-    @user.meals.where(eaten_at: (@now - @settings[:full_minutes_after_meal].minutes)..@now).exists?
   end
 
   # 食事時刻から猶予（60分）を過ぎても、その区分の今日の記録がなければ空腹。
@@ -87,13 +70,6 @@ class CharacterStateResolver
       return meal_type
     end
     nil
-  end
-
-  # 今日起床していて（今日の集計日の睡眠記録がある）、今日の睡眠スコアがしきい値未満
-  def sleep_deprived?
-    return false unless @user.sleep_records.finished.where(recorded_on: @today).exists?
-
-    ScoreCalculator.new(user: @user, date: @today).sleep_score < @settings[:sleep_deprived_score_below]
   end
 
   # 就寝リマインド: 睡眠目標が「時間帯」のときだけ。就寝時刻の30分前から起床時刻までで、睡眠中でないとき。
@@ -127,11 +103,10 @@ class CharacterStateResolver
     tasks.exists? && tasks.where.not(id: ExerciseTaskCompletion.on(@today).select(:exercise_task_id)).exists?
   end
 
-  # 吹き出しは1つだけ。就寝リマインド → 睡眠不足 → 空腹 → 未完了タスク → 状態に合ったひとこと
+  # 吹き出しは1つだけ。就寝リマインド → 空腹 → 未完了タスク → 状態に合ったひとこと
   def message_for(state)
     key =
       if bedtime_reminder? then :bedtime
-      elsif state == :sleep_deprived then :sleep_deprived
       elsif state == :hungry then :hungry
       elsif tasks_remaining? then :tasks_remaining
       else :"state_#{state}"

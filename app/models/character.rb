@@ -1,6 +1,8 @@
 class Character < ApplicationRecord
-  # characters / character_state_logs / character_animations で共通の状態（spec.md 4章）
-  STATES = { normal: 0, sleeping: 1, sleep_deprived: 2, full: 3, hungry: 4, exercising: 5, studying: 6, fat: 7 }.freeze
+  # characters / character_state_logs / character_animations で共通の状態（spec.md 4章）。
+  # 睡眠不足(2)・満腹(3)・太り(7) は 2026-11-24 になくした（数字は詰めない）。
+  # exercising（汗汗）はサーバーでは判定せず、ホームで運動タイマーを動かしている間だけ表示する
+  STATES = { normal: 0, sleeping: 1, hungry: 4, exercising: 5, studying: 6 }.freeze
   POINT_COLUMNS = %i[sleep_points meal_points exercise_points work_points total_points].freeze
 
   belongs_to :user
@@ -35,7 +37,13 @@ class Character < ApplicationRecord
   # 画像のパス。進化の段階ごとの画像があればそれを使う（stage_image_path）。
   # なければ状態の画像（character_animations、なければ規約どおり public/characters/<state>.png）
   def image_path
-    stage_image_path || animation&.gif_path || "/characters/#{state}.png"
+    self.class.image_path_for(evolution_stage, state)
+  end
+
+  # 段階と状態を指定して画像のパスを求める（テストパネルで状態ごとの姿を見るときにも使う）
+  def self.image_path_for(stage, state)
+    stage_image_path_for(stage, state) ||
+      CharacterAnimation.find_by(state: state)&.gif_path || "/characters/#{state}.png"
   end
 
   # 段階ごとの画像（public/characters/stages/）。ファイル名は段階の数字: 0.png（卵）〜 4.png（つぼみ）。
@@ -61,7 +69,11 @@ class Character < ApplicationRecord
   # 画像が今の状態を表しているか（状態ごとの段階の画像 <段階>_<状態>.png、または段階の画像がなく状態の画像を使うとき）。
   # false のとき（段階の姿だけの画像）は、ホームで状態のマークと名前を重ねる（docs/decisions.md）
   def image_shows_state?
-    path = stage_image_path
+    self.class.image_shows_state_for?(evolution_stage, state)
+  end
+
+  def self.image_shows_state_for?(stage, state)
+    path = stage_image_path_for(stage, state)
     path.nil? || path.end_with?("_#{state}.png")
   end
 
