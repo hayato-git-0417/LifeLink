@@ -45,6 +45,7 @@ export default function MyPage() {
           followersCount={user.followers_count ?? 0}
           followingsCount={user.followings_count ?? 0}
           linkCounts
+          photoBorderWidth={3.5}
         />
         <ErrorList errors={errors} />
         <section className={form.card}>

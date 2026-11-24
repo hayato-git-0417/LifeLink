@@ -45,7 +45,7 @@ module Api
       def user_list_json(users)
         following_ids = current_user.active_follows.where(followed_id: users.map(&:id)).pluck(:followed_id).to_set
         users.map do |user|
-          { id: user.id, name: user.name, icon: user.icon, following: following_ids.include?(user.id) }
+          { id: user.id, name: user.name, icon: user.icon, avatar_url: user.avatar.attached? ? rails_blob_path(user.avatar, only_path: true) : nil, avatar_selected: user.avatar_selected, following: following_ids.include?(user.id) }
         end
       end
 
@@ -56,6 +56,8 @@ module Api
           id: user.id,
           name: user.name,
           icon: user.icon,
+          avatar_url: user.avatar.attached? ? rails_blob_path(user.avatar, only_path: true) : nil,
+          avatar_selected: user.avatar_selected,
           is_self: user.id == current_user.id,
           following: current_user.following?(user),
           mutual: current_user.mutual_follow?(user),

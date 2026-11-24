@@ -41,7 +41,7 @@ export default function UserPage() {
           !errors.length && <p className={styles.empty}>読み込み中…</p>
         ) : (
           <>
-            <ProfileHeader user={user} followersCount={user.followers_count} followingsCount={user.followings_count}>
+            <ProfileHeader user={user} followersCount={user.followers_count} followingsCount={user.followings_count} photoBorderWidth={3.5}>
               <FollowButton
                 userId={user.id}
                 following={user.following}

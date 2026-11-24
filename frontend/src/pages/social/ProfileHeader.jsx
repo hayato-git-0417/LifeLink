@@ -4,14 +4,14 @@ import { Link } from 'react-router-dom'
 import UserIcon from '../../components/UserIcon.jsx'
 import styles from './Social.module.css'
 
-export default function ProfileHeader({ user, followersCount, followingsCount, linkCounts = false, children }) {
+export default function ProfileHeader({ user, followersCount, followingsCount, linkCounts = false, children, photoBorderWidth }) {
   const counts = [
     { tab: 'followers', label: 'フォロワー', value: followersCount },
     { tab: 'followings', label: 'フォロー中', value: followingsCount },
   ]
   return (
     <section className={styles.profile}>
-      <UserIcon icon={user.icon} size={84} />
+      <UserIcon icon={user.icon} avatarUrl={user.avatar_selected ? user.avatar_url : null} size={84} photoBorderWidth={photoBorderWidth}/>
       <div className={styles.profileBody}>
         <h2 className={styles.profileName}>{user.name}</h2>
         <div className={styles.counts}>
