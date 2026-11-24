@@ -35,7 +35,13 @@ class Character < ApplicationRecord
   # 画像のパス。進化の段階ごとの画像があればそれを使う（stage_image_path）。
   # なければ状態の画像（character_animations、なければ規約どおり public/characters/<state>.png）
   def image_path
-    stage_image_path || animation&.gif_path || "/characters/#{state}.png"
+    self.class.image_path_for(evolution_stage, state)
+  end
+
+  # 段階と状態を指定して画像のパスを求める（テストパネルで状態ごとの姿を見るときにも使う）
+  def self.image_path_for(stage, state)
+    stage_image_path_for(stage, state) ||
+      CharacterAnimation.find_by(state: state)&.gif_path || "/characters/#{state}.png"
   end
 
   # 段階ごとの画像（public/characters/stages/）。ファイル名は段階の数字: 0.png（卵）〜 4.png（つぼみ）。
@@ -61,7 +67,11 @@ class Character < ApplicationRecord
   # 画像が今の状態を表しているか（状態ごとの段階の画像 <段階>_<状態>.png、または段階の画像がなく状態の画像を使うとき）。
   # false のとき（段階の姿だけの画像）は、ホームで状態のマークと名前を重ねる（docs/decisions.md）
   def image_shows_state?
-    path = stage_image_path
+    self.class.image_shows_state_for?(evolution_stage, state)
+  end
+
+  def self.image_shows_state_for?(stage, state)
+    path = stage_image_path_for(stage, state)
     path.nil? || path.end_with?("_#{state}.png")
   end
 

@@ -77,6 +77,21 @@ class CharacterTest < ActiveSupport::TestCase
     end
   end
 
+  test "リポジトリの状態別の画像: 段階1〜4（5は4）の空腹・汗汗・睡眠中・勉強中は状態別の絵、それ以外は段階の絵＋マーク" do
+    (1..5).each do |stage|
+      image_stage = [ stage, 4 ].min
+      %w[hungry exercising sleeping studying].each do |state|
+        assert_equal "/characters/stages/#{image_stage}_#{state}.png", Character.image_path_for(stage, state)
+        assert Character.image_shows_state_for?(stage, state)
+      end
+      %w[sleep_deprived full fat].each do |state|
+        assert_equal "/characters/stages/#{image_stage}.png", Character.image_path_for(stage, state)
+        assert_not Character.image_shows_state_for?(stage, state)
+      end
+    end
+    assert_equal "/characters/stages/0.png", Character.image_path_for(0, "hungry") # 卵は状態別の絵がまだない
+  end
+
   test "リポジトリの段階の画像: 0〜4 はそれぞれの画像、5 は画像ができるまで 4" do
     assert_equal (0..4).map { |stage| "/characters/stages/#{stage}.png" }, (0..4).map { |stage| Character.stage_image_path_for(stage) }
     assert_equal "/characters/stages/4.png", Character.stage_image_path_for(5)

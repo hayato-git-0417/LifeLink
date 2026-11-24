@@ -57,6 +57,14 @@ export default function HomePage({ wallImage, floorImage, placedFurniture }) {
   const stageRef = useRef(null)
   const [stageChange, setStageChange] = useState(null)
 
+  // テストパネル（開発用）で選んだ状態の姿。表示だけを差し替える（記録・DB の状態は変えない）
+  const [previewCharacter, setPreviewCharacter] = useState(null)
+  const handlePreview = useCallback((entry) => {
+    setPreviewCharacter(
+      entry && { state: entry.state, state_label: entry.label, image_path: entry.image_path, image_shows_state: entry.image_shows_state },
+    )
+  }, [])
+
   const load = useCallback(async () => {
     const data = await api('/home')
     const previousStage = stageRef.current
@@ -200,6 +208,9 @@ export default function HomePage({ wallImage, floorImage, placedFurniture }) {
     setExerciseOpen(false)
   }
   const sleeping = home?.character.state === 'sleeping'
+  // 表示するキャラ（テストパネルで状態を選んでいればその姿）。夜の部屋・動き・状態マーク・話しかけたときのひとことに使う
+  const character = home && (previewCharacter ? { ...home.character, ...previewCharacter } : home.character)
+  const night = character?.state === 'sleeping'
 
   // ホーム画面を離れたら、残っている予約を取り消す
   useEffect(() => {
@@ -229,7 +240,7 @@ export default function HomePage({ wallImage, floorImage, placedFurniture }) {
         { duration: 300 }
       )
     }
-    const state = home.character.state
+    const state = character.state
     const messages = CHARACTER_MESSAGES[state] ?? [home.message].filter(Boolean)
 
     if (messages.length === 0) return
@@ -281,7 +292,7 @@ export default function HomePage({ wallImage, floorImage, placedFurniture }) {
 
   return (
     <AppShell bare>
-      <div className={`${styles.room} ${sleeping ? styles.night : ''}`}>
+      <div className={`${styles.room} ${night ? styles.night : ''}`}>
         
         <Room wallImage={wallImage} floorImage={floorImage} />
         {placedFurniture.map((item) => (
@@ -345,17 +356,17 @@ export default function HomePage({ wallImage, floorImage, placedFurniture }) {
                     data-click-sound="custom"
                     disabled={characterTapLocked}
                     className={styles.characterButton}
-                    aria-label={`${home.character.name}に話しかける`}
+                    aria-label={`${character.name}に話しかける`}
                     onClick={handleCharacterTap}
                   >
                     <img
-                      className={`${styles.character} ${styles[`anim_${home.character.state}`] || styles.anim_normal}`}
-                      src={home.character.image_path}
-                      alt={`${home.character.name}（${home.character.state_label}）`}
+                      className={`${styles.character} ${styles[`anim_${character.state}`] || styles.anim_normal}`}
+                      src={character.image_path}
+                      alt={`${character.name}（${character.state_label}）`}
                     />
                   </button>
-                  {!home.character.image_shows_state && (
-                    <StateBadge key={home.character.state} state={home.character.state} label={home.character.state_label} />
+                  {!character.image_shows_state && (
+                    <StateBadge key={character.state} state={character.state} label={character.state_label} />
                   )}
                 </div>
 
@@ -447,7 +458,7 @@ export default function HomePage({ wallImage, floorImage, placedFurniture }) {
 
         {EvolutionDevPanel && home && (
           <Suspense fallback={null}>
-            <EvolutionDevPanel onChanged={load} />
+            <EvolutionDevPanel onChanged={load} onPreview={handlePreview} />
           </Suspense>
         )}
       </div>
