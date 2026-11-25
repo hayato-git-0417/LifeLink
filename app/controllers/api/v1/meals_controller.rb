@@ -17,6 +17,7 @@ module Api
 
       game_api
 
+      before_action :ensure_not_sleeping, only: :create
       before_action :set_meal, only: %i[show update destroy]
 
       # GET /api/v1/meals?date=2026-10-06
@@ -245,6 +246,12 @@ module Api
 
       private
 
+      def ensure_not_sleeping
+        return unless current_user.sleep_records.in_progress.exists?
+
+        render_errors([ I18n.t("api.errors.meal.cannot_record_while_sleeping") ])
+      end
+
       def set_meal
         @meal = current_user.meals.find(params[:id])
       end
@@ -252,12 +259,14 @@ module Api
       def meal_params
         @meal_params ||= params.require(:meal).permit(
           *MEAL_ATTRIBUTES,
-          :food_items_json
+          :food_items_json,
+          :manual_meal_type
         )
       end
 
       def save_meal(meal)
-        attrs = meal_params.except(:food_items_json)
+        attrs = meal_params.except(:food_items_json, :manual_meal_type)
+        manual_meal_type = manually_selected_meal_type?
 
         food_items =
           if meal_params.key?(:food_items_json)
@@ -270,14 +279,30 @@ module Api
         end
 
         current_user.with_lock do
+          next sleep_blocked_result if current_user.sleep_records.in_progress.exists?
+
           meal.assign_attributes(attrs)
-          attrs[:meal_type] = MealTypeClassifier.call(user: current_user, eaten_at: meal.eaten_at)
+          attrs[:manual_meal_type] = manual_meal_type
+          unless manual_meal_type && attrs.key?(:meal_type)
+            attrs[:meal_type] = MealTypeClassifier.call(user: current_user, eaten_at: meal.eaten_at)
+          end
           MealFoodItemUpdater.call(
             meal: meal,
             attributes: attrs,
             food_items: food_items
           )
         end
+      end
+
+      def manually_selected_meal_type?
+        ActiveModel::Type::Boolean.new.cast(meal_params[:manual_meal_type]) || false
+      end
+
+      def sleep_blocked_result
+        MealFoodItemUpdater::Result.new(
+          success: false,
+          errors: [ I18n.t("api.errors.meal.cannot_record_while_sleeping") ]
+        )
       end
 
       def remove_photo?
@@ -291,6 +316,7 @@ module Api
           meal.slice(
             :id,
             :meal_type,
+            :manual_meal_type,
             :eaten_at,
             :content,
             :comment,

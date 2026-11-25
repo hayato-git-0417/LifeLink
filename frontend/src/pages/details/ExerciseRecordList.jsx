@@ -95,7 +95,7 @@ function EditExerciseRecord({ record, isTimer, taskTitles = [], onCancel, onSave
   async function handleSubmit(event) {
     event.preventDefault()
     if (isTimer && !memo.trim()) return setErrors(['運動項目名を入力してください'])
-    if (isTimer && !(Number(duration) > 0)) return setErrors(['運動時間は0より大きい分数を入力してください'])
+    if (isTimer && (!Number.isInteger(Number(duration)) || Number(duration) < 1)) return setErrors(['運動時間は1分以上の整数で入力してください'])
         if (!isTimer && !(Number(distance) > 0)) return setErrors(['移動距離は0より大きい数で入力してください'])
     setSaving(true)
     setErrors([])
@@ -128,7 +128,7 @@ function EditExerciseRecord({ record, isTimer, taskTitles = [], onCancel, onSave
         <input
           className={form.input}
           type="number"
-          min="0.01"
+          min={isTimer ? '1' : '0.01'}
           step={isTimer ? '1' : '0.01'}
           value={isTimer ? duration : distance}
           onChange={(event) => isTimer ? setDuration(event.target.value) : setDistance(event.target.value)}

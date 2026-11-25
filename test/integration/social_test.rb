@@ -51,7 +51,7 @@ class SocialTest < ActionDispatch::IntegrationTest
     get "/api/v1/users/#{@alice.id}", headers: auth_headers(@me)
     assert_response :ok
     user = json["user"]
-    assert_equal %w[id name icon is_self following mutual followers_count followings_count character].sort, user.keys.sort
+    assert_equal %w[id name icon avatar_url avatar_selected is_self following mutual followers_count followings_count character].sort, user.keys.sort
     assert_equal false, user["is_self"]
     assert_equal false, user["following"]
     assert_equal false, user["mutual"]
@@ -159,6 +159,15 @@ class SocialTest < ActionDispatch::IntegrationTest
   test "フォロー通知には actor（アイコン・名前）が付く" do
     post "/api/v1/users/#{@alice.id}/follow", headers: auth_headers(@me)
     get "/api/v1/notifications", headers: auth_headers(@alice)
-    assert_equal({ "id" => @me.id, "name" => "自分", "icon" => @me.icon }, json["notifications"].first["actor"])
+    assert_equal(
+      {
+        "id" => @me.id,
+        "name" => "自分",
+        "icon" => @me.icon,
+        "avatar_url" => nil,
+        "avatar_selected" => false
+      },
+      json["notifications"].first["actor"]
+    )
   end
 end

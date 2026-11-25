@@ -27,6 +27,7 @@ import FurniturePlacementPage from './pages/home/FurniturePlacementPage.jsx'
 import RoomEditPage from './pages/home/RoomEditPage.jsx'
 
 const ExercisePage = lazy(() => import('./pages/exercise/ExercisePage.jsx'))
+const ExerciseTaskSettingsPage = lazy(() => import('./pages/exercise/ExerciseTaskSettingsPage.jsx'))
 const DetailsPage = lazy(() => import('./pages/details/DetailsPage.jsx'))
 const MyPage = lazy(() => import('./pages/social/MyPage.jsx'))
 
@@ -527,6 +528,7 @@ export default function App() {
           <Route path="/meals/list" element={<MealListPage />} />
           <Route path="/meals/:id/edit" element={<MealFormPage />} />
           <Route path="/exercise" element={<ExercisePage />} />
+          <Route path="/exercise/tasks" element={<ExerciseTaskSettingsPage />} />
           <Route path="/details" element={<DetailsPage />} />
           <Route path="/mypage" element={<MyPage />} />
           <Route path="/follows" element={<FollowsPage />} />

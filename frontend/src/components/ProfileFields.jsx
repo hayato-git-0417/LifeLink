@@ -149,6 +149,7 @@ function ProfilePhotoPicker({ value, onChange }) {
   const [offset, setOffset] = useState({ x: 0, y: 0 })
   const [dragStart, setDragStart] = useState(null)
   const photoInputRef = useRef(null)
+  const selectedIcon = PRESET_ICONS.find((icon) => icon.key === value.icon) || PRESET_ICONS[0]
 
   useEffect(() => {
     if (!value.avatar) {
@@ -287,7 +288,11 @@ function ProfilePhotoPicker({ value, onChange }) {
           )}
         </div>
       </div>
-      <span className={styles.photoHint}>{previewUrl ? '右端の写真を選ぶか、＋から写真を変更（10MB以下）' : '右端の＋から写真を選択（10MB以下）'}</span>
+      <span className={styles.photoHint} role="status">
+        {value.useAvatar
+          ? `選択中: 写真。${previewUrl ? '＋から写真を変更できます（10MB以下）' : '右端の＋から写真を選択できます（10MB以下）'}`
+          : `選択中: ${selectedIcon.label}。右端の＋から写真も選択できます（10MB以下）`}
+      </span>
       {photoError && <span className={styles.photoError} role="alert">{photoError}</span>}
       {cropUrl && (
         <div className={styles.cropBackdrop} role="presentation">

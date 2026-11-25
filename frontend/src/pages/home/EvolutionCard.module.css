@@ -23,7 +23,23 @@
 .head {
   display: flex;
   align-items: baseline;
+  min-width: 0;
+}
+
+.pointsLink {
+  display: flex;
+  flex: 1;
+  align-items: baseline;
   gap: 6px;
+  min-width: 0;
+  border-radius: 6px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.pointsLink:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 3px;
 }
 
 .label {
@@ -131,7 +147,15 @@
   height: 21px;
   border: 1.5px dashed var(--line-soft);
   border-radius: 50%;
+  background: transparent;
   color: var(--line-soft);
+  cursor: pointer;
+  padding: 0;
+}
+
+.item:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
 }
 
 .done_meal,
@@ -156,6 +180,17 @@
 
 .done_sleep {
   background: var(--sleep);
+}
+
+.itemHint {
+  margin: -1px 0 0;
+  padding: 4px 7px;
+  border-radius: 7px;
+  background: var(--paper-deep);
+  color: var(--ink-soft);
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1.35;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -6,7 +6,7 @@ module Api
 
       # GET /api/v1/notifications（新しい順に50件）
       def index
-        notifications = current_user.notifications.includes(:actor).recent_first.limit(LIST_LIMIT)
+        notifications = current_user.notifications.includes(actor: { avatar_attachment: :blob }).recent_first.limit(LIST_LIMIT)
         render json: {
           notifications: notifications.map { |notification| notification_json(notification) },
           unread_count: current_user.notifications.unread.count

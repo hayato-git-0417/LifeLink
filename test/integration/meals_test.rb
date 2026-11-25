@@ -43,6 +43,33 @@ class MealsTest < ActionDispatch::IntegrationTest
     assert_response :unauthorized
   end
 
+  test "睡眠中は食事を記録できない" do
+    @user.sleep_records.create!(slept_at: 30.minutes.ago)
+
+    assert_no_difference "Meal.count" do
+      post "/api/v1/meals",
+           params: { meal: { meal_type: "lunch", eaten_at: Time.current.iso8601 } },
+           headers: @headers,
+           as: :json
+    end
+
+    assert_response :unprocessable_entity
+    assert_equal [ "睡眠中は食事を記録できません" ], json["errors"]
+  end
+
+  test "ワーク中は食事を記録できる" do
+    @user.work_records.create!(started_at: 30.minutes.ago)
+
+    assert_difference "Meal.count", 1 do
+      post "/api/v1/meals",
+           params: { meal: { meal_type: "lunch", eaten_at: Time.current.iso8601 } },
+           headers: @headers,
+           as: :json
+    end
+
+    assert_response :created
+  end
+
   test "写真つきで記録（multipart）し、写真の URL を返す。一覧は日付で絞り込む" do
     travel_to Time.zone.local(2026, 10, 6, 12, 30) do
       post "/api/v1/meals", headers: @headers, params: {

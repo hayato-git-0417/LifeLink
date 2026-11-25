@@ -6,13 +6,9 @@ module Api
 
       def kind = :sleep
 
-      # 就寝時に計測中だったワークは自動終了し、レスポンスで知らせる
+      # 既存クライアントとの互換性のためキーだけは返す。ワークの自動終了は行わない。
       def start_json(result)
-        super.merge(auto_finished_work_record: result.auto_finished&.then { |work| work_json(work) })
-      end
-
-      def work_json(work)
-        work.as_json(only: %i[id title started_at ended_at duration_minutes recorded_on record_method]).merge("in_progress" => false)
+        super.merge(auto_finished_work_record: nil)
       end
     end
   end

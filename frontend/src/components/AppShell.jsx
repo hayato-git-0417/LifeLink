@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth.js'
 import styles from './AppShell.module.css'
-import { BackIcon, BellIcon, ChartIcon, DoorIcon, HomeIcon, MenuIcon, PersonIcon, SlidersIcon } from './icons.jsx'
+import { BackIcon, BellIcon, ChartIcon, DoorIcon, GearIcon, HomeIcon, MenuIcon, PersonIcon } from './icons.jsx'
 
 export default function AppShell({ title, guest = false, backTo, bare = false, children }) {
   if (bare) return <div className={styles.frame}>{children}</div>
@@ -16,7 +16,7 @@ export default function AppShell({ title, guest = false, backTo, bare = false, c
       <header className={styles.header}>
         <span className={styles.side}>
           {backTo && (
-            <Link to={backTo} className={styles.roundButton} aria-label="戻る">
+            <Link to={backTo} className={styles.roundButton} aria-label="戻る" data-label="戻る" title="戻る">
               <BackIcon size={22} />
             </Link>
           )}
@@ -54,12 +54,19 @@ export function HeaderActions({ showCustomize = false }) {
           to="/home/customize/edit"
           className={styles.roundButton}
           aria-label="模様替え"
+          data-label="模様替え"
           title="模様替え"
         >
           <HomeIcon size={22} />
         </Link>
       )}
-      <Link to="/notifications" className={styles.roundButton} aria-label={`通知（未読 ${unreadCount} 件）`}>
+      <Link
+        to="/notifications"
+        className={styles.roundButton}
+        aria-label={`通知（未読 ${unreadCount} 件）`}
+        data-label="通知"
+        title="通知"
+      >
         <BellIcon size={22} />
         {unreadCount > 0 && <span className={styles.badge}>{unreadCount > 99 ? '99+' : unreadCount}</span>}
       </Link>
@@ -68,6 +75,8 @@ export function HeaderActions({ showCustomize = false }) {
           type="button"
           className={styles.roundButton}
           aria-label="メニュー"
+          data-label="メニュー"
+          title="メニュー"
           aria-expanded={open}
           onClick={() => setOpen((value) => !value)}
         >
@@ -79,12 +88,8 @@ export function HeaderActions({ showCustomize = false }) {
               <ChartIcon size={20} />
               記録の詳細
             </Link>
-            <Link to="/notifications">
-              <BellIcon size={20} />
-              通知
-            </Link>
             <Link to="/settings">
-              <SlidersIcon size={20} />
+              <GearIcon size={20} />
               設定
             </Link>
             <button type="button" className={styles.logout} onClick={logout}>

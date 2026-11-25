@@ -1,11 +1,11 @@
 # 睡眠・ワークのタイマー操作（spec.md 2.1）。ホームのボタン（start / finish / cancel）と詳細画面の修正・削除。
 #   TimerRecorder.new(user: current_user, kind: :sleep).start
-# 結果の record は操作した記録、auto_finished は就寝時に自動終了したワーク。
+# 結果の record は操作した記録。
 # 記録が変わった日は DailyAchievementUpdater に渡す（確定済みの日のポイントは動かさない: spec.md 2.1）。
 class TimerRecorder
   KINDS = { sleep: SleepRecord, work: WorkRecord }.freeze
 
-  Result = Struct.new(:record, :auto_finished, :errors, keyword_init: true) do
+  Result = Struct.new(:record, :discarded, :errors, keyword_init: true) do
     def success? = errors.blank?
   end
 
@@ -15,32 +15,36 @@ class TimerRecorder
     @klass = KINDS.fetch(@kind)
   end
 
-  # 就寝／ワーク開始。すでに計測中なら失敗。
-  # 就寝時にワーク計測中ならワークをその時刻で終了し、睡眠中はワークを開始できない（spec.md 2.1【仮】）
+  # 就寝／ワーク開始。別のタイマーが計測中なら、開始せずに失敗する。
   def start(at: Time.current, attributes: {})
-    return failure(:already_in_progress) if in_progress_record
-    return failure(:cannot_start_work_while_sleeping) if @kind == :work && @user.sleep_records.in_progress.exists?
+    @user.with_lock do
+      next failure(:already_in_progress) if in_progress_record
+      next failure(:cannot_start_work_while_sleeping) if @kind == :work && @user.sleep_records.in_progress.exists?
+      next failure(:cannot_start_sleep_while_working) if @kind == :sleep && @user.work_records.in_progress.exists?
 
-    result = nil
-    ApplicationRecord.transaction do
-      auto_finished = finish_work_for_sleep(at) if @kind == :sleep
-      record = scope.build(attributes.merge(@klass.start_column => at, record_method: :timer))
-      unless record.save
-        result = failure_from(record)
-        raise ActiveRecord::Rollback # ワークの自動終了も取り消す
+      result = nil
+      ApplicationRecord.transaction do
+        record = scope.build(attributes.merge(@klass.start_column => at, record_method: :timer))
+        unless record.save
+          result = failure_from(record)
+          raise ActiveRecord::Rollback
+        end
+
+        result = success(record)
       end
-
-      result = success(record, auto_finished: auto_finished)
+      result
     end
-    # 就寝でワークを終えたときは、ワークを記録したことになる（進化ポイント）
-    award(:work, at) if result.success? && result.auto_finished
-    result
   end
 
   # 起床／ワーク終了。終えた時点で記録したことになり、進化ポイントを加算する（spec.md 4.3）
   def finish(at: Time.current)
     record = in_progress_record
     return failure(:not_in_progress) unless record
+
+    if at < record.started_time + 1.minute
+      record.destroy!
+      return discarded
+    end
 
     record[@klass.finish_column] = at
     return failure_from(record) unless record.save
@@ -88,21 +92,6 @@ class TimerRecorder
     scope.in_progress.first
   end
 
-  # 就寝時刻でワークを終了する。開始と同じ時刻なら（押し間違いとみなして）消す
-  def finish_work_for_sleep(at)
-    work = @user.work_records.in_progress.first
-    return nil unless work
-
-    if work.started_at >= at
-      work.destroy!
-      return nil
-    end
-
-    work.update!(ended_at: at)
-    refresh(work.recorded_on)
-    work
-  end
-
   def refresh(*dates)
     DailyAchievementUpdater.call(user: @user, dates: dates)
   end
@@ -112,8 +101,12 @@ class TimerRecorder
     EvolutionPointAwarder.call(user: @user, item: item, now: at)
   end
 
-  def success(record, auto_finished: nil)
-    Result.new(record: record, auto_finished: auto_finished, errors: [])
+  def success(record)
+    Result.new(record: record, errors: [])
+  end
+
+  def discarded
+    Result.new(discarded: true, errors: [])
   end
 
   def failure(key)

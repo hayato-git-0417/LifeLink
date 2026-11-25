@@ -106,6 +106,7 @@ function EditForm({ config, record, onCancel, onSaved }) {
     event.preventDefault()
     if (!start || !finish) return setErrors([`${config.startLabel}と${config.finishLabel}の日時を入力してください`])
     if (new Date(finish) <= new Date(start)) return setErrors([`${config.finishLabel}は${config.startLabel}より後にしてください`])
+    if (new Date(finish) - new Date(start) < 60 * 1000) return setErrors(['記録時間は1分以上にしてください'])
     setSaving(true)
     setErrors([])
     const body = { [config.start]: fromDateTimeLocal(start), [config.finish]: fromDateTimeLocal(finish) }

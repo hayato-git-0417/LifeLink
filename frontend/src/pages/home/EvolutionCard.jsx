@@ -1,6 +1,8 @@
 // ホームの進化カード（spec.md 4.3）。GET /api/v1/home の evolution を表示する。
 // 1行目: 累計ポイントと段階（進化N）／ゲージ: 今の段階のラインから次の段階のラインまでの進み具合／
 // 下: 次の進化までのポイント、今日記録したときの倍率、今日記録した項目（1項目1日1回ポイントが入るので、残りが分かるように）
+import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { ExerciseIcon, MealIcon, SleepIcon, SparkleIcon, WorkIcon } from '../../components/icons.jsx'
 import styles from './EvolutionCard.module.css'
 import { formatMultiplier, formatPoints } from './evolutionFormat.js'
@@ -14,23 +16,27 @@ const ITEMS = [
 ]
 
 export default function EvolutionCard({ evolution }) {
+  const [selectedItem, setSelectedItem] = useState(null)
   const { stage, points, next_stage_points: nextStagePoints, points_to_next: pointsToNext, progress_percent: percent } = evolution
   const finalStage = nextStagePoints === null
   const recorded = new Set(evolution.recorded_items_today)
   const recordedLabels = ITEMS.filter(({ key }) => recorded.has(key)).map(({ label }) => label)
+  const selected = ITEMS.find(({ key }) => key === selectedItem)
 
   return (
     <section className={styles.card} aria-label="キャラの進化">
       <div className={styles.head}>
-        <span className={styles.label}>累計ポイント</span>
-        <span className={styles.points}>
-          <strong>{formatPoints(points)}</strong>
-          <small>pt</small>
-        </span>
-        <span className={styles.stage}>
-          <SparkleIcon size={13} strokeWidth={2.4} />
-          進化{stage}
-        </span>
+        <Link to="/details" className={styles.pointsLink} aria-label="累計ポイントの詳細を見る">
+          <span className={styles.label}>累計ポイント</span>
+          <span className={styles.points}>
+            <strong>{formatPoints(points)}</strong>
+            <small>pt</small>
+          </span>
+          <span className={styles.stage}>
+            <SparkleIcon size={13} strokeWidth={2.4} />
+            進化{stage}
+          </span>
+        </Link>
       </div>
 
       <div
@@ -60,16 +66,28 @@ export default function EvolutionCard({ evolution }) {
         </span>
         <span
           className={styles.items}
-          role="img"
-          aria-label={recordedLabels.length ? `今日記録した項目: ${recordedLabels.join('・')}` : '今日はまだ記録していません'}
+          role="group"
+          aria-label={recordedLabels.length ? `今日記録した項目: ${recordedLabels.join('・')}` : '今日の記録項目'}
         >
           {ITEMS.map(({ key, label, Icon }) => (
-            <span key={key} className={`${styles.item} ${recorded.has(key) ? styles[`done_${key}`] : ''}`} title={label}>
+            <button
+              key={key}
+              type="button"
+              className={`${styles.item} ${recorded.has(key) ? styles[`done_${key}`] : ''}`}
+              aria-pressed={selectedItem === key}
+              aria-label={`${label}の記録状況を表示`}
+              onClick={() => setSelectedItem(key)}
+            >
               <Icon size={13} strokeWidth={2.2} />
-            </span>
+            </button>
           ))}
         </span>
       </div>
+      {selected && (
+        <p className={styles.itemHint} role="status">
+          {selected.label}の記録 {recorded.has(selected.key) ? '今日は記録済みです' : '今日はまだ記録していません'}
+        </p>
+      )}
     </section>
   )
 }
