@@ -56,16 +56,22 @@ class TimedRecordsTest < ActionDispatch::IntegrationTest
     assert_equal [ "計測中のワークの記録がありません" ], json["errors"]
   end
 
-  test "就寝時にワーク計測中ならワークを自動終了し、睡眠中はワークを開始できない" do
+  test "ワーク中は睡眠を開始できず、睡眠中はワークを開始できない" do
     travel_to Time.zone.local(2026, 10, 6, 20) do
       post "/api/v1/work_records/start", headers: @headers
     end
 
     travel_to Time.zone.local(2026, 10, 6, 23, 30) do
       post "/api/v1/sleep_records/start", headers: @headers
+      assert_response :unprocessable_entity
+      assert_equal [ "ワーク中は睡眠を開始できません" ], json["errors"]
+      assert @user.work_records.in_progress.exists?
+
+      post "/api/v1/work_records/cancel", headers: @headers
+      assert_response :no_content
+
+      post "/api/v1/sleep_records/start", headers: @headers
       assert_response :created
-      assert_equal 210, json.dig("auto_finished_work_record", "duration_minutes")
-      assert_not @user.work_records.in_progress.exists?
 
       post "/api/v1/work_records/start", headers: @headers
       assert_response :unprocessable_entity

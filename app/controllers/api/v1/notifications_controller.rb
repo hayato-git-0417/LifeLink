@@ -6,7 +6,7 @@ module Api
 
       # GET /api/v1/notifications（新しい順に50件）
       def index
-        notifications = current_user.notifications.includes(:actor).recent_first.limit(LIST_LIMIT)
+        notifications = current_user.notifications.includes(actor: { avatar_attachment: :blob }).recent_first.limit(LIST_LIMIT)
         render json: {
           notifications: notifications.map { |notification| notification_json(notification) },
           unread_count: current_user.notifications.unread.count
@@ -37,7 +37,13 @@ module Api
           body: notification.body,
           read: notification.read?,
           created_at: notification.created_at,
-          actor: actor && { id: actor.id, name: actor.name, icon: actor.icon }
+          actor: actor && {
+            id: actor.id,
+            name: actor.name,
+            icon: actor.icon,
+            avatar_url: actor.avatar.attached? ? rails_blob_path(actor.avatar, only_path: true) : nil,
+            avatar_selected: actor.avatar_selected
+          }
         }
       end
     end

@@ -172,10 +172,11 @@ export default function MealFormPage() {
   const [foodQuery, setFoodQuery] = useState('')
   const [foodResults, setFoodResults] = useState([])
   const [foodItems, setFoodItems] = useState([])
+  const [mealTypeManuallySelected, setMealTypeManuallySelected] = useState(false)
 
   // 解析中・送信中は入力を止める
   const locked = busy || scanning
-  const mealType = meal ? guessMealType(mealGoal, new Date(meal.eaten_at)) : 'snack'
+  const mealType = meal?.meal_type || 'snack'
   const mealContent = meal?.content || ''
   // 編集画面では保存済みの内容を読み込む
   // 新規画面では目標に合わせて食事区分を初期設定する
@@ -200,6 +201,7 @@ export default function MealFormPage() {
               ])
             ),
           })
+          setMealTypeManuallySelected(Boolean(data.manual_meal_type))
           setFoodItems(
             (data.food_items ?? []).map((item) => ({
               ...item,
@@ -226,6 +228,7 @@ export default function MealFormPage() {
             ...emptyMeal(),
             meal_type: guessMealType(goal),
           })
+          setMealTypeManuallySelected(false)
         })
         .catch(() => {
           if (!cancelled) setMeal(emptyMeal())
@@ -270,10 +273,20 @@ export default function MealFormPage() {
   }, [photoPreview])
 
   const update = (changes) => {
-    if ('content' in changes || NUTRIENTS.some(({ key }) => key in changes)) setNutritionInfo(null)
+    const nextChanges = { ...changes }
+    if ('eaten_at' in nextChanges && !mealTypeManuallySelected) {
+      nextChanges.meal_type = guessMealType(mealGoal, new Date(nextChanges.eaten_at))
+    }
+    if ('content' in nextChanges || NUTRIENTS.some(({ key }) => key in nextChanges)) setNutritionInfo(null)
     setMeal((current) =>
-      current ? { ...current, ...changes } : current
+      current ? { ...current, ...nextChanges } : current
     )
+  }
+
+  function selectMealType(meal_type) {
+    if (locked) return
+    setMealTypeManuallySelected(true)
+    update({ meal_type })
   }
 
   function replaceFoodItems(items) {
@@ -453,6 +466,7 @@ export default function MealFormPage() {
       const body = new FormData()
 
       body.append('meal[meal_type]', mealType)
+      body.append('meal[manual_meal_type]', String(mealTypeManuallySelected))
       body.append('meal[eaten_at]', fromDateTimeLocal(meal.eaten_at))
       body.append('meal[content]', (meal.content ?? '').trim())
       body.append('meal[comment]', (meal.comment ?? '').trim())
@@ -614,11 +628,21 @@ export default function MealFormPage() {
               </div>
             </div>
 
-            <fieldset className={styles.typeRow} title="食べた時刻から自動設定します。朝・昼・夕は各1日1件、設定時刻の前後1時間以外は間食になります。">
+            <fieldset className={styles.typeRow} title="食べた時刻から自動設定します。解析後はタップして区分を変更できます。朝・昼・夕は各1日1件、設定時刻の前後1時間以外は間食になります。">
               <legend className={styles.smallLabel}>区分</legend>
-              <div className={styles.mealTypes} role="group" aria-label="食べた時刻から自動設定された食事区分">
+              <div className={styles.mealTypes} role="radiogroup" aria-label="食事区分">
                 {MEAL_TYPES.map(({ key, label }) => (
-                  <span key={key} className={styles.chip + ' ' + (mealType === key ? styles.chipOn : '')} aria-current={mealType === key ? 'true' : undefined}>{label}</span>
+                  <label key={key} className={styles.chip + ' ' + (mealType === key ? styles.chipOn : '')}>
+                    <input
+                      type="radio"
+                      name="meal_type"
+                      value={key}
+                      checked={mealType === key}
+                      disabled={locked}
+                      onChange={() => selectMealType(key)}
+                    />
+                    {label}
+                  </label>
                 ))}
               </div>
             </fieldset>

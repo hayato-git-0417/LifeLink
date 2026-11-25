@@ -15,22 +15,23 @@ module Api
                     .where.not(id: current_user.id)
                     .order(:name, :id)
                     .limit(SEARCH_LIMIT)
+                    .with_attached_avatar
         render json: { users: user_list_json(users.to_a) }
       end
 
       # GET /api/v1/users/:id（ユーザーのプロフィールは公開情報なので User から探す）
       def show
-        user = User.includes(:character).find(params[:id])
+        user = User.includes(:character, avatar_attachment: :blob).find(params[:id])
         render json: { user: public_profile_json(user) }
       end
 
       # GET /api/v1/users/:id/followers・followings（見られるのは自分の一覧だけ【仮】）
       def followers
-        render json: { users: user_list_json(own_user!.followers.order("follows.created_at DESC").to_a) }
+        render json: { users: user_list_json(own_user!.followers.order("follows.created_at DESC").with_attached_avatar.to_a) }
       end
 
       def followings
-        render json: { users: user_list_json(own_user!.followings.order("follows.created_at DESC").to_a) }
+        render json: { users: user_list_json(own_user!.followings.order("follows.created_at DESC").with_attached_avatar.to_a) }
       end
 
       private
@@ -45,7 +46,14 @@ module Api
       def user_list_json(users)
         following_ids = current_user.active_follows.where(followed_id: users.map(&:id)).pluck(:followed_id).to_set
         users.map do |user|
-          { id: user.id, name: user.name, icon: user.icon, following: following_ids.include?(user.id) }
+          {
+            id: user.id,
+            name: user.name,
+            icon: user.icon,
+            avatar_url: user.avatar.attached? ? rails_blob_path(user.avatar, only_path: true) : nil,
+            avatar_selected: user.avatar_selected,
+            following: following_ids.include?(user.id)
+          }
         end
       end
 
@@ -56,6 +64,8 @@ module Api
           id: user.id,
           name: user.name,
           icon: user.icon,
+          avatar_url: user.avatar.attached? ? rails_blob_path(user.avatar, only_path: true) : nil,
+          avatar_selected: user.avatar_selected,
           is_self: user.id == current_user.id,
           following: current_user.following?(user),
           mutual: current_user.mutual_follow?(user),

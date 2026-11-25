@@ -55,8 +55,8 @@ export default function ExercisePage({ onClose, timer: externalTimer, now: exter
     })
   }
   function openTaskSettings() {
-    close()
-    navigate('/settings/goal')
+    if (controlled) onClose?.()
+    navigate('/exercise/tasks', { state: { returnTo: controlled ? '/' : '/exercise' } })
   }
 
   function formatElapsed(seconds = 0) {

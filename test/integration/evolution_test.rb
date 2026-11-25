@@ -45,14 +45,19 @@ class EvolutionTest < ActionDispatch::IntegrationTest
     end
   end
 
-  test "睡眠は起床、ワークは終了を押したときに入る（開始では入らない）。就寝でワークを自動終了したらワーク分も入る" do
+  test "睡眠は起床、ワークは終了を押したときに入る（開始では入らない）" do
     travel_to(at(DAY, 15)) { post "/api/v1/work_records/start", headers: headers }
     assert_equal 0, @character.reload.evolution_points
 
     travel_to(at(DAY, 23)) do
-      post "/api/v1/sleep_records/start", headers: headers # ワークをこの時刻で終える
+      post "/api/v1/sleep_records/start", headers: headers
+      assert_response :unprocessable_entity
+
+      post "/api/v1/work_records/finish", headers: headers
+      assert_response :ok
+
+      post "/api/v1/sleep_records/start", headers: headers
       assert_response :created
-      assert json["auto_finished_work_record"].present?
     end
     assert_equal [ "work" ], @character.evolution_point_logs.map(&:item)
 

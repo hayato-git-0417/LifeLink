@@ -11,7 +11,7 @@ export default function ProfileHeader({ user, followersCount, followingsCount, l
   ]
   return (
     <section className={styles.profile}>
-      <UserIcon icon={user.icon} size={84} />
+      <UserIcon icon={user.icon} avatarUrl={user.avatar_selected ? user.avatar_url : null} size={84} />
       <div className={styles.profileBody}>
         <h2 className={styles.profileName}>{user.name}</h2>
         <div className={styles.counts}>

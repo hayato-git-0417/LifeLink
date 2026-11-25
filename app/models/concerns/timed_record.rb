@@ -14,6 +14,7 @@ module TimedRecord
 
     validates :recorded_on, presence: true
     validate :finish_after_start
+    validate :minimum_duration
     validate :within_max_duration
     validate :only_one_in_progress, if: :in_progress?
 
@@ -65,6 +66,12 @@ module TimedRecord
     return if duration_minutes.nil?
 
     errors.add(:duration_minutes, :less_than_or_equal_to, count: self.class.max_minutes) if duration_minutes > self.class.max_minutes
+  end
+
+  def minimum_duration
+    return if in_progress? || duration_minutes.to_i >= 1
+
+    errors.add(:duration_minutes, :greater_than_or_equal_to, count: 1)
   end
 
   def only_one_in_progress

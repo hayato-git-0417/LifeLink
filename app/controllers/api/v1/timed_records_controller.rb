@@ -67,7 +67,7 @@ module Api
       def render_result(result)
         return render_errors(result.errors) unless result.success?
 
-        render json: { json_key => record_json(result.record) }
+        render json: { json_key => record_json(result.record), discarded: result.discarded }
       end
 
       def start_json(result)

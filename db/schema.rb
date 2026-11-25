@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_11_18_000000) do
+ActiveRecord::Schema[7.2].define(version: 2026_11_24_000000) do
   create_table "active_storage_attachments", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -222,6 +222,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_18_000000) do
     t.date "recorded_on", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.boolean "manual_meal_type", default: false, null: false
     t.index ["user_id", "eaten_at"], name: "index_meals_on_user_id_and_eaten_at"
     t.index ["user_id", "recorded_on"], name: "index_meals_on_user_id_and_recorded_on"
   end
@@ -287,10 +288,10 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_18_000000) do
     t.json "tokens"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.boolean "avatar_selected", default: false, null: false
     t.decimal "height_cm", precision: 5, scale: 1
     t.decimal "weight_kg", precision: 5, scale: 1
     t.integer "activity_level", null: false
+    t.boolean "avatar_selected", default: false, null: false
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["name"], name: "index_users_on_name"
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true

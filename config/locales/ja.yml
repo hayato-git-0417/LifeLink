@@ -198,5 +198,8 @@ ja:
         already_in_progress: "%{model}はすでに計測中です"
         not_in_progress: "計測中の%{model}がありません"
         cannot_start_work_while_sleeping: 睡眠中はワークを開始できません
+        cannot_start_sleep_while_working: ワーク中は睡眠を開始できません
         in_progress_not_editable: 計測中の記録は修正できません（取り消しを使ってください）
         finish_in_future: 終了日時は現在より前にしてください
+      meal:
+        cannot_record_while_sleeping: 睡眠中は食事を記録できません

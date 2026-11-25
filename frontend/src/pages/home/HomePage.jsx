@@ -90,7 +90,13 @@ export default function HomePage({ wallImage, floorImage, placedFurniture }) {
 
   const sleepTimer = home?.timers.sleep
   const workTimer = home?.timers.work
+  const sleeping = Boolean(sleepTimer)
   const exerciseRunning = exerciseTimer.runningTaskId !== null
+  const exerciseActive = exerciseTimer.active
+  const mealLocked = Boolean(sleepTimer)
+  const workStartLocked = !workTimer && Boolean(sleepTimer || exerciseActive)
+  const exerciseStartLocked = !exerciseActive && Boolean(sleepTimer || workTimer)
+  const sleepStartLocked = !sleepTimer && Boolean(workTimer || exerciseActive)
   const now = useNow(Boolean(workTimer) || exerciseRunning)
   const exerciseElapsed = exerciseTimer.taskId === null ? 0 : (exerciseTimer.elapsedByTask[exerciseTimer.taskId] || 0) + (exerciseTimer.runningTaskId === exerciseTimer.taskId ? Math.max(0, Math.floor((now - exerciseTimer.startedAt) / 1000)) : 0)
 
@@ -103,9 +109,11 @@ export default function HomePage({ wallImage, floorImage, placedFurniture }) {
     try {
       const data = await api(`/${kind}/${action}`, { method: 'POST' })
       await load()
-      // お知らせはホームを読み直してから出す（ボタンの表示と食い違わないように）
-      const autoFinished = data?.auto_finished_work_record
-      if (autoFinished) setNotice(`計測中のワークを終了しました（${formatMinutes(autoFinished.duration_minutes)}）`)
+      if (data.discarded) {
+        const label = kind === 'sleep_records' ? '睡眠' : 'ワーク'
+        setNotice(`${label}は1分未満のため記録できません。1分以上計測してから終了してください`)
+        return
+      }
       if (kind === 'sleep_records' && action === 'finish') {
         setNotice(`おはよう！ 睡眠時間は ${formatMinutes(data.sleep_record.duration_minutes)} でした`)
       }
@@ -199,8 +207,6 @@ export default function HomePage({ wallImage, floorImage, placedFurniture }) {
     setExerciseTimer({ taskId: null, runningTaskId: null, startedAt: null, elapsedByTask: {}, active: false })
     setExerciseOpen(false)
   }
-  const sleeping = home?.character.state === 'sleeping'
-
   // ホーム画面を離れたら、残っている予約を取り消す
   useEffect(() => {
     return () => clearTimeout(speechTimerRef.current)
@@ -378,7 +384,18 @@ export default function HomePage({ wallImage, floorImage, placedFurniture }) {
 
         {home && (
           <nav className={styles.buttons} aria-label="記録">
-            <Link to="/meals" className={`${styles.button} ${styles.meal}`}>
+            <Link
+              to="/meals"
+              className={`${styles.button} ${styles.meal}`}
+              aria-disabled={mealLocked || undefined}
+              tabIndex={mealLocked ? -1 : undefined}
+              title={mealLocked ? '睡眠中は食事を記録できません' : undefined}
+              onClick={(event) => {
+                if (!mealLocked) return
+                event.preventDefault()
+                setNotice('睡眠中は食事を記録できません')
+              }}
+            >
               <MealIcon className={styles.buttonIcon} />
               <span>食事</span>
             </Link>
@@ -391,9 +408,9 @@ export default function HomePage({ wallImage, floorImage, placedFurniture }) {
               <button
                 type="button"
                 className={`${styles.button} ${styles.work} ${workTimer ? styles.running : ''}`}
-                disabled={busy || (sleeping && !workTimer)}
+                disabled={busy || workStartLocked}
                 onClick={() => act('work_records', workTimer ? 'finish' : 'start')}
-                title={sleeping ? '睡眠中はワークを開始できません' : undefined}
+                title={workStartLocked ? (sleepTimer ? '睡眠中はワークを開始できません' : '運動中はワークを開始できません') : undefined}
                 aria-label={workTimer ? 'ワーク終了' : 'ワーク開始'}
               >
                 <WorkIcon className={styles.buttonIcon} />
@@ -410,18 +427,19 @@ export default function HomePage({ wallImage, floorImage, placedFurniture }) {
             >
               <button
                 type="button"
-                className={`${styles.button} ${styles.exercise} ${exerciseTimer.active ? styles.running : ''}`}
-                disabled={busy}
+                className={`${styles.button} ${styles.exercise} ${exerciseActive ? styles.running : ''}`}
+                disabled={busy || exerciseStartLocked}
                 onClick={() => exerciseTimer.runningTaskId !== null ? finishExerciseTimer() : setExerciseOpen(true)}
+                title={exerciseStartLocked ? (sleepTimer ? '睡眠中は運動を開始できません' : 'ワーク中は運動を開始できません') : undefined}
                 aria-label={exerciseTimer.runningTaskId !== null ? '運動終了' : '運動を記録'}
               >
                  <ExerciseIcon className={styles.buttonIcon} />
-                {exerciseTimer.active && exerciseTimer.taskTitle && (
+                {exerciseActive && exerciseTimer.taskTitle && (
                   <span className={styles.exerciseActivity} title={exerciseTimer.taskTitle}>
                     {exerciseTimer.runningTaskId !== null ? `${exerciseTimer.taskTitle}中…` : `${exerciseTimer.taskTitle}（一時停止）`}
                   </span>
                 )}
-                <span className={styles.timerText}>{exerciseTimer.active ? formatElapsed(exerciseElapsed * 1000) : '運動'}</span>
+                <span className={styles.timerText}>{exerciseActive ? formatElapsed(exerciseElapsed * 1000) : '運動'}</span>
               </button>
             </TimerSlot>
             <TimerSlot
@@ -433,8 +451,9 @@ export default function HomePage({ wallImage, floorImage, placedFurniture }) {
              <button
                 type="button"
                 className={`${styles.button} ${styles.sleep} ${sleepTimer ? styles.running : ''}`}
-                disabled={busy}
+                disabled={busy || sleepStartLocked}
                 onClick={() => act('sleep_records', sleepTimer ? 'finish' : 'start')}
+                title={sleepStartLocked ? (workTimer ? 'ワーク中は睡眠を開始できません' : '運動中は睡眠を開始できません') : undefined}
                 aria-label={sleepTimer ? `起床（${formatTime(sleepTimer.slept_at)} から睡眠中）` : '就寝'}
               >
                 {sleepTimer ? <SunIcon className={styles.buttonIcon} /> : <SleepIcon className={styles.buttonIcon} />}

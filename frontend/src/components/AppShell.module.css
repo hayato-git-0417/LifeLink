@@ -68,6 +68,35 @@
   transform: translateY(2px);
 }
 
+/* アイコンだけの操作は、タップやキーボード操作時に名前を表示する。 */
+.roundButton[data-label]::after {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  z-index: 30;
+  padding: 4px 8px;
+  border: 1.5px solid var(--ink);
+  border-radius: 999px;
+  background: var(--paper);
+  box-shadow: 0 2px 0 var(--ink);
+  color: var(--ink);
+  content: attr(data-label);
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1.2;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -4px);
+  transition: opacity 0.12s ease, transform 0.12s ease;
+  white-space: nowrap;
+}
+
+.roundButton[data-label]:hover::after,
+.roundButton[data-label]:focus::after {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
 .badge {
   position: absolute;
   top: -7px;
