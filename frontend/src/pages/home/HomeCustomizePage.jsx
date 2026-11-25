@@ -20,7 +20,7 @@ const categoryGroups = [
       { id: 'chair', label: '椅子' },
       { id: 'closet', label: 'クローゼット' },
       { id: 'plant', label: '植物' },
-      { id: 'desk', label: '机' },
+      { id: 'table', label: 'テーブル' },
       { id: 'hang', label: '壁飾り' },
       { id: 'rug', label: '敷物' },
       { id: 'chest', label: 'タンス' },

@@ -22,7 +22,7 @@
 | 1 | ユーザー・認証 | users | User | ログイン情報とプロフィール。devise_token_auth の生成カラムに、生年月日・性別・アイコンを追加する。 | ログイン(p.8) / 新規登録①②(p.9-10) / マイページ(p.3) / プロフィール変更(p.16) / 設定(p.15) |
 | 2 | ユーザー・認証 | follows | Follow | ユーザー同士のフォロー関係。フォロワー数・フォロー中の数もここから数える。 | マイページ(p.3) / フォロー一覧(p.4) |
 | 3 | ユーザー・認証 | notifications | Notification | 通知画面に出す内容。フォロー・キャラの状態変化・リマインドなど。 | 通知（デザイン未作成） / ホーム（未読バッジ） |
-| 4 | キャラ | characters | Character | ユーザー1人につきキャラ1匹。現在の状態（8種類、毎日リセット）と、翌日に引き継ぐ各項目のポイント（0〜1000）を持つ。 | ホーム(p.1-2) |
+| 4 | キャラ | characters | Character | ユーザー1人につきキャラ1匹。現在の状態（5種類、毎日リセット）と、翌日に引き継ぐ各項目のポイント（0〜1000）を持つ。 | ホーム(p.1-2) |
 | 5 | キャラ | character_state_logs | CharacterStateLog | キャラの状態がいつ・なぜ変わったかの履歴。通知や振り返りに使う。不要なら省略可。 | ホーム（内部処理） / 通知 |
 | 6 | キャラ | daily_achievements | DailyAchievement | 1日ごとの記録。その日の達成スコア（0〜100）、そこから決まるポイントの増減、反映後のポイントを持つ。当日分は記録を保存するたびに計算し直し、日付が変わったときに確定してキャラのポイントへ反映する。 | ホーム(p.1-2)のゲージ / 詳細(p.5) / 各記録画面（保存時に再計算） |
 | 7 | 目標設定 | goals | Goal | ユーザーの理想の生活リズム。キャラはこの値どおりに生活する。1ユーザー1行。 | 新規登録：目標設定(p.11-12) / 目標変更(p.17) / 食事トップ(p.13) |
@@ -35,7 +35,7 @@
 | 14 | マスタ | nutrition_standards | NutritionStandard | 年齢・性別ごとの食事のデフォルト値。新規登録時に goals の初期値を決めるのに使う。値は db/seeds.rb で投入。 | 新規登録（内部処理） / 食事トップ(p.13) |
 | 16 | マスタ | food_compositions | FoodComposition | 食品成分表の食品名と100g当たりの5項目。db/seeds.rb で投入。 | 食事を記録(p.14) |
 | 17 | 記録 | meal_food_items | MealFoodItem | 食事に使った食品と摂取量（g）。 | 食事を記録(p.14) |
-| 15 | マスタ | character_animations | CharacterAnimation | キャラの状態（8種類）ごとに表示するGIFのパス。GIF本体は Rails の public/characters/ に置く（Reactを使う場合も使わない場合も同じパスで表示できる）。値は db/seeds.rb で投入。 | ホーム(p.1-2) |
+| 15 | マスタ | character_animations | CharacterAnimation | キャラの状態（5種類）ごとに表示するGIFのパス。GIF本体は Rails の public/characters/ に置く（Reactを使う場合も使わない場合も同じパスで表示できる）。値は db/seeds.rb で投入。 | ホーム(p.1-2) |
 | 16 | キャラ | evolution_point_logs | EvolutionPointLog | 進化の累計ポイントの増減履歴（記録による加算・休んだ日の減少）。記録による加算は「キャラ・日・項目」で1行だけ（2026-11-10 追加。spec.md 4.3） | ホーム（進化カード） / 通知 |
 | － | フレームワーク | active_storage_blobs<br>active_storage_attachments<br>active_storage_variant_records | （Rails標準） | 食事写真の保存用。rails active_storage:install で自動生成されるので自分で設計しない。 | 食事を記録(p.14) |
 
@@ -126,7 +126,7 @@
 
 ### characters
 
-- 役割: ユーザー1人につきキャラ1匹。現在の状態（8種類、毎日リセット）と、翌日に引き継ぐ各項目のポイント（0〜1000）を持つ。
+- 役割: ユーザー1人につきキャラ1匹。現在の状態（5種類、毎日リセット）と、翌日に引き継ぐ各項目のポイント（0〜1000）を持つ。
 - 画面: ホーム(p.1-2)
 - モデル: Character（app/models/character.rb）
 
@@ -396,7 +396,7 @@
 
 ### character_animations
 
-- 役割: キャラの状態（8種類）ごとに表示するGIFのパス。GIF本体は Rails の public/characters/ に置く（Reactを使う場合も使わない場合も同じパスで表示できる）。値は db/seeds.rb で投入。
+- 役割: キャラの状態（5種類）ごとに表示するGIFのパス。GIF本体は Rails の public/characters/ に置く（Reactを使う場合も使わない場合も同じパスで表示できる）。値は db/seeds.rb で投入。
 - 画面: ホーム(p.1-2)
 - モデル: CharacterAnimation（app/models/character_animation.rb）
 
@@ -413,9 +413,9 @@
 - `テーブル.カラム`: `モデルに書くコード`
 - `users.gender`: `enum :gender, { unspecified: 0, male: 1, female: 2, other: 3 }`
 - `users.icon`: `enum :icon, { person_blue: 0, person_pink: 1, person_green: 2, cat: 3, penguin: 4 }`
-- `characters.state`: `enum :state, { normal: 0, sleeping: 1, sleep_deprived: 2, full: 3, hungry: 4, exercising: 5, studying: 6, fat: 7 }`
-- `character_state_logs.state`: `enum :state, { normal: 0, sleeping: 1, sleep_deprived: 2, full: 3, hungry: 4, exercising: 5, studying: 6, fat: 7 }`
-- `character_animations.state`: `enum :state, { normal: 0, sleeping: 1, sleep_deprived: 2, full: 3, hungry: 4, exercising: 5, studying: 6, fat: 7 }`
+- `characters.state`: `enum :state, { normal: 0, sleeping: 1, hungry: 4, exercising: 5, studying: 6 }`（2・3・7 は 2026-11-24 になくした睡眠不足・満腹・太りの欠番）
+- `character_state_logs.state`: `enum :state, { normal: 0, sleeping: 1, hungry: 4, exercising: 5, studying: 6 }`（2・3・7 は 2026-11-24 になくした睡眠不足・満腹・太りの欠番）
+- `character_animations.state`: `enum :state, { normal: 0, sleeping: 1, hungry: 4, exercising: 5, studying: 6 }`（2・3・7 は 2026-11-24 になくした睡眠不足・満腹・太りの欠番）
 - `goals.sleep_goal_type`: `enum :sleep_goal_type, { duration: 0, time_range: 1 }`
 - `sleep_records.record_method`: `enum :record_method, { timer: 0, manual: 1 }`
 - `work_records.record_method`: `enum :record_method, { timer: 0, manual: 1 }`
@@ -428,7 +428,7 @@
 - `evolution_point_logs.reason`: `enum :reason, { recorded: 0, missed: 1 }`
 - `evolution_point_logs.item`: `enum :item, { sleep: 0, meal: 1, exercise: 2, work: 3 }, prefix: true`（sleep が Kernel#sleep とぶつかるので item_ を付ける）
 
-表示名: characters.state = normal:デフォルト / sleeping:睡眠中 / sleep_deprived:睡眠不足 / full:満腹 / hungry:空腹 / exercising:汗汗（運動中） / studying:勉強中 / fat:太り（運動不足）
+表示名: characters.state = normal:デフォルト / sleeping:睡眠中 / hungry:空腹 / exercising:汗汗（運動中。ホームの運動タイマー中だけ表示） / studying:勉強中
 
 ## 画面 CRUD 表
 

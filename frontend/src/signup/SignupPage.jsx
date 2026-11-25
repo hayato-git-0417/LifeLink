@@ -26,9 +26,10 @@ export default function SignupPage() {
   const [fieldErrors, setFieldErrors] = useState({})
   const [busy, setBusy] = useState(false) //「通信などの処理中です」という状態に切り替える命令、true になるとボタンが押せなくなり、連打による二重送信を防げる
   const [resumingSignup, setResumingSignup] = useState(false)
-  const [account, setAccount] = useState({ email: '', password: '', password_confirmation: '' })
+  const [account, setAccount] = useState({ password: '', password_confirmation: '' })
   const [showPassword, setShowPassword] = useState(false) // パスワードを隠すやつ false は非表示、true は表示
   const [profile, setProfile] = useState({
+    accountId: '',
     icon: 'person_blue',
     name: '',
     birthdate: '',
@@ -96,7 +97,9 @@ export default function SignupPage() {
     }
 
     // 項目ごとにエラーメッセージを設定する
-    if (!account.email.trim()) found.email = 'メールアドレスを入力してください'
+    const accountId = profile.accountId.trim()
+    if (!accountId) found.accountId = 'ユーザーIDを入力してください'
+    else if (!/^[a-zA-Z0-9_.]{3,20}$/.test(accountId)) found.accountId = 'ユーザーIDは半角英数字とアンダースコアで3〜20文字にしてください'
     if (account.password.length < PASSWORD_MIN) found.password = `パスワードは${PASSWORD_MIN}文字以上にしてください`
     if (account.password !== account.password_confirmation) found.password_confirmation = 'パスワード（確認用）が一致しません'
     setErrors([])
@@ -106,21 +109,22 @@ export default function SignupPage() {
     setBusy(true)
     setResumingSignup(false)
     try {
-      const data = await api('/registrations/email_available', { params: { email: account.email.trim() } })
+      const data = await api('/registrations/account_id_available', { params: { account_id: accountId } })
       if (!data.available) {
         try {
           await api('/auth/sign_in', {
             method: 'POST',
-            body: { email: account.email.trim(), password: account.password },
+            body: { account_id: accountId, password: account.password },
           })
           const current = await api('/me')
           if (current.user?.goal_registered) {
             clearAuth()
-            setFieldErrors({ email: 'このメールアドレスはすでに登録されています' })
+            setFieldErrors({ accountId: 'このユーザーIDはすでに使われています' })
             return
           }
           setProfile((previous) => ({
             ...previous,
+            accountId: current.user.account_id || '',
             icon: current.user.icon,
             name: current.user.name,
             birthdate: current.user.birthdate,
@@ -137,13 +141,13 @@ export default function SignupPage() {
           go(2)
         } catch {
           clearAuth()
-          setFieldErrors({ email: 'このメールアドレスはすでに登録されています' })
+          setFieldErrors({ accountId: 'このユーザーIDはすでに使われています' })
         }
         return
       }
       go(2)
     } catch (error) {
-      if (error.status === 422) setFieldErrors({ email: error.messages })
+      if (error.status === 422) setFieldErrors({ accountId: error.messages })
       else setErrors(error.messages)
     } finally { //  通信に失敗した場合
       setBusy(false)
@@ -180,9 +184,9 @@ export default function SignupPage() {
     try {
       // ユーザーを作る（キャラもサーバーで作られる）。トークンは api() が保存する
       const formData = new FormData()
-      formData.append('email', account.email.trim())
       formData.append('password', account.password)
       formData.append('password_confirmation', account.password_confirmation)
+      formData.append('account_id', profile.accountId.trim())
       formData.append('name', profile.name.trim())
       formData.append('icon', profile.icon)
       formData.append('birthdate', profile.birthdate)
@@ -195,15 +199,15 @@ export default function SignupPage() {
         try {
           await api('/auth', { method: 'POST', body: formData })
         } catch (createError) {
-          const duplicateEmail = createError.status === 422
-            && createError.messages?.some((message) => /(メールアドレス|email).*(存在|登録|使用|already|taken)/i.test(message))
-          if (!duplicateEmail) throw createError
+          const duplicateAccountId = createError.status === 422
+            && createError.messages?.some((message) => /(ユーザーID|account_id|account id).*(存在|登録|使用|already|taken|重複)/i.test(message))
+          if (!duplicateAccountId) throw createError
 
           // 前回の登録が途中で止まり、ユーザーだけ作成済みなら同じ認証情報で続きを行う
           try {
             await api('/auth/sign_in', {
               method: 'POST',
-              body: { email: account.email.trim(), password: account.password },
+              body: { account_id: profile.accountId.trim(), password: account.password },
             })
             const current = await api('/me')
             if (current.user?.goal_registered) {
@@ -219,6 +223,7 @@ export default function SignupPage() {
       setResumingSignup(true)
       // 新規登録画面で確定したアイコンをユーザープロフィールにも保存し、設定画面で同じ表示にする
       const profileData = new FormData()
+      profileData.append('user[account_id]', profile.accountId.trim())
       profileData.append('user[name]', profile.name.trim())
       profileData.append('user[icon]', profile.icon)
       profileData.append('user[birthdate]', profile.birthdate)
@@ -237,7 +242,7 @@ export default function SignupPage() {
     } catch (error) {
       const fields = error.fieldErrors || {}
       if (Object.keys(fields).length) {
-        const accountFields = ['email', 'password', 'password_confirmation']
+        const accountFields = ['accountId', 'account_id', 'password', 'password_confirmation']
         go(Object.keys(fields).some((key) => accountFields.includes(key)) ? 1 : 2)
         setFieldErrors(fields)
         setErrors(fields.base || [])
@@ -266,18 +271,25 @@ export default function SignupPage() {
         <form className={styles.form} onSubmit={submitAccount} noValidate>
           <section className={`${styles.card} ${styles.form}`}>
             <label className={styles.field}>
-              <span className={styles.label}>メールアドレス</span>
+              <span className={styles.label}>ユーザーID</span>
               <input
                 className={styles.input}
-                type="email"
-                autoComplete="email"
-                placeholder="例：name@example.com"  // emailのプレースホルダ
-                aria-invalid={Boolean(fieldErrors.email)}
-                aria-describedby={fieldErrors.email ? 'email-error' : undefined}
-                value={account.email}
-                onChange={(event) => setAccount({ ...account, email: event.target.value })}
+                type="text"
+                minLength={3}
+                maxLength={20}
+                pattern="[A-Za-z0-9_.]{3,20}"
+                autoComplete="username"
+                autoCapitalize="off"
+                spellCheck={false}
+                placeholder="LifeLink_01"
+                aria-invalid={Boolean(fieldErrors.accountId)}
+                aria-describedby={fieldErrors.accountId ? 'accountId-error' : undefined}
+                value={profile.accountId}
+                onChange={(event) => setProfile((current) => ({ ...current, accountId: event.target.value }))}
+                required
               />
-              <FieldError errors={fieldErrors} name="email" />
+              <FieldError errors={fieldErrors} name="accountId" />
+              <span className={styles.hint}>半角英数字、_ (アンダーバー) 、. (ドット)が使えます（3〜20文字）</span>
             </label>
             <div className={styles.field}>
               <label className={styles.label} htmlFor="password">
@@ -341,7 +353,7 @@ export default function SignupPage() {
 
       {step === 2 && (
         <form className={styles.form} onSubmit={submitProfile} noValidate>
-          <ProfileFields errors={fieldErrors} value={profile} onChange={(changes) => setProfile((current) => ({ ...current, ...changes }))} />
+          <ProfileFields showAccountId={false} errors={fieldErrors} value={profile} onChange={(changes) => setProfile((current) => ({ ...current, ...changes }))} />
           <div className={`${styles.actions} ${styles.actionsBetween}`}>
             <button className={styles.button} type="button" onClick={() => go(1)}>
               戻る

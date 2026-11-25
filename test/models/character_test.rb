@@ -77,6 +77,19 @@ class CharacterTest < ActiveSupport::TestCase
     end
   end
 
+  test "リポジトリの状態別の画像: 段階1〜4（5は4）の空腹・汗汗・睡眠中・勉強中は状態別の絵、デフォルトと卵は段階の絵" do
+    (1..5).each do |stage|
+      image_stage = [ stage, 4 ].min
+      %w[hungry exercising sleeping studying].each do |state|
+        assert_equal "/characters/stages/#{image_stage}_#{state}.png", Character.image_path_for(stage, state)
+        assert Character.image_shows_state_for?(stage, state)
+      end
+      assert_equal "/characters/stages/#{image_stage}.png", Character.image_path_for(stage, "normal")
+    end
+    assert_equal "/characters/stages/0.png", Character.image_path_for(0, "hungry") # 卵は状態別の絵がまだない
+    assert_not Character.image_shows_state_for?(0, "hungry")                     # → ホームで状態マークを重ねる
+  end
+
   test "リポジトリの段階の画像: 0〜4 はそれぞれの画像、5 は画像ができるまで 4" do
     assert_equal (0..4).map { |stage| "/characters/stages/#{stage}.png" }, (0..4).map { |stage| Character.stage_image_path_for(stage) }
     assert_equal "/characters/stages/4.png", Character.stage_image_path_for(5)
@@ -94,8 +107,8 @@ class CharacterTest < ActiveSupport::TestCase
     assert_equal "/characters/sleeping.png", character.animation.gif_path
   end
 
-  test "8つの状態が enum で使える" do
-    assert_equal %w[normal sleeping sleep_deprived full hungry exercising studying fat], Character.states.keys
+  test "5つの状態が enum で使える（睡眠不足・満腹・太りはなくした。数字は詰めない）" do
+    assert_equal({ "normal" => 0, "sleeping" => 1, "hungry" => 4, "exercising" => 5, "studying" => 6 }, Character.states)
     assert_equal Character.states, CharacterStateLog.states
     assert_equal Character.states, CharacterAnimation.states
   end

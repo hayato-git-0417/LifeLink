@@ -25,6 +25,27 @@ export default function ProfileFields({ value, onChange, errors = {} }) {
       </section>
       <section className={`${form.card} ${form.form}`}>
         <label className={form.field}>
+          <span className={form.label}>ユーザーID</span>
+          <input
+            className={form.input}
+            type="text"
+            minLength={3}
+            maxLength={20}
+            pattern="[A-Za-z0-9_.]{3,20}"
+            placeholder="LifeLink_01"
+            autoComplete="username"
+            autoCapitalize="off"
+            spellCheck={false}
+            required
+            aria-invalid={Boolean(errors.accountId)}
+            aria-describedby={errors.accountId ? 'accountId-error' : undefined}
+            value={value.accountId || ''}
+            onChange={(event) => onChange({ accountId: event.target.value })}
+          />
+          <FieldError errors={errors} name="accountId" />
+          <span className={form.hint}>半角英数字、_ (アンダーバー) 、. (ドット)が使えます（3〜20文字）</span>
+        </label>
+        <label className={form.field}>
           <span className={form.label}>ユーザー名</span>
           <input
             className={form.input}

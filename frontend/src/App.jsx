@@ -120,12 +120,11 @@ export default function App() {
   /* 床の初期値 */
   const [floorImage, setFloorImage] = useSavedRoomImage(
     furnitureKey ? `${furnitureKey}:floor` : null,
-    '/room/floor/wood-floor.png'
+    '/room/floor/log-natural.png'
   )
 
   const [roomImageDraft, setRoomImageDraft] = useState(null)
-  const pendingRoomImages =
-    roomImageDraft?.key === furnitureKey ? roomImageDraft : null
+  const pendingRoomImages = roomImageDraft?.key === furnitureKey ? roomImageDraft : null
 
   const editingWallImage = pendingRoomImages?.wallImage ?? wallImage
   const editingFloorImage = pendingRoomImages?.floorImage ?? floorImage
@@ -185,8 +184,6 @@ export default function App() {
       setRoomImageDraft(null)
     }
   }, [location.pathname])
-
-
 
   // ログインしたユーザーの配置を復元する
   useEffect(() => {

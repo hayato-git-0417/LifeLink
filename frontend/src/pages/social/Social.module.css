@@ -56,6 +56,14 @@
   min-width: 0;
 }
 
+.profileNameRow {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  max-width: 100%;
+  min-width: 0;
+}
+
 .profileName {
   max-width: 100%;
   margin: 0;
@@ -64,6 +72,13 @@
   line-height: 1.25;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.profileAccountId,
+.userAccountId {
+  flex: 0 0 auto;
+  color: var(--ink-soft);
+  font-size: 1rem;
 }
 
 .counts {
@@ -201,6 +216,34 @@
 
 .searchInput {
   padding-left: 38px;
+  padding-right: 38px;
+}
+
+.searchClear {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 22px;
+  line-height: 1;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-50%);
+  cursor: pointer;
+}
+
+.searchField:hover .searchClear,
+.searchField:focus-within .searchClear {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .searchButton {
@@ -263,6 +306,17 @@
   font-weight: 700;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.userIdentity {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.userAccountId {
+  color: var(--ink-soft);
+  font-size: 0.9rem;
 }
 
 /* フォローする（ココアで塗る）／フォロー中（クリーム） */

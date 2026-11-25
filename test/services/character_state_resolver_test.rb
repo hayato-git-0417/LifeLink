@@ -25,41 +25,28 @@ class CharacterStateResolverTest < ActiveSupport::TestCase
     @user.meals.create!(meal_type: meal_type, eaten_at: time)
   end
 
-  test "優先順: 睡眠中 > 汗汗 > 勉強中 > 満腹 > 空腹 > 睡眠不足 > 太り > デフォルト" do
-    @character.update!(exercise_points: 100) # 太り
-    @user.sleep_records.create!(slept_at: at(0), woke_at: at(5)) # 300分 → 睡眠不足
-    now = at(13, 30)                                              # 朝食・昼食なし → 空腹
-    @user.meals.create!(meal_type: :snack, eaten_at: now - 30.minutes) # 満腹
-    @user.work_records.create!(started_at: now - 1.hour)               # 勉強中
-    @task.exercise_task_completions.create!(target_date: DAY, completed_at: now - 10.minutes) # 汗汗
-    @user.sleep_records.create!(slept_at: now - 5.minutes)             # 睡眠中（昼寝）
+  test "優先順: 睡眠中 > 勉強中 > 空腹 > デフォルト" do
+    now = at(13, 30)                                       # 朝食・昼食なし → 空腹
+    @user.work_records.create!(started_at: now - 1.hour)   # 勉強中
+    @user.sleep_records.create!(slept_at: now - 5.minutes) # 睡眠中（昼寝）
 
     assert_equal "sleeping", resolve(now).state
     @user.sleep_records.in_progress.destroy_all
-    assert_equal "exercising", resolve(now).state
-    ExerciseTaskCompletion.delete_all
     assert_equal "studying", resolve(now).state
     @user.work_records.destroy_all
-    assert_equal "full", resolve(now).state
-    @user.meals.destroy_all
     assert_equal "hungry", resolve(now).state
     eat(:breakfast, at(7, 30))
-    eat(:lunch, at(11, 50)) # 13:30 には食後90分を過ぎている
-    assert_equal "sleep_deprived", resolve(now).state
-    @user.sleep_records.destroy_all
-    assert_equal "fat", resolve(now).state
-    @character.update!(exercise_points: 300)
+    eat(:lunch, at(11, 50))
     assert_equal "normal", resolve(now).state
   end
 
-  test "汗汗はチェックしてから30分間、満腹は食後90分間" do
-    @task.exercise_task_completions.create!(target_date: DAY, completed_at: at(18))
-    assert_equal "exercising", resolve(at(18, 30)).state
-    assert_not_equal "exercising", resolve(at(18, 31)).state
+  test "なくした状態にはならない: 運動タスクのチェック直後・食後・睡眠不足・運動ポイント不足でもデフォルト" do
+    @character.update!(exercise_points: 0)
+    @user.sleep_records.create!(slept_at: at(1), woke_at: at(3)) # 睡眠スコアが低い
+    eat(:breakfast, at(7)); eat(:lunch, at(12))
+    @task.exercise_task_completions.create!(target_date: DAY, completed_at: at(12, 50))
 
-    eat(:dinner, at(19))
-    assert_equal "full", resolve(at(20, 30)).state
-    assert_equal "normal", resolve(at(20, 31)).state
+    assert_equal "normal", resolve(at(13)).state # 汗汗はホームの運動タイマー中だけ（サーバーでは判定しない）
   end
 
   test "空腹: 食事時刻から60分過ぎてから、次の食事時刻まで。夕食はその日の終わりまで" do
@@ -87,15 +74,6 @@ class CharacterStateResolverTest < ActiveSupport::TestCase
     assert_equal "normal", resolve(at(9)).state
   end
 
-  test "睡眠不足は今日起床していて睡眠スコアが80未満のとき（起床前は判定しない）" do
-    assert_equal "normal", resolve(at(6)).state
-    @user.sleep_records.create!(slept_at: at(1), woke_at: at(6, 35)) # 335分 / 420 = 79.8
-    eat(:breakfast, at(7))
-    assert_equal "sleep_deprived", resolve(at(10)).state
-    @user.sleep_records.last.update!(woke_at: at(6, 36))              # 336分 = 80.0
-    assert_equal "normal", resolve(at(10)).state
-  end
-
   test "状態が変わったら履歴を閉じて新しい行を作る。同じ状態なら作らない" do
     result = resolve(at(8))
     assert result.changed
@@ -110,10 +88,10 @@ class CharacterStateResolverTest < ActiveSupport::TestCase
     eat(:breakfast, at(9, 30))
     assert resolve(at(9, 30)).changed
     assert_equal at(9, 30), log.reload.ended_at
-    assert_equal "full", @character.character_state_logs.current.sole.state
+    assert_equal "normal", @character.character_state_logs.current.sole.state
   end
 
-  test "吹き出し: 就寝リマインド > 睡眠不足 > 空腹 > 未完了タスク > 状態のひとこと" do
+  test "吹き出し: 就寝リマインド > 空腹 > 未完了タスク > 状態のひとこと" do
     assert_equal "そろそろ寝る時間だよ", resolve(at(23, 30, day: DAY - 1)).message
     assert_equal "おなかすいた…", resolve(at(23, 29, day: DAY - 1)).message # 夕食がないので空腹のひとこと
 

@@ -1,23 +1,51 @@
+
 // マイページ・他人のマイページの上部: アイコン・名前・フォロワー数／フォロー中数（デザイン p.3）。
 // linkCounts のとき数を押すとフォロー一覧へ（自分のページだけ）
 import { Link } from 'react-router-dom'
 import UserIcon from '../../components/UserIcon.jsx'
 import styles from './Social.module.css'
 
-export default function ProfileHeader({ user, followersCount, followingsCount, linkCounts = false, children }) {
+export default function ProfileHeader({
+  user,
+  followersCount,
+  followingsCount,
+  linkCounts = false,
+  children,
+  photoBorderWidth,
+}) {
   const counts = [
     { tab: 'followers', label: 'フォロワー', value: followersCount },
     { tab: 'followings', label: 'フォロー中', value: followingsCount },
   ]
+
   return (
     <section className={styles.profile}>
-      <UserIcon icon={user.icon} avatarUrl={user.avatar_selected ? user.avatar_url : null} size={84} />
+      <UserIcon
+        icon={user.icon}
+        avatarUrl={user.avatar_selected ? user.avatar_url : null}
+        size={84}
+        photoBorderWidth={photoBorderWidth}
+      />
+
       <div className={styles.profileBody}>
-        <h2 className={styles.profileName}>{user.name}</h2>
+        <div className={styles.profileNameRow}>
+          <h2 className={styles.profileName}>{user.name}</h2>
+
+          {linkCounts && user.account_id && (
+            <span className={styles.profileAccountId}>
+              @{user.account_id}
+            </span>
+          )}
+        </div>
+
         <div className={styles.counts}>
           {counts.map((count) =>
             linkCounts ? (
-              <Link key={count.tab} to={`/follows?tab=${count.tab}`} className={`${styles.count} ${styles.countLink}`}>
+              <Link
+                key={count.tab}
+                to={`/follows?tab=${count.tab}`}
+                className={`${styles.count} ${styles.countLink}`}
+              >
                 <strong>{count.value}</strong>
                 {count.label}
               </Link>
@@ -29,6 +57,7 @@ export default function ProfileHeader({ user, followersCount, followingsCount, l
             ),
           )}
         </div>
+
         {children}
       </div>
     </section>

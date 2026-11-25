@@ -6,7 +6,7 @@
 .photoIcon {
   display: block;
   flex-shrink: 0;
-  border: var(--avatar-border-width, 3px) solid var(--ink);
+  border: var(--avatar-border-width, 2.5px) solid var(--ink);
   border-radius: 50%;
   clip-path: circle(50%);
   object-fit: cover;

@@ -1,16 +1,16 @@
+
 # This file is auto-generated from the current state of the database. Instead
 # of editing this file, please use the migrations feature of Active Record to
 # incrementally modify your database, and then regenerate this schema definition.
 #
-# This file is the source Rails uses to define your schema when running `bin/rails
-# db:schema:load`. When creating a new database, `bin/rails db:schema:load` tends to
+# This file is the source Rails uses to define your database schema.
+# When creating a new database, `bin/rails db:schema:load` tends to
 # be faster and is potentially less error prone than running all of your
-# migrations from scratch. Old migrations may fail to apply correctly if those
-# migrations use external dependencies or application code.
+# migrations from scratch.
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_11_24_000000) do
+ActiveRecord::Schema[7.2].define(version: 2026_11_24_190000) do
   create_table "active_storage_attachments", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -56,7 +56,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_24_000000) do
     t.datetime "started_at", null: false
     t.datetime "ended_at"
     t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
+    t.datetime "updated_at"
     t.index ["character_id", "started_at"], name: "index_character_state_logs_on_character_id_and_started_at"
     t.index ["character_id", "target_date"], name: "index_character_state_logs_on_character_id_and_target_date"
   end
@@ -292,6 +292,8 @@ ActiveRecord::Schema[7.2].define(version: 2026_11_24_000000) do
     t.decimal "weight_kg", precision: 5, scale: 1
     t.integer "activity_level", null: false
     t.boolean "avatar_selected", default: false, null: false
+    t.string "account_id", null: false
+    t.index ["account_id"], name: "index_users_on_account_id", unique: true
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["name"], name: "index_users_on_name"
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true

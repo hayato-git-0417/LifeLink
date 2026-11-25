@@ -18,8 +18,8 @@ class ApplicationController < ActionController::API
     render json: { errors: Array(messages) }, status: status
   end
 
-  # 新規登録（POST /api/v1/auth）でプロフィールも受け取る
+  # 新規登録（POST /api/v1/auth）でユーザーIDとプロフィールを受け取る
   def configure_permitted_parameters
-    devise_parameter_sanitizer.permit(:sign_up, keys: %i[name icon birthdate gender height_cm weight_kg activity_level])
+    devise_parameter_sanitizer.permit(:sign_up, keys: %i[account_id name icon birthdate gender height_cm weight_kg activity_level])
   end
 end
